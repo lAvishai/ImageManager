@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { type PilgiRecord, newRecord, now, stageData, stageOf } from '../domain'
 import { RecordsRepo } from '../services/github'
 import { useAuthStore } from './auth'
@@ -144,6 +144,12 @@ export const useRecordsStore = defineStore('records', () => {
     mutate(id, (c) => { c.stage5 = posted ? { status: 'posted', postedBy: auth.email, postedAt: now() } : { status: 'pending', postedBy: null, postedAt: null } }, `${id}: ${posted ? 'marked posted' : 'reverted to pending'}`)
   const setPostDate = (id: string, iso: string) =>
     mutate(id, (c) => { c.stage5.postedAt = iso }, `${id}: post date updated`)
+  /** Soft delete: flags the record in its JSON file; the file itself is kept in the repo. */
+  const remove = (id: string) =>
+    mutate(id, (c) => { c.deleted = true; c.deletedBy = auth.email; c.deletedAt = now() }, `${id}: marked as deleted`)
 
-  return { records, loaded, loadError, toastMsg, toast, init, reset, byId, mutate, review, addImage, saveText, create, createMany, setCharacter, addRemark, setPosted, setPostDate }
+  // Deleted records stay in `records` (so ids are never reused) but are hidden from lists
+  const visible = computed(() => records.value.filter((r) => !r.deleted))
+
+  return { records, visible, loaded, loadError, toastMsg, toast, init, reset, byId, mutate, review, addImage, saveText, create, createMany, setCharacter, addRemark, setPosted, setPostDate, remove }
 })
