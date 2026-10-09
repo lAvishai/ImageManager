@@ -1,0 +1,193 @@
+{
+  "me": "maya@company.com",
+  "people": [
+    "jonas@company.com",
+    "priya@company.com",
+    "leo@company.com"
+  ],
+  "rejectComments": [
+    "Bottom line lands flat — punch up the payoff.",
+    "Hands look off on the left figure, please regenerate.",
+    "Caption block covers the face; move it up.",
+    "Too dark. Lift exposure and keep the warm palette.",
+    "Too close to an earlier record — find a fresh angle."
+  ],
+  "records": [
+    {
+      "top": "When the coffee finally kicks in",
+      "bottom": "and it is already 5pm",
+      "sc": "Office worker at a tidy desk, low golden light, mug raised, wall clock reading five.",
+      "s1": [
+        "approved"
+      ],
+      "s2": [
+        "rejected",
+        "approved"
+      ],
+      "s3": [
+        "approved"
+      ],
+      "s4": "posted",
+      "remarks": [
+        {
+          "by": "priya@company.com",
+          "at": "2026-10-02T09:14:00Z",
+          "stage": 2,
+          "text": "Can we keep the cat from the last batch? People liked it."
+        },
+        {
+          "by": "maya@company.com",
+          "at": "2026-10-02T09:40:00Z",
+          "stage": 2,
+          "text": "Yes — I'll mention it in the scenario."
+        },
+        {
+          "by": "leo@company.com",
+          "at": "2026-10-03T16:05:00Z",
+          "stage": 4,
+          "text": "Font on the bottom line feels a bit small on mobile."
+        }
+      ]
+    },
+    {
+      "top": "Me explaining my weekend plans",
+      "bottom": "my couch, already knowing the truth",
+      "sc": "Person gesturing at a map; a sagging sofa watches from the corner, slightly smug.",
+      "s1": [
+        "rejected",
+        "approved"
+      ],
+      "ss": [
+        "rejected",
+        "approved"
+      ],
+      "s2": [
+        "approved"
+      ],
+      "s3": [
+        "rejected",
+        "approved"
+      ],
+      "s4": "pending",
+      "remarks": [
+        {
+          "by": "jonas@company.com",
+          "at": "2026-10-04T11:20:00Z",
+          "stage": 5,
+          "text": "Holding this one until Friday for the long weekend."
+        }
+      ]
+    },
+    {
+      "top": "Houseplant after one day of vacation",
+      "bottom": "\"so this is how you treat family\"",
+      "sc": "A dramatic, wilting fern on a windowsill, leaves draped like a fainting actor.",
+      "s1": [
+        "approved"
+      ],
+      "s2": [
+        "approved"
+      ],
+      "s3": [
+        "rejected",
+        "pending"
+      ]
+    },
+    {
+      "top": "Monday morning standup",
+      "bottom": "everyone muted, nobody awake",
+      "sc": "Grid of sleepy animals on a video call; an owl is the only one with eyes open.",
+      "s1": [
+        "approved"
+      ],
+      "s2": [
+        "rejected",
+        "rejected",
+        "approved"
+      ],
+      "s3": []
+    },
+    {
+      "top": "The group chat at 2am",
+      "bottom": "versus the group chat at 9am",
+      "sc": "Split frame: neon-lit raccoons partying on the left, the same raccoons asleep in a pile on the right.",
+      "s1": [
+        "approved"
+      ],
+      "s2": [
+        "rejected",
+        "pending"
+      ],
+      "mine2": true
+    },
+    {
+      "top": "Ordering \"just one thing\" online",
+      "bottom": "the delivery driver, every single day",
+      "sc": "Doorstep stacked with parcels; a courier waving like an old friend.",
+      "s1": [
+        "approved"
+      ],
+      "ss": [
+        "pending"
+      ],
+      "mineS": true
+    },
+    {
+      "top": "When the recipe says \"a pinch\"",
+      "bottom": "my hand, measuring with feelings",
+      "sc": "Close-up of a hand pouring a heap of salt over a pot, steam swirling.",
+      "s1": [
+        "approved"
+      ],
+      "ss": [
+        "rejected",
+        "pending"
+      ]
+    },
+    {
+      "top": "Cat seeing the vacuum cleaner",
+      "bottom": "like it owes her money",
+      "prevBottom": "as if it were a monster",
+      "sc": "Ginger cat on a stair landing glaring down at a robot vacuum, dramatic side light.",
+      "s1": [
+        "rejected",
+        "pending"
+      ]
+    },
+    {
+      "top": "Trying to fold a fitted sheet",
+      "bottom": "three hours, zero progress",
+      "sc": "Person tangled in a floral sheet in a sunlit laundry room, determined expression.",
+      "s1": [
+        "approved"
+      ],
+      "ss": []
+    },
+    {
+      "top": "Weekend me vs. weekday me",
+      "bottom": "same person, different species",
+      "sc": "Sloth in pajamas on the left; a hummingbird in a tiny blazer on the right.",
+      "s1": [
+        "pending"
+      ]
+    },
+    {
+      "top": "Gym on January 2nd",
+      "bottom": "gym on February 2nd",
+      "sc": "Crowded gym, every machine taken, beside the same room empty with one tumbleweed.",
+      "s1": [
+        "rejected"
+      ]
+    },
+    {
+      "top": "Reading the terms and conditions",
+      "bottom": "said no one, ever",
+      "sc": "Tortoise in reading glasses with an absurdly long scroll unrolling down a hill.",
+      "s1": [
+        "pending"
+      ],
+      "mine1": true
+    }
+  ],
+  "sampleCsv": "topSentence,bottomSentence\n\"When the alarm goes off\",\"and you were mid-dream\"\n\"My bank account\",\"after one coffee run\"\n\"Dog hearing the treat bag\",\"from three rooms away\"\n\"Me at the start of a puzzle\",\"me at piece 400\"\n\"Opening the fridge for the 5th time\",\n\"Wi-Fi drops for one second\",\"entire family appears in the hallway\"\n\"Assembling flat-pack furniture\",\"one screw left over, no idea where\""
+}

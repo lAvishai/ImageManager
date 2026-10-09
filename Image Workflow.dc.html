@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>PilGi Manager</title>
+<link rel="stylesheet" href="_ds/organic-edb397d8-99a9-4c87-a5c7-bca9b56d9bc8/styles.css">
+<script src="_ds/organic-edb397d8-99a9-4c87-a5c7-bca9b56d9bc8/_ds_bundle.js"></script>
+<style>a{color:var(--color-accent-700)} a:hover{color:var(--color-accent-600)} input[type=checkbox]{accent-color:var(--color-accent);width:16px;height:16px;cursor:pointer}</style>
+</helmet>
+<div style="min-height:100vh; background:var(--color-bg); color:var(--color-text); font-family:var(--font-body)">
+
+<sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Login / Setup" style="min-height:100vh; display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap:var(--space-8); padding:clamp(16px, 4vw, var(--space-8))">
+  <div style="display:flex; flex-direction:column; gap:var(--space-6); max-width:460px; padding:var(--space-4) 0 0 clamp(0px, 2vw, var(--space-6))">
+    <div class="nav-brand" style="font-size:22px">PilGi Manager</div>
+    <sc-if value="{{ lg.isSetup }}">
+      <div>
+        <h1 style="font-size:46px">Set up this browser</h1>
+        <p class="text-muted" style="margin:0; text-wrap:pretty">Paste your git access token once. It's encrypted with a key derived from your password before anything is stored.</p>
+      </div>
+      <form onSubmit="{{ lg.submit }}" style="display:flex; flex-direction:column; gap:var(--space-3)">
+        <div class="field"><label>Your email</label><input class="input" type="email" value="{{ lg.email }}" onChange="{{ lg.setEmail }}"></div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap:var(--space-3)">
+          <div class="field"><label>Repository</label><input class="input" value="{{ lg.repo }}" onChange="{{ lg.setRepo }}" placeholder="owner/name"></div>
+          <div class="field"><label>Branch</label><input class="input" value="{{ lg.branch }}" onChange="{{ lg.setBranch }}"></div>
+        </div>
+        <div class="field"><label>Personal access token</label><input class="input" type="password" value="{{ lg.token }}" onChange="{{ lg.setToken }}" placeholder="ghp_••••••••••••••••"></div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap:var(--space-3)">
+          <div class="field"><label>Password</label><input class="input" type="password" value="{{ lg.pw }}" onChange="{{ lg.setPw }}" placeholder="8+ characters"></div>
+          <div class="field"><label>Confirm password</label><input class="input" type="password" value="{{ lg.pw2 }}" onChange="{{ lg.setPw2 }}"></div>
+        </div>
+        <label style="display:flex; gap:var(--space-2); align-items:flex-start; font-size:13px; cursor:pointer">
+          <input type="checkbox" checked="{{ lg.remember }}" onChange="{{ lg.toggleRemember }}" style="margin-top:3px">
+          <span>Remember password in a cookie on this device<span class="text-muted" style="display:block; font-size:12px; text-wrap:pretty">Anyone with access to this browser could decrypt the token. Turn off on shared machines.</span></span>
+        </label>
+        <sc-if value="{{ lg.hasError }}"><div style="font-size:13px; color:var(--color-accent-700)">{{ lg.error }}</div></sc-if>
+        <div style="display:flex; gap:var(--space-3); align-items:center; margin-top:var(--space-2)">
+          <button class="btn btn-primary" type="submit" disabled="{{ lg.busy }}" style="padding-inline:var(--space-6)">{{ lg.setupLabel }}</button>
+          <button class="btn btn-ghost" type="button" onClick="{{ lg.toUnlock }}">I've set up before</button>
+        </div>
+      </form>
+    </sc-if>
+    <sc-if value="{{ lg.isUnlock }}">
+      <div>
+        <h1 style="font-size:46px">Welcome back</h1>
+        <p class="text-muted" style="margin:0">Unlock to decrypt your token and load pilgis from <b style="color:var(--color-text)">{{ lg.repo }}</b>.</p>
+      </div>
+      <div style="display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3) var(--space-4); border-radius:999px; background:var(--color-accent-2-100); color:var(--color-accent-2-800); font-size:13px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+        <span style="flex:1">Saved password found for {{ lg.email }}</span>
+        <button class="btn btn-ghost" type="button" onClick="{{ lg.useCookie }}" style="color:var(--color-accent-2-800)">Continue</button>
+      </div>
+      <form onSubmit="{{ lg.submit }}" style="display:flex; flex-direction:column; gap:var(--space-3)">
+        <div class="field"><label>Or enter your password</label><input class="input" type="password" value="{{ lg.pw }}" onChange="{{ lg.setPw }}"></div>
+        <sc-if value="{{ lg.hasError }}"><div style="font-size:13px; color:var(--color-accent-700)">{{ lg.error }}</div></sc-if>
+        <div style="display:flex; gap:var(--space-3); align-items:center">
+          <button class="btn btn-primary" type="submit" disabled="{{ lg.busy }}" style="padding-inline:var(--space-6)">{{ lg.unlockLabel }}</button>
+          <button class="btn btn-ghost" type="button" onClick="{{ lg.toSetup }}">Reset with a new token</button>
+        </div>
+      </form>
+    </sc-if>
+  </div>
+  <div style="position:relative; overflow:hidden; border-radius:calc(var(--radius-lg) * 1.6); background:var(--color-accent-2-200); padding:var(--space-8); display:flex; flex-direction:column; justify-content:flex-end; min-height:520px">
+    <div style="position:absolute; width:340px; height:340px; border-radius:50%; background:var(--color-accent-300); top:-90px; right:-70px"></div>
+    <div style="position:absolute; width:150px; height:150px; border-radius:50%; background:var(--color-accent-2-400); top:170px; right:210px"></div>
+    <div style="position:relative; display:flex; flex-direction:column; gap:var(--space-3)">
+      <h6 style="margin:0; color:var(--color-accent-2-800)">Every image, five gates</h6>
+      <sc-for list="{{ stageList }}" as="st" hint-placeholder-count="5">
+        <div style="display:flex; align-items:center; gap:var(--space-3)">
+          <span style="width:36px; height:36px; border-radius:50%; display:grid; place-items:center; background:var(--color-bg); font-family:var(--font-heading); font-size:16px; flex:none">{{ st.n }}</span>
+          <div><div style="font-family:var(--font-heading); font-size:18px; line-height:1.2">{{ st.name }}</div><div style="font-size:13px; color:var(--color-accent-2-800)">{{ st.desc }}</div></div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isApp }}" hint-placeholder-val="{{ true }}">
+<nav class="nav" style="padding:var(--space-4) clamp(16px, 4vw, var(--space-8)); flex-wrap:wrap; gap:var(--space-3); border-bottom:2px solid var(--color-neutral-300); margin-bottom:var(--space-4)">
+  
+  <div style="display:flex; gap:var(--space-1); margin-right:auto">
+    <h1 onClick="{{ goDashboard }}" title="Back to pilgis" style="margin:0; cursor:pointer" style-hover="color:var(--color-accent-700)" data-om-label="PilGi">PilGi manager</h1>
+  </div>
+  <button class="btn btn-primary" onClick="{{ openNewDialog }}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+      New PilGi
+    </button><button class="btn btn-secondary" onClick="{{ goImport }}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
+      Import batch
+    </button><span style="display:inline-flex; align-items:center; gap:6px; font-size:12px; min-width:0; overflow-wrap:anywhere" class="text-muted">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M6 9v6"></path><path d="M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path><path d="M18 9c0 6-12 3-12 6"></path></svg>
+    {{ repoLabel }}
+  </span>
+  <span style="display:inline-flex; align-items:center; gap:var(--space-2); font-size:13px">
+    <span style="width:30px; height:30px; border-radius:50%; background:var(--color-accent-200); color:var(--color-accent-800); display:grid; place-items:center; font-weight:700; font-size:12px">MA</span>
+    {{ me }}
+  </span>
+  <button class="btn btn-secondary btn-icon" onClick="{{ lock }}" title="Lock">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+  </button>
+</nav>
+
+<sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+<main data-screen-label="Records Dashboard" style="padding:var(--space-4) clamp(16px, 4vw, var(--space-8)) var(--space-8)">
+  
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap:var(--space-3); margin-bottom:var(--space-6)">
+    <sc-for list="{{ dash.tiles }}" as="t" hint-placeholder-count="6">
+      <button onClick="{{ t.onClick }}" style="all:unset; cursor:pointer; display:flex; flex-direction:column; gap:var(--space-2); padding:var(--space-4); border-radius:calc(var(--radius-lg) * 1.15); background:{{ t.bg }}; box-shadow:{{ t.shadow }}">
+        <span style="display:flex; align-items:center; justify-content:space-between">
+          <span style="height:30px; padding:0 12px; border-radius:999px; display:inline-flex; align-items:center; gap:6px; background:{{ t.dot }}; color:var(--color-bg); font-size:13px; font-weight:600; white-space:nowrap"><span style="font-family:var(--font-heading); font-size:14px">{{ t.n }}</span><span>{{ t.label }}</span></span>
+          <span style="font-family:var(--font-heading); font-size:30px; line-height:1">{{ t.count }}</span>
+        </span>
+        <span style="display:flex; flex-direction:column; gap:2px">
+          <sc-for list="{{ t.statuses }}" as="x" hint-placeholder-count="2">
+            <span class="text-muted" style="display:flex; justify-content:space-between; gap:var(--space-2); font-size:12px"><span>{{ x.label }}</span><span style="font-weight:600">{{ x.n }}</span></span>
+          </sc-for>
+          <sc-if value="{{ t.noStatuses }}"><span class="text-muted" style="font-size:12px">No pilgis</span></sc-if>
+        </span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="display:flex; gap:var(--space-3); align-items:center; flex-wrap:wrap; margin-bottom:var(--space-3)">
+    <div class="seg">
+      <sc-for list="{{ dash.statusOpts }}" as="o" hint-placeholder-count="6">
+        <label class="seg-opt"><input type="radio" name="statusf" checked="{{ o.active }}" onChange="{{ o.onSelect }}">{{ o.label }}</label>
+      </sc-for>
+    </div>
+    <div style="position:relative; flex:1 1 220px; min-width:0; max-width:340px; margin-left:auto">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; left:14px; top:11px; opacity:0.55"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+      <input class="input" placeholder="Search sentences or pilgi id" value="{{ dash.q }}" onChange="{{ dash.setQ }}" style="padding-left:36px">
+    </div>
+  </div>
+
+  <div style="background:var(--color-neutral-100); border-radius:calc(var(--radius-lg) * 1.15); padding:var(--space-2) var(--space-3); overflow-x:auto">
+    <table class="table" style="min-width:720px">
+      <thead><tr>
+        <th>PilGi</th><th>Stage</th><th>Remarks</th><th>Status</th><th>Posted</th><th>Last modified</th>
+      </tr></thead>
+      <tbody>
+        <sc-for list="{{ dash.rows }}" as="row" hint-placeholder-count="8">
+          <tr onClick="{{ row.open }}" style="cursor:pointer">
+            <td>
+              <div style="display:flex; align-items:center; gap:var(--space-3); padding-block:4px">
+                <sc-if value="{{ row.hasThumb }}"><span title="Image uploaded" style="width:36px; height:36px; flex:none; border-radius:50%; display:grid; place-items:center; background:var(--color-accent-2-200); color:var(--color-accent-2-800)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg></span></sc-if>
+                <div style="min-width:0">
+                  <div style="font-weight:600; line-height:1.3">{{ row.top }}</div>
+                  <div style="font-weight:600; line-height:1.3">{{ row.bottom }}</div>
+                  <div style="font-size:11px; color:var(--color-neutral-600); margin-top:2px">{{ row.id }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div style="display:flex; flex-direction:column; gap:5px">
+                <span style="font-size:13px; white-space:nowrap">{{ row.stageNum }} · {{ row.stageName }}</span>
+                <span style="display:flex; gap:4px">
+                  <sc-for list="{{ row.dots }}" as="dot" hint-placeholder-count="5"><span style="width:18px; height:6px; border-radius:999px; background:{{ dot.bg }}"></span></sc-for>
+                </span>
+              </div>
+            </td>
+            <td onClick="{{ row.stop }}">
+              <button onClick="{{ row.openRemarks }}" title="{{ row.remarksTitle }}" aria-label="{{ row.remarksTitle }}" style="all:unset; cursor:pointer; min-width:34px; height:30px; padding:0 10px; box-sizing:border-box; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; gap:5px; font-size:13px; font-weight:700; background:{{ row.remarksBg }}; color:{{ row.remarksFg }}" style-hover="background:var(--color-accent-300)">
+                <sc-if value="{{ row.hasRemarks }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg></sc-if>
+                <span>{{ row.remarksLabel }}</span>
+              </button>
+            </td>
+            <td><span class="tag {{ row.tagCls }}" style="white-space:nowrap">{{ row.statusLabel }}</span></td>
+            <td style="font-size:13px; white-space:nowrap">{{ row.postedAt }}</td>
+            <td style="font-size:13px; white-space:nowrap"><div>{{ row.by }}</div><div class="text-muted" style="font-size:12px">{{ row.at }}</div></td>
+          </tr>
+        </sc-for>
+      </tbody>
+    </table>
+    <sc-if value="{{ dash.empty }}">
+      <div style="padding:var(--space-8) var(--space-4)">
+        <h4 style="margin:0 0 4px">Nothing here</h4>
+        <p class="text-muted" style="margin:0">No pilgis match these filters.</p>
+      </div>
+    </sc-if>
+  </div>
+</main>
+</sc-if>
+
+<sc-if value="{{ isImport }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Batch Import" style="padding:var(--space-4) clamp(16px, 4vw, var(--space-8)) var(--space-8); max-width:1180px">
+  <button class="btn btn-ghost" onClick="{{ goDashboard }}" style="margin-bottom:var(--space-3)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>Records
+  </button>
+  <h1 style="margin:0">Batch import scenarios</h1>
+  <p class="text-muted" style="margin:0 0 var(--space-6); max-width:560px; text-wrap:pretty">Each row becomes a new pilgi at Stage 1, pending review. Only the top and bottom sentence are imported.</p>
+
+  <sc-if value="{{ imp.isUpload }}">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap:var(--space-6)">
+      <div onClick="{{ imp.pick }}" onDragOver="{{ imp.dragOver }}" onDragLeave="{{ imp.dragLeave }}" onDrop="{{ imp.drop }}" style="cursor:pointer; min-height:320px; border-radius:calc(var(--radius-lg) * 1.4); border:2px dashed {{ imp.dropBorder }}; background:{{ imp.dropBg }}; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:var(--space-3); padding:var(--space-8)">
+        <span style="width:64px; height:64px; border-radius:50%; background:var(--color-accent-200); color:var(--color-accent-700); display:grid; place-items:center">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
+        </span>
+        <h3 style="margin:0">Drop a CSV or JSON file</h3>
+        <p class="text-muted" style="margin:0">or click to browse your files</p>
+        <sc-if value="{{ imp.hasError }}"><div style="font-size:13px; color:var(--color-accent-700)">{{ imp.error }}</div></sc-if>
+        <input type="file" accept=".csv,.json" ref="{{ imp.fileRef }}" onChange="{{ imp.onFile }}" style="display:none">
+        <button class="btn btn-secondary" onClick="{{ imp.useSample }}" style="margin-top:var(--space-2)">Try with a sample file</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:var(--space-3)">
+        <h6 style="margin:0" class="text-muted">Expected format</h6>
+        <div class="card">
+          <div class="card-kicker">CSV</div>
+          <pre style="margin:0; font-size:12px; line-height:1.6; white-space:pre-wrap; font-family:ui-monospace, monospace">topSentence,bottomSentence
+"When the alarm goes off","and you were mid-dream"
+"My bank account","after one coffee run"</pre>
+        </div>
+        <div class="card">
+          <div class="card-kicker">JSON</div>
+          <pre style="margin:0; font-size:12px; line-height:1.6; white-space:pre-wrap; font-family:ui-monospace, monospace">[
+  { "topSentence": "When the alarm goes off",
+    "bottomSentence": "and you were mid-dream" }
+]</pre>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ imp.isPreview }}">
+    <div style="display:flex; align-items:center; gap:var(--space-3); flex-wrap:wrap; margin-bottom:var(--space-4)">
+      <span style="display:inline-flex; align-items:center; gap:var(--space-2); padding:6px 14px; border-radius:999px; background:var(--color-surface); font-size:13px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg>
+        {{ imp.fileName }}
+      </span>
+      <span class="tag tag-accent-2">{{ imp.validLabel }}</span>
+      <sc-if value="{{ imp.hasInvalid }}"><span class="tag tag-outline">{{ imp.invalidLabel }}</span></sc-if>
+      <span style="margin-left:auto; display:flex; gap:var(--space-2)">
+        <button class="btn btn-secondary" onClick="{{ imp.reset }}">Choose another file</button>
+        <button class="btn btn-primary" onClick="{{ imp.confirm }}" disabled="{{ imp.noneSelected }}">{{ imp.confirmLabel }}</button>
+      </span>
+    </div>
+    <div style="background:var(--color-neutral-100); border-radius:calc(var(--radius-lg) * 1.15); padding:var(--space-2) var(--space-3); overflow-x:auto">
+      <table class="table" style="min-width:560px">
+        <thead><tr><th style="width:34px"></th><th style="width:40px">#</th><th>Top sentence</th><th>Bottom sentence</th><th>Check</th></tr></thead>
+        <tbody>
+          <sc-for list="{{ imp.rows }}" as="r" hint-placeholder-count="5">
+            <tr style="opacity:{{ r.opacity }}">
+              <td><input type="checkbox" checked="{{ r.include }}" disabled="{{ r.invalid }}" onChange="{{ r.toggle }}"></td>
+              <td class="text-muted">{{ r.n }}</td>
+              <td>{{ r.top }}</td>
+              <td>{{ r.bottomShown }}</td>
+              <td><span class="tag {{ r.tagCls }}">{{ r.check }}</span></td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+  </sc-if>
+</main>
+</sc-if>
+
+<sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Record Detail" style="padding:var(--space-4) clamp(16px, 4vw, var(--space-8)) var(--space-8)">
+  
+  <div style="display:flex; gap:var(--space-6); align-items:flex-end; flex-wrap:wrap; margin-bottom:var(--space-6)">
+    <div style="flex:1 1 0; min-width:200px; max-width:720px; margin-right:auto; align-self:flex-start">
+      <div style="display:flex; gap:var(--space-2); align-items:center; margin-bottom:var(--space-2)">
+        
+        
+      </div>
+      <h2 style="margin:0; font-size:clamp(15px, 2vw, 34px); text-wrap:balance">{{ d.top }}</h2>
+      <h2 style="margin:4px 0 0; font-size:clamp(15px, 2vw, 34px); text-wrap:balance">{{ d.bottom }}</h2><span class="tag tag-neutral">{{ d.id }}</span><span class="text-muted" style="font-size:12px">Created by {{ d.createdBy }} · {{ d.createdAt }}</span>
+    </div>
+    <button class="btn btn-secondary" onClick="{{ rm.toggle }}" style="align-self:flex-start; display:flex; align-items:center; gap:var(--space-2)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
+      Remarks
+      <span style="min-width:22px; height:22px; padding:0 6px; border-radius:999px; display:inline-grid; place-items:center; background:var(--color-accent); color:var(--color-bg); font-size:12px; font-weight:700">{{ rm.count }}</span>
+    </button><div style="display:flex; flex-direction:column; gap:var(--space-2); align-self:flex-start; padding:var(--space-3) var(--space-4); border-radius:var(--radius-md); background:var(--color-surface); font-size:13px">
+      
+      <div style="display:flex; flex-direction:column; gap:var(--space-2)">
+        <sc-for list="{{ d.pickers }}" as="pk" hint-placeholder-count="2">
+          <div style="display:flex; align-items:center; gap:var(--space-2); position:relative">
+            <span style="width:92px; flex:none">{{ pk.label }}</span>
+            <button class="input" onClick="{{ pk.toggle }}" style="display:flex; align-items:center; gap:var(--space-2); padding:5px 10px 5px 6px; min-width:150px; background:var(--color-bg); cursor:pointer; text-align:left">
+              <span style="width:24px; height:24px; flex:none; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:700; color:#fff; background:{{ pk.cur.bg }}">{{ pk.cur.glyph }}</span>
+              <span style="flex:1">{{ pk.cur.name }}</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+            </button>
+            <sc-if value="{{ pk.open }}">
+              <div style="position:absolute; top:calc(100% + 4px); left:100px; right:0; z-index:30; display:flex; flex-direction:column; padding:4px; border-radius:var(--radius-md); background:var(--color-bg); box-shadow:0 8px 24px rgba(0,0,0,0.14); border:1px solid var(--color-divider)">
+                <sc-for list="{{ pk.opts }}" as="o" hint-placeholder-count="3">
+                  <button onClick="{{ o.pick }}" style="display:flex; align-items:center; gap:var(--space-2); padding:6px 8px; border:0; border-radius:var(--radius-sm); background:{{ o.rowBg }}; font:inherit; color:inherit; cursor:pointer; text-align:left" style-hover="background:var(--color-surface)">
+                    <span style="width:24px; height:24px; flex:none; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:700; color:#fff; background:{{ o.bg }}">{{ o.glyph }}</span>
+                    <span>{{ o.name }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    
+    <div style="display:flex; flex-direction:column; gap:2px; align-self:flex-start; padding:var(--space-3) var(--space-4); border-radius:var(--radius-md); background:var(--color-surface); font-size:13px">
+      <span class="text-muted" style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase">Last modified</span>
+      <span><b>{{ d.lastBy }}</b> · {{ d.lastAt }}</span>
+      
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(5, minmax(150px,1fr)); gap:var(--space-2); padding:var(--space-2); border-radius:999px; overflow-x:auto; scrollbar-width:none; background:var(--color-neutral-200); margin-bottom:var(--space-6)">
+    <sc-for list="{{ d.steps }}" as="st" hint-placeholder-count="5">
+      <button onClick="{{ st.onClick }}" disabled="{{ st.locked }}" style="all:unset; cursor:{{ st.cursor }}; display:flex; align-items:center; gap:var(--space-3); padding:var(--space-2) var(--space-3); border-radius:999px; background:{{ st.bg }}; box-shadow:{{ st.shadow }}; opacity:{{ st.opacity }}">
+        <span style="width:34px; height:34px; flex:none; border-radius:50%; display:grid; place-items:center; background:{{ st.circle }}; color:var(--color-bg); font-family:var(--font-heading); font-size:15px">
+          <sc-if value="{{ st.done }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>
+          <sc-if value="{{ st.notDone }}">{{ st.n }}</sc-if>
+        </span>
+        <span style="min-width:0">
+          <span style="display:block; font-family:var(--font-heading); font-size:15px; line-height:1.2">{{ st.name }}</span>
+          <span style="display:block; font-size:12px; color:var(--color-neutral-700)">{{ st.sub }}</span>
+        </span>
+      </button>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{ d.isLocked }}">
+    <div style="padding:var(--space-8); border-radius:calc(var(--radius-lg) * 1.3); background:var(--color-neutral-100); max-width:560px">
+      <h3 style="margin:0 0 var(--space-2)">Locked for now</h3>
+      <p class="text-muted" style="margin:0 0 var(--space-4)">{{ d.lockedMsg }}</p>
+      <button class="btn btn-secondary" onClick="{{ d.goCurrent }}">Go to current stage</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ d.isReview }}">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap:var(--space-6); align-items:start">
+      <div style="display:flex; flex-direction:column; gap:var(--space-4)">
+        <sc-if value="{{ d.showCaption }}">
+          <div style="display:flex; flex-direction:column; justify-content:space-between; gap:var(--space-6); min-height:320px; padding:clamp(20px, 4vw, var(--space-8)); border-radius:calc(var(--radius-lg) * 1.4); background:var(--color-accent-2-200)">
+            <div style="font-family:var(--font-heading); font-size:28px; line-height:1.15; text-wrap:balance; text-align:center">{{ vv.top }}</div>
+            <div style="font-family:var(--font-heading); font-size:28px; line-height:1.15; text-wrap:balance; text-align:center">{{ vv.bottom }}</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ d.showScenario }}">
+          <div style="display:flex; flex-direction:column; gap:var(--space-4); min-height:320px; padding:clamp(20px, 4vw, var(--space-8)); border-radius:calc(var(--radius-lg) * 1.4); background:var(--color-accent-100)">
+            <span class="tag tag-neutral" style="align-self:flex-start">Scenario</span>
+            <div style="font-size:22px; line-height:1.45; color:var(--color-accent-900); text-wrap:pretty; max-width:620px">{{ vv.scenario }}</div>
+            <div class="text-muted" style="margin-top:auto; font-size:13px">For “{{ d.top }} / {{ d.bottom }}”</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ d.showScenarioEmpty }}">
+          <div style="min-height:300px; border-radius:calc(var(--radius-lg) * 1.4); border:2px dashed var(--color-divider); display:flex; flex-direction:column; justify-content:center; align-items:flex-start; padding:var(--space-8); gap:var(--space-3)">
+            <h3 style="margin:0">No scenario yet</h3>
+            <p class="text-muted" style="margin:0; max-width:380px">Describe the scene the image should show. It goes to review like the text.</p>
+            <button class="btn btn-primary" onClick="{{ d.writeScenario }}">Write scenario</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ d.showEditor }}">
+          <div style="display:flex; flex-direction:column; gap:var(--space-3); padding:var(--space-6); border-radius:calc(var(--radius-lg) * 1.4); background:var(--color-surface)">
+            <h4 style="margin:0">{{ ed.title }}</h4>
+            <sc-if value="{{ ed.isText }}">
+              <div class="field"><label>Top sentence</label><input class="input" value="{{ ed.top }}" onChange="{{ ed.setTop }}"></div>
+              <div class="field"><label>Bottom sentence</label><input class="input" value="{{ ed.bottom }}" onChange="{{ ed.setBottom }}"></div>
+            </sc-if>
+            <sc-if value="{{ ed.isScenario }}">
+              <div class="field"><label>Scenario description</label><textarea class="input" value="{{ ed.scenario }}" onChange="{{ ed.setScenario }}" style="border-radius:var(--radius-md); min-height:140px"></textarea></div>
+            </sc-if>
+            <div style="display:flex; gap:var(--space-2); justify-content:flex-end">
+              <button class="btn btn-ghost" onClick="{{ ed.cancel }}">Cancel</button>
+              <button class="btn btn-primary" onClick="{{ ed.save }}" disabled="{{ ed.invalid }}">{{ ed.saveLabel }}</button>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ d.showImage }}">
+          <div style="aspect-ratio:4 / 3; border-radius:calc(var(--radius-lg) * 1.4); overflow:hidden" class="washed">
+            <dc-import name="Thumb" style="display:block; width:100%; height:100%" bg="{{ vv.thumb.bg }}" fg="{{ vv.thumb.fg }}" text="{{ vv.thumb.text }}" hint-size="100%,100%"></dc-import>
+          </div>
+          <div style="display:flex; gap:var(--space-2); align-items:center; padding:6px 6px 6px 16px; border-radius:999px; background:var(--color-surface)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none; opacity:0.6"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px">{{ vv.link }}</span>
+            <a class="btn btn-secondary" href="{{ vv.link }}" target="_blank" rel="noreferrer" style="padding-block:6px">Open in Drive</a>
+          </div>
+        </sc-if>
+        <sc-if value="{{ d.showEmpty }}">
+          <div style="min-height:300px; border-radius:calc(var(--radius-lg) * 1.4); border:2px dashed var(--color-divider); display:flex; flex-direction:column; justify-content:center; padding:var(--space-8); gap:var(--space-2)">
+            <h3 style="margin:0">No image yet</h3>
+            <p class="text-muted" style="margin:0; max-width:380px">{{ d.emptyMsg }}</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ d.showReviewBlock }}">
+          <div style="display:flex; flex-direction:column; gap:var(--space-3); padding:var(--space-4) var(--space-4) var(--space-4) var(--space-6); border-radius:calc(var(--radius-lg) * 1.15); background:var(--color-neutral-100)">
+            <div style="display:flex; align-items:center; gap:var(--space-2); flex-wrap:wrap">
+              <span style="font-family:var(--font-heading); font-size:18px">{{ vv.label }}</span>
+              <span class="tag {{ vv.tagCls }}">{{ vv.statusLabel }}</span>
+              <sc-if value="{{ vv.isFinal }}"><span class="tag tag-accent-2">Selected as final</span></sc-if>
+              <span class="text-muted" style="font-size:12px; margin-left:auto">{{ vv.byLine }}</span>
+            </div>
+            <sc-if value="{{ vv.hasReview }}">
+              <div style="display:flex; flex-direction:column; gap:2px; padding:var(--space-3) var(--space-4); border-radius:var(--radius-md); background:{{ vv.commentBg }}">
+                <span style="font-size:12px; color:var(--color-neutral-700)">{{ vv.reviewLine }}</span>
+                <span style="font-size:14px">{{ vv.comment }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ vv.showBlocked }}">
+              <div style="font-size:13px; color:var(--color-accent-700)">You created this version — another reviewer needs to approve or reject it.</div>
+            </sc-if>
+            <div style="display:flex; gap:var(--space-2); flex-wrap:wrap">
+              <sc-if value="{{ vv.canReview }}">
+                <button class="btn btn-primary" onClick="{{ vv.approve }}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>{{ vv.approveLabel }}
+                </button>
+                <button class="btn btn-secondary" onClick="{{ vv.reject }}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>Reject
+                </button>
+              </sc-if>
+              <sc-if value="{{ vv.canEdit }}"><button class="btn btn-ghost" onClick="{{ vv.edit }}">{{ vv.editLabel }}</button></sc-if>
+              <sc-if value="{{ vv.canNew }}"><button class="btn btn-primary" onClick="{{ vv.newVersion }}">Write new version</button></sc-if>
+              <sc-if value="{{ vv.canUpdate }}"><button class="btn btn-secondary" onClick="{{ vv.update }}" title="Creates a new version for review; the approved version stays final until the new one is approved">{{ vv.updateLabel }}</button></sc-if>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:var(--space-4)">
+        <sc-if value="{{ d.canAdd }}">
+          <div style="display:flex; flex-direction:column; gap:var(--space-3); padding:var(--space-4) var(--space-4) var(--space-4) var(--space-6); border-radius:calc(var(--radius-lg) * 1.15); background:var(--color-accent-100)">
+            <div>
+              <h5 style="margin:0 0 2px">{{ d.addTitle }}</h5>
+              <p class="text-muted" style="margin:0; font-size:13px">{{ d.addNote }}</p>
+            </div>
+            <div style="display:flex; gap:var(--space-2)">
+              <input class="input" placeholder="https://drive.google.com/file/d/…" value="{{ d.linkDraft }}" onChange="{{ d.setLink }}" style="background:var(--color-bg)">
+              <sc-if value="{{ d.showCancelAdd }}"><button class="btn btn-ghost" onClick="{{ d.cancelAdd }}" style="flex:none">Cancel</button></sc-if>
+              <button class="btn btn-primary" onClick="{{ d.addVersion }}" style="flex:none">Add</button>
+            </div>
+            <sc-if value="{{ d.hasLinkError }}"><span style="font-size:12px; color:var(--color-accent-700)">{{ d.linkError }}</span></sc-if>
+          </div>
+        </sc-if>
+
+        <div style="display:flex; align-items:baseline; justify-content:space-between">
+          <h4 style="margin:0">{{ d.listTitle }}</h4>
+          <span class="text-muted" style="font-size:13px">{{ d.versionCount }}</span>
+        </div>
+
+        <sc-if value="{{ d.isGallery }}">
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap:var(--space-3)">
+            <sc-for list="{{ d.versions }}" as="v" hint-placeholder-count="2">
+              <button onClick="{{ v.onClick }}" style="all:unset; cursor:pointer; display:flex; flex-direction:column; gap:6px; padding:6px; border-radius:var(--radius-lg); background:{{ v.bg }}; outline:{{ v.ring }}; outline-offset:-2px">
+                <div style="position:relative; aspect-ratio:4 / 3; border-radius:22px; overflow:hidden" class="washed">
+                  <dc-import name="Thumb" style="display:block; width:100%; height:100%" bg="{{ v.thumb.bg }}" fg="{{ v.thumb.fg }}" text="{{ v.thumb.text }}" hint-size="100%,100%"></dc-import>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; padding:0 6px 4px">
+                  <span style="font-family:var(--font-heading); font-size:14px; margin-right:auto">{{ v.label }}</span>
+                  <span class="tag {{ v.tagCls }}">{{ v.statusLabel }}</span>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ d.isList }}">
+          <div style="display:flex; flex-direction:column; gap:var(--space-2)">
+            <sc-for list="{{ d.versions }}" as="v" hint-placeholder-count="3">
+              <button onClick="{{ v.onClick }}" style="all:unset; cursor:pointer; display:flex; gap:var(--space-3); padding:var(--space-3) var(--space-4); border-radius:var(--radius-lg); background:{{ v.bg }}; outline:{{ v.ring }}; outline-offset:-2px">
+                <sc-if value="{{ v.hasThumb }}"><div style="width:64px; height:48px; flex:none; border-radius:12px; overflow:hidden"><dc-import name="Thumb" style="display:block; width:100%; height:100%" bg="{{ v.thumb.bg }}" fg="{{ v.thumb.fg }}" text="{{ v.thumb.text }}" hint-size="100%,100%"></dc-import></div></sc-if>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px">
+                  <div style="display:flex; align-items:center; gap:6px">
+                    <span style="font-family:var(--font-heading); font-size:14px; margin-right:auto">{{ v.label }}</span>
+                    <span class="tag {{ v.tagCls }}">{{ v.statusLabel }}</span>
+                  </div>
+                  <span class="text-muted" style="font-size:12px">{{ v.byLine }}</span>
+                  <sc-if value="{{ v.hasComment }}"><span style="font-size:13px; line-height:1.4">“{{ v.comment }}” <span class="text-muted">— {{ v.reviewer }}</span></span></sc-if>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ d.noVersions }}"><p class="text-muted" style="margin:0; font-size:14px">No versions uploaded yet.</p></sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ d.isPosting }}">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap:var(--space-6); align-items:start">
+      <div style="display:flex; flex-direction:column; gap:var(--space-3)">
+        <div style="aspect-ratio:4 / 3; border-radius:calc(var(--radius-lg) * 1.4); overflow:hidden" class="washed">
+          <dc-import name="Thumb" style="display:block; width:100%; height:100%" bg="{{ p4.thumb.bg }}" fg="{{ p4.thumb.fg }}" text="{{ true }}" hint-size="100%,100%"></dc-import>
+        </div>
+        <span class="text-muted" style="font-size:13px">Final asset · {{ p4.finalLabel }} · <a href="{{ p4.link }}" target="_blank" rel="noreferrer">Open in Drive</a></span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:var(--space-4); padding:var(--space-6); border-radius:calc(var(--radius-lg) * 1.3); background:{{ p4.panelBg }}">
+        <h6 style="margin:0" class="text-muted">Posting status</h6>
+        <h2 style="margin:0">{{ p4.headline }}</h2>
+        <div class="seg" style="align-self:flex-start; background:var(--color-bg)">
+          <label class="seg-opt"><input type="radio" name="post" checked="{{ p4.isPending }}" onChange="{{ p4.setPending }}">Pending</label>
+          <label class="seg-opt"><input type="radio" name="post" checked="{{ p4.isPosted }}" onChange="{{ p4.setPosted }}">Posted</label>
+        </div>
+        <sc-if value="{{ p4.isPosted }}">
+          <div style="display:grid; grid-template-columns:auto 1fr; gap:4px var(--space-4); font-size:14px">
+            <span class="text-muted" style="align-self:center">Posted</span>
+            <sc-if value="{{ p4.notEditingDate }}">
+              <span style="display:flex; align-items:center; gap:var(--space-2)"><span>{{ p4.postedAt }}</span><button class="btn btn-ghost btn-icon" onClick="{{ p4.editDate }}" title="Edit post date" aria-label="Edit post date" style="width:30px; height:30px; padding:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path><path d="m15 5 4 4"></path></svg></button></span>
+            </sc-if>
+            <sc-if value="{{ p4.editingDate }}">
+              <span style="display:flex; align-items:center; gap:var(--space-2); flex-wrap:wrap">
+                <input class="input" type="datetime-local" value="{{ p4.dateDraft }}" onChange="{{ p4.setDateDraft }}" style="background:var(--color-bg); max-width:230px; padding-block:6px">
+                <button class="btn btn-primary" onClick="{{ p4.saveDate }}" style="padding-block:6px">OK</button>
+                <button class="btn btn-ghost" onClick="{{ p4.cancelDate }}" style="padding-block:6px">Cancel</button>
+              </span>
+            </sc-if>
+            <span class="text-muted">By</span><span>{{ p4.postedBy }}</span>
+          </div>
+        </sc-if>
+        <p class="text-muted" style="margin:0; font-size:13px; text-wrap:pretty">Not a one-way switch — revert to pending any time. The posted date is stamped when you mark it posted.</p>
+      </div>
+    </div>
+  </sc-if>
+</main>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ rm.open }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ rm.close }}" style="position:fixed; inset:0; z-index:40; background:rgba(32,30,29,0.18)"></div>
+  <aside data-screen-label="Remarks" style="position:fixed; top:0; right:0; bottom:0; z-index:41; width:min(420px, 100%); display:flex; flex-direction:column; background:var(--color-bg); box-shadow:var(--shadow-lg); border-radius:calc(var(--radius-lg) * 1.4) 0 0 calc(var(--radius-lg) * 1.4)">
+    <div style="display:flex; align-items:flex-start; gap:var(--space-3); padding:var(--space-6) var(--space-6) var(--space-4)">
+      <div style="margin-right:auto">
+        <h3 style="margin:0">Remarks</h3>
+        <span class="text-muted" style="font-size:13px">{{ rm.sub }}</span>
+      </div>
+      <button class="btn btn-ghost btn-icon" onClick="{{ rm.close }}" aria-label="Close remarks" style="width:36px; height:36px; padding:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+    </div>
+    <div ref="{{ rm.listRef }}" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:var(--space-4); padding:var(--space-2) var(--space-6) var(--space-4)">
+      <sc-if value="{{ rm.empty }}">
+        <div style="margin:auto 0; display:flex; flex-direction:column; align-items:flex-start; gap:var(--space-2); padding:var(--space-6); border-radius:var(--radius-lg); background:var(--color-surface)">
+          <h5 style="margin:0">No remarks yet</h5>
+          <p class="text-muted" style="margin:0; font-size:13px; text-wrap:pretty">Notes here stay with the pilgi through every stage. They don't affect reviews or versions.</p>
+        </div>
+      </sc-if>
+      <sc-for list="{{ rm.items }}" as="m" hint-placeholder-count="3">
+        <div style="display:flex; flex-direction:{{ m.dir }}; align-items:flex-end; gap:var(--space-2)">
+          <span title="{{ m.who }}" style="width:30px; height:30px; flex:none; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:700; color:var(--color-bg); background:{{ m.avatarBg }}">{{ m.glyph }}</span>
+          <div style="max-width:78%; display:flex; flex-direction:column; gap:4px; align-items:{{ m.align }}">
+            <div style="display:flex; gap:var(--space-2); align-items:center; font-size:12px">
+              <b>{{ m.name }}</b><span class="text-muted">{{ m.at }}</span>
+            </div>
+            <div style="padding:10px 14px; border-radius:{{ m.radius }}; background:{{ m.bg }}; font-size:14px; line-height:1.45; white-space:pre-wrap; text-wrap:pretty">{{ m.text }}</div>
+            <span class="tag tag-outline" style="font-size:11px">{{ m.stage }}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <form onSubmit="{{ rm.send }}" style="display:flex; align-items:flex-end; gap:var(--space-2); padding:var(--space-3) var(--space-6) var(--space-6); border-top:2px solid var(--color-neutral-200)">
+      <textarea class="input" rows="2" value="{{ rm.draft }}" onChange="{{ rm.setDraft }}" onKeyDown="{{ rm.keyDown }}" placeholder="Write a remark… (Enter to send)" style="flex:1; resize:none; border-radius:var(--radius-md); min-height:48px"></textarea>
+      <button class="btn btn-primary btn-icon" type="submit" disabled="{{ rm.cantSend }}" aria-label="Send remark" style="width:44px; height:44px; padding:0; flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"></path><path d="m21.854 2.147-10.94 10.939"></path></svg></button>
+    </form>
+  </aside>
+</sc-if>
+
+<sc-if value="{{ dlg.open }}" hint-placeholder-val="{{ false }}">
+  <div class="dialog-backdrop" onClick="{{ dlg.cancel }}" style="z-index:50">
+    <div class="dialog" onClick="{{ dlg.stop }}">
+      <div class="dialog-title">{{ dlg.title }}</div>
+      <div class="dialog-body">{{ dlg.body }}</div>
+      <div class="field">
+        <label>{{ dlg.commentLabel }}</label>
+        <textarea class="input" value="{{ dlg.comment }}" onChange="{{ dlg.setComment }}" placeholder="{{ dlg.placeholder }}" style="border-radius:var(--radius-md)"></textarea>
+      </div>
+      <sc-if value="{{ dlg.hasError }}"><span style="font-size:13px; color:var(--color-accent-700)">Add a comment so the creator knows what to change.</span></sc-if>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" onClick="{{ dlg.cancel }}">Cancel</button>
+        <button class="btn btn-primary" onClick="{{ dlg.confirm }}">{{ dlg.confirmLabel }}</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ nw.open }}" hint-placeholder-val="{{ false }}">
+  <div class="dialog-backdrop" onClick="{{ nw.cancel }}" style="z-index:50">
+    <div class="dialog" onClick="{{ dlg.stop }}" style="width:min(520px,100%)">
+      <div class="dialog-title">New scenario</div>
+      <div class="field"><label>Top sentence</label><input class="input" value="{{ nw.top }}" onChange="{{ nw.setTop }}"></div>
+      <div class="field"><label>Bottom sentence</label><input class="input" value="{{ nw.bottom }}" onChange="{{ nw.setBottom }}"></div>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" onClick="{{ nw.cancel }}">Cancel</button>
+        <button class="btn btn-primary" onClick="{{ nw.create }}" disabled="{{ nw.invalid }}">Create PilGi</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ toast.show }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed; left:var(--space-8); bottom:var(--space-6); z-index:60; display:flex; align-items:center; gap:var(--space-2); padding:10px 18px; border-radius:999px; background:var(--color-neutral-900); color:var(--color-bg); font-size:13px; box-shadow:var(--shadow-lg)">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><line x1="3" x2="9" y1="12" y2="12"></line><line x1="15" x2="21" y1="12" y2="12"></line></svg>
+    {{ toast.msg }}
+  </div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;login&quot;,&quot;dashboard&quot;,&quot;import&quot;,&quot;detail&quot;],&quot;default&quot;:&quot;login&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;},&quot;separateReviewer&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Workflow&quot;}}">
+let ME = '', PEOPLE = [], REJ = [], DEFS = [], SAMPLE = '';
+const SN = ['', 'Text', 'Scenario', 'Clean image', 'Image with text', 'Posting'];
+const SD = ['', 'Top & bottom sentence', 'Describe the scene for the image', 'Generated image, no text yet', 'Final image with the caption applied', 'Publish, then mark as posted'];
+const TILE = [['var(--color-accent-200)', 'var(--color-accent-400)'], ['var(--color-accent-2-200)', 'var(--color-accent-2-500)'], ['var(--color-neutral-300)', 'var(--color-neutral-500)'], ['var(--color-accent-300)', 'var(--color-accent-500)'], ['var(--color-accent-2-300)', 'var(--color-accent-2-600)']];
+const ST = {
+  pending: { label: 'Needs review', cls: 'tag-accent' }, rejected: { label: 'Rejected', cls: 'tag-outline' },
+  approved: { label: 'Approved', cls: 'tag-accent-2' }, awaiting: { label: 'Awaiting upload', cls: 'tag-neutral' },
+  ready: { label: 'Ready to post', cls: 'tag-neutral' }, posted: { label: 'Posted', cls: 'tag-accent-2' }
+};
+const MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const fmt = iso => { if (!iso) return '—'; const d = new Date(iso); return `${MO[d.getUTCMonth()]} ${d.getUTCDate()}, ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`; };
+const short = e => e ? e.split('@')[0] : '—';
+const approvedIn = st => st.versions.some(v => v.status === 'approved');
+const stageOf = r => !approvedIn(r.stage1) ? 1 : !approvedIn(r.stage2) ? 2 : !approvedIn(r.stage3) ? 3 : !approvedIn(r.stage4) ? 4 : 5;
+const last = st => st.versions[st.versions.length - 1];
+const shown1 = st => st.versions.find(v => v.versionNumber === st.selectedVersionNumber) || last(st);
+const thumb = (num, stage, vn) => { const c = TILE[(num * 3 + stage + vn) % TILE.length]; return { bg: c[0], fg: c[1], text: stage === 4 }; };
+const recStatus = r => { if (r.currentStage === 5) return r.stage5.status === 'posted' ? 'posted' : 'ready'; const v = last(r['stage' + r.currentStage]); return v ? v.status : 'awaiting'; };
+const recThumb = r => { const v4 = last(r.stage4), v3 = last(r.stage3); if (v4) return thumb(r.num, 4, v4.versionNumber); if (v3) return thumb(r.num, 3, v3.versionNumber); return null; };
+const now = () => new Date().toISOString();
+const pad = n => 'rec_' + String(n).padStart(4, '0');
+
+function build(def, i) {
+  let t = Date.parse('2026-10-02T08:00:00Z') - (16 - i) * 86400000;
+  const tick = () => { t += (3 + (i % 3)) * 3600000; return new Date(t).toISOString(); };
+  const who = k => PEOPLE[(i + k) % 3];
+  const createdBy = def.mine1 ? ME : who(0), createdAt = tick();
+  let lm = { by: createdBy, at: createdAt };
+  const rev = (status, j) => {
+    if (status === 'pending') return { status, reviewedBy: null, reviewedAt: null, reviewComments: '' };
+    const at = tick(), by = (i + j) % 4 === 0 ? ME : who(1); lm = { by, at };
+    return { status, reviewedBy: by, reviewedAt: at, reviewComments: status === 'rejected' ? REJ[(i + j) % REJ.length] : (j % 2 ? 'Looks great.' : '') };
+  };
+  const s1 = def.s1.map((st, j) => {
+    const ca = j ? tick() : createdAt; if (j) lm = { by: createdBy, at: ca };
+    const old = j < def.s1.length - 1;
+    return { versionNumber: j + 1, topSentence: def.top, bottomSentence: old && def.prevBottom ? def.prevBottom : def.bottom, createdBy, createdAt: ca, ...rev(st, j) };
+  });
+  const ssArr = def.ss || (def.s2 ? ['approved'] : []);
+  const ss = ssArr.map((st, j) => { const by = def.mineS && j === ssArr.length - 1 ? ME : createdBy, at = tick(); lm = { by, at }; return { versionNumber: j + 1, scenario: j < ssArr.length - 1 ? def.sc.split(/[,;]/)[0] + '.' : def.sc, createdBy: by, createdAt: at, ...rev(st, j + 1) }; });
+  const img = (arr, stage, key, mine) => (arr || []).map((st, j) => {
+    const by = mine && j === arr.length - 1 ? ME : who(2), at = tick(); lm = { by, at };
+    return { versionNumber: j + 1, [key]: `https://drive.google.com/file/d/1${stage}${String(i + 1).padStart(3, '0')}v${j + 1}Qx8/view`, uploadedBy: by, uploadedAt: at, ...rev(st, j + stage) };
+  });
+  const sel = vs => { const a = vs.find(v => v.status === 'approved'); return a ? a.versionNumber : null; };
+  const s3 = img(def.s2, 3, 'imageLink', def.mine2), s4 = img(def.s3, 4, 'driveLink');
+  let s5 = { status: 'pending', postedBy: null, postedAt: null };
+  if (def.s4 === 'posted') { const at = tick(); s5 = { status: 'posted', postedBy: who(1), postedAt: at }; lm = { by: s5.postedBy, at }; }
+  const r = { id: pad(i + 1), num: i + 1, createdBy, createdAt, stage1: { versions: s1, selectedVersionNumber: sel(s1) }, stage2: { versions: ss, selectedVersionNumber: sel(ss) }, stage3: { versions: s3, selectedVersionNumber: sel(s3) }, stage4: { versions: s4, selectedVersionNumber: sel(s4) }, stage5: s5, lastModifiedBy: lm.by, lastModifiedAt: lm.at };
+  r.currentStage = stageOf(r);
+  r.remarks = def.remarks || [];
+  return r;
+}
+
+function splitCSV(line) {
+  const out = []; let cur = '', q = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (q) { if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true; else if (ch === ',') { out.push(cur); cur = ''; } else cur += ch;
+  }
+  out.push(cur); return out.map(s => s.trim());
+}
+function parseFile(name, text) {
+  if (/\.json$/i.test(name) || /^\s*[\[{]/.test(text)) {
+    let data = JSON.parse(text); if (!Array.isArray(data)) data = data.scenarios || [];
+    return data.map(o => ({ top: String(o.topSentence || '').trim(), bottom: String(o.bottomSentence || '').trim() }));
+  }
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length && /topsentence/i.test(lines[0])) lines.shift();
+  return lines.map(l => { const c = splitCSV(l); return { top: c[0] || '', bottom: c[1] || '' }; });
+}
+
+class Component extends DCLogic {
+  state = {
+    screen: this.props.startScreen ?? 'login',
+    records: [], loaded: false,
+    selId: 'rec_0005', activeStage: 3, viewVn: {},
+    stageF: 'all', statusF: 'all', q: '', sel: [],
+    login: { mode: 'unlock', email: ME, repo: 'acme-studio/image-records', branch: 'main', token: '', pw: '', pw2: '', remember: true, error: '', busy: false },
+    imp: { step: 'upload', rows: [], fileName: '', error: '', drag: false },
+    editor: null, imgUpdate: false, dateDraft: null, remarksOpen: false, remarkDraft: '', linkDraft: '', linkError: '', dialog: null, nw: null, toast: null
+  };
+  fileRef = React.createRef();
+  remarksRef = React.createRef();
+  componentDidUpdate(pp, ps) { const el = this.remarksRef.current; if (el && this.state.remarksOpen) { const r = this.state.records.find(x => x.id === this.state.selId); const n = r && r.remarks ? r.remarks.length : 0; if (!ps.remarksOpen || this._rmN !== n) el.scrollTop = el.scrollHeight; this._rmN = n; } }
+
+  componentDidUpdate(pp) {
+    if (pp.startScreen !== this.props.startScreen && this.props.startScreen) this.setState({ screen: this.props.startScreen });
+  }
+  componentWillUnmount() { clearTimeout(this._t); }
+
+  toast(msg) { clearTimeout(this._t); this.setState({ toast: msg }); this._t = setTimeout(() => this.setState({ toast: null }), 3200); }
+
+  mutate(ids, fn, msg) {
+    const set = new Set([].concat(ids));
+    this.setState(s => ({ records: s.records.map(r => { if (!set.has(r.id)) return r; const c = JSON.parse(JSON.stringify(r)); fn(c); c.lastModifiedBy = ME; c.lastModifiedAt = now(); c.currentStage = stageOf(c); return c; }) }));
+    this.toast(msg);
+  }
+
+  openRecord(id) {
+    const r = this.state.records.find(x => x.id === id);
+    this.setState({ screen: 'detail', selId: id, activeStage: r.currentStage, viewVn: {}, editor: null, imgUpdate: false, dateDraft: null, remarksOpen: false, remarkDraft: '', linkDraft: '', linkError: '' });
+  }
+
+  review(mode, stage, vn, comment) {
+    const id = this.state.selId, wasCur = this.state.records.find(x => x.id === id).currentStage === stage;
+    this.mutate(id, r => {
+      const st = r['stage' + stage]; const v = st.versions.find(x => x.versionNumber === vn);
+      Object.assign(v, { status: mode === 'approve' ? 'approved' : 'rejected', reviewedBy: ME, reviewedAt: now(), reviewComments: comment });
+      if (mode === 'approve') { st.selectedVersionNumber = vn; if (stage === 4) r.stage5 = { status: 'pending', postedBy: null, postedAt: null }; }
+    }, mode === 'approve' ? `Committed records/${id}.json — Stage ${stage} approved, v${vn} selected` : `Committed records/${id}.json — v${vn} rejected`);
+    if (mode === 'approve') this.setState({ activeStage: wasCur ? Math.min(stage + 1, 5) : stage, viewVn: {}, editor: null });
+  }
+
+  addImage(stage) {
+    const link = this.state.linkDraft.trim();
+    if (!/^https?:\/\/\S+$/.test(link)) { this.setState({ linkError: 'Paste a full link, e.g. https://drive.google.com/file/d/…' }); return; }
+    const id = this.state.selId;
+    this.mutate(id, r => { const st = r['stage' + stage]; st.versions.push({ versionNumber: st.versions.length + 1, [stage === 3 ? 'imageLink' : 'driveLink']: link, uploadedBy: ME, uploadedAt: now(), status: 'pending', reviewedBy: null, reviewedAt: null, reviewComments: '' }); }, `Committed records/${id}.json — new Stage ${stage} version`);
+    this.setState(s => ({ imgUpdate: false, linkDraft: '', linkError: '', viewVn: { ...s.viewVn, [stage]: undefined } }));
+  }
+
+  saveEditor() {
+    const e = this.state.editor, id = this.state.selId, a = this.state.activeStage;
+    const body = a === 1 ? { topSentence: e.top.trim(), bottomSentence: e.bottom.trim() } : { scenario: e.scenario.trim() };
+    this.mutate(id, r => {
+      const vs = r['stage' + a].versions;
+      if (e.mode === 'edit') Object.assign(vs.find(x => x.versionNumber === e.vn), body);
+      else vs.push({ versionNumber: vs.length + 1, ...body, createdBy: ME, createdAt: now(), status: 'pending', reviewedBy: null, reviewedAt: null, reviewComments: '' });
+    }, e.mode === 'edit' ? `Committed records/${id}.json — v${e.vn} updated` : `Committed records/${id}.json — new ${a === 1 ? 'text' : 'scenario'} version`);
+    this.setState({ editor: null, viewVn: {} });
+  }
+
+  loadText(name, text) {
+    try {
+      const rows = parseFile(name, text).map(r => ({ ...r, include: !!(r.top && r.bottom) }));
+      if (!rows.length) throw new Error('empty');
+      this.setState({ imp: { step: 'preview', rows, fileName: name, error: '', drag: false } });
+    } catch (e) { this.setState(s => ({ imp: { ...s.imp, drag: false, error: "Couldn't read that file. Use a CSV with topSentence,bottomSentence columns or a JSON array." } })); }
+  }
+  readFile(f) { if (!f) return; const fr = new FileReader(); fr.onload = () => this.loadText(f.name, String(fr.result)); fr.readAsText(f); }
+
+  confirmImport() {
+    const rows = this.state.imp.rows.filter(r => r.include && r.top && r.bottom);
+    this.setState(s => {
+      let n = s.records.reduce((m, r) => Math.max(m, r.num), 0);
+      const created = rows.map(row => { n++; const at = now(); return { id: pad(n), num: n, createdBy: ME, createdAt: at, currentStage: 1, stage1: { versions: [{ versionNumber: 1, topSentence: row.top, bottomSentence: row.bottom, createdBy: ME, createdAt: at, status: 'pending', reviewedBy: null, reviewedAt: null, reviewComments: '' }], selectedVersionNumber: null }, stage2: { versions: [], selectedVersionNumber: null }, stage3: { versions: [], selectedVersionNumber: null }, stage4: { versions: [], selectedVersionNumber: null }, stage5: { status: 'pending', postedBy: null, postedAt: null }, lastModifiedBy: ME, lastModifiedAt: at }; });
+      return { records: [...s.records, ...created], screen: 'dashboard', stageF: 1, statusF: 'all', imp: { step: 'upload', rows: [], fileName: '', error: '', drag: false } };
+    });
+    this.toast(`Committed ${rows.length} new files to records/`);
+  }
+
+  componentDidMount() {
+    fetch('data/seed.json').then(r => r.json()).then(d => {
+      ME = d.me; PEOPLE = d.people; REJ = d.rejectComments; DEFS = d.records; SAMPLE = d.sampleCsv;
+      this.setState(x => ({ records: DEFS.map(build), loaded: true, login: { ...x.login, email: x.login.email || ME } }));
+    });
+  }
+
+  renderVals() {
+    if (!this.state.loaded) return {};
+    const s = this.state, sep = !!this.props.separateReviewer, bulkOn = false;
+    const L = s.login, setL = patch => this.setState(x => ({ login: { ...x.login, ...patch, error: '' } }));
+    const val = k => e => setL({ [k]: e.target.value });
+    const enter = () => { setL({ busy: true }); setTimeout(() => this.setState(x => ({ screen: 'dashboard', login: { ...x.login, busy: false, pw: '', pw2: '', token: '', mode: 'unlock' } })), 650); };
+    const lg = {
+      isSetup: L.mode === 'setup', isUnlock: L.mode === 'unlock', ...L, hasError: !!L.error,
+      setEmail: val('email'), setRepo: val('repo'), setBranch: val('branch'), setToken: val('token'), setPw: val('pw'), setPw2: val('pw2'),
+      toggleRemember: () => setL({ remember: !L.remember }),
+      toUnlock: () => setL({ mode: 'unlock' }), toSetup: () => setL({ mode: 'setup' }), useCookie: enter,
+      setupLabel: L.busy ? 'Encrypting token…' : 'Encrypt & continue', unlockLabel: L.busy ? 'Decrypting…' : 'Unlock',
+      submit: e => {
+        e.preventDefault();
+        if (L.mode === 'setup') {
+          if (!L.email || !L.repo || !L.token) return this.setState(x => ({ login: { ...x.login, error: 'Email, repository and token are all required.' } }));
+          if (L.pw.length < 8) return this.setState(x => ({ login: { ...x.login, error: 'Password needs at least 8 characters.' } }));
+          if (L.pw !== L.pw2) return this.setState(x => ({ login: { ...x.login, error: "Passwords don't match." } }));
+        } else if (!L.pw) return this.setState(x => ({ login: { ...x.login, error: 'Enter your password to unlock.' } }));
+        enter();
+      }
+    };
+
+    const recs = s.records, counts = [0, 0, 0, 0, 0, 0]; recs.forEach(r => counts[r.currentStage]++);
+    const pend = n => `${recs.filter(r => r.currentStage === n && recStatus(r) === 'pending').length} need review`;
+    const tileSub = ['', pend(1), pend(2), `${recs.filter(r => r.currentStage === 3 && recStatus(r) !== 'pending').length} need an image`, pend(4), `${recs.filter(r => r.stage5.status === 'posted' && r.currentStage === 5).length} posted`];
+    const statusesFor = k => { const m = {}; recs.filter(r => k === 'all' || r.currentStage === k).forEach(r => { const st = recStatus(r); m[st] = (m[st] || 0) + 1; }); return Object.keys(ST).filter(st => m[st]).map(st => ({ label: ST[st].label, n: m[st] })); };
+    const tiles = ['all', 1, 2, 3, 4, 5].map(k => {
+      const active = s.stageF === k, statuses = k === 'all' ? [] : statusesFor(k);
+      return { statuses, noStatuses: k !== 'all' && !statuses.length, n: k === 'all' ? '∗' : k, label: k === 'all' ? 'All PilGis' : SN[k], sub: k === 'all' ? 'Across every stage' : tileSub[k], count: k === 'all' ? recs.length : counts[k], bg: active ? 'var(--color-surface)' : 'var(--color-neutral-100)', shadow: active ? 'var(--shadow-md)' : 'none', dot: k === 'all' ? 'var(--color-neutral-700)' : active ? 'var(--color-accent)' : 'var(--color-accent-2)', onClick: () => this.setState({ stageF: k, sel: [] }) };
+    });
+    const q = s.q.trim().toLowerCase();
+    const filtered = recs.filter(r => (s.stageF === 'all' || r.currentStage === s.stageF) && (s.statusF === 'all' || recStatus(r) === s.statusF) && (!q || (r.id + ' ' + shown1(r.stage1).topSentence + ' ' + shown1(r.stage1).bottomSentence).toLowerCase().includes(q))).sort((a, b) => b.lastModifiedAt.localeCompare(a.lastModifiedAt));
+    const selectableIds = filtered.filter(r => bulkOn && r.currentStage === 1 && last(r.stage1).status === 'pending').map(r => r.id);
+    const sel = s.sel.filter(id => selectableIds.includes(id));
+    const rows = filtered.map(r => {
+      const k = recStatus(r), th = recThumb(r), v1 = shown1(r.stage1), cur = r['stage' + r.currentStage];
+      const done = n => n < r.currentStage || (n === 5 && r.stage5.status === 'posted'), rc = (r.remarks || []).length;
+      return {
+        id: r.id, top: v1.topSentence, bottom: v1.bottomSentence, stageNum: r.currentStage, stageName: SN[r.currentStage],
+        tagCls: ST[k].cls, statusLabel: ST[k].label, postedAt: r.stage5 && r.stage5.status === 'posted' ? fmt(r.stage5.postedAt) : '—', by: short(r.lastModifiedBy), at: fmt(r.lastModifiedAt),
+        hasThumb: !!th, noThumb: !th, thumb: th || {}, versions: r.currentStage === 5 ? '—' : (cur.versions.length ? `${cur.versions.length} at stage ${r.currentStage}` : 'None yet'),
+        dots: [1, 2, 3, 4, 5].map(n => ({ bg: done(n) ? 'var(--color-accent-2)' : n === r.currentStage ? 'var(--color-accent)' : 'var(--color-neutral-300)' })),
+        selectable: selectableIds.includes(r.id), checked: sel.includes(r.id),
+        stop: e => e.stopPropagation(),
+        onCheck: () => this.setState(x => ({ sel: x.sel.includes(r.id) ? x.sel.filter(i => i !== r.id) : [...x.sel, r.id] })),
+        open: () => this.openRecord(r.id),
+        hasRemarks: rc > 0, remarksLabel: rc > 0 ? String(rc) : '+', remarksTitle: rc > 0 ? `${rc} remark${rc === 1 ? '' : 's'}` : 'Add a remark',
+        remarksBg: rc > 0 ? 'var(--color-accent-200)' : 'var(--color-neutral-200)', remarksFg: rc > 0 ? 'var(--color-accent-800)' : 'var(--color-neutral-700)',
+        openRemarks: e => { e.stopPropagation(); this.setState({ selId: r.id, remarksOpen: true, remarkDraft: '' }); }
+      };
+    });
+    const dash = {
+      summary: `${recs.length} pilgis · ${recs.filter(r => ['pending'].includes(recStatus(r))).length} waiting on review`,
+      tiles, rows, q: s.q, setQ: e => this.setState({ q: e.target.value }), empty: !rows.length,
+      statusOpts: [['all', 'All'], ['pending', 'Needs review'], ['rejected', 'Rejected'], ['awaiting', 'Awaiting upload'], ['ready', 'Ready to post'], ['posted', 'Posted']].map(([k, label]) => ({ label, active: s.statusF === k, onSelect: () => this.setState({ statusF: k }) })),
+      canSelectAll: selectableIds.length > 0, allChecked: selectableIds.length > 0 && sel.length === selectableIds.length,
+      toggleAll: () => this.setState({ sel: sel.length === selectableIds.length ? [] : selectableIds }),
+      hasSelection: sel.length > 0, selLabel: `${sel.length} pending text${sel.length > 1 ? 's' : ''} selected`,
+      clearSel: () => this.setState({ sel: [] }),
+      bulkApprove: () => {
+        const ok = sel.filter(id => !(sep && recs.find(r => r.id === id).createdBy === ME));
+        this.mutate(ok, r => { const v = last(r.stage1); Object.assign(v, { status: 'approved', reviewedBy: ME, reviewedAt: now(), reviewComments: '' }); r.stage1.selectedVersionNumber = v.versionNumber; }, `Committed ${ok.length} records — text approved${ok.length < sel.length ? `, ${sel.length - ok.length} skipped (your own)` : ''}`);
+        this.setState({ sel: [] });
+      }
+    };
+
+    const I = s.imp, setI = p => this.setState(x => ({ imp: { ...x.imp, ...p } }));
+    const validN = I.rows.filter(r => r.top && r.bottom).length, inc = I.rows.filter(r => r.include && r.top && r.bottom).length;
+    const imp = {
+      isUpload: I.step === 'upload', isPreview: I.step === 'preview', fileName: I.fileName, hasError: !!I.error, error: I.error,
+      fileRef: this.fileRef, pick: () => this.fileRef.current && this.fileRef.current.click(),
+      onFile: e => { this.readFile(e.target.files[0]); e.target.value = ''; },
+      dragOver: e => { e.preventDefault(); if (!I.drag) setI({ drag: true }); }, dragLeave: () => setI({ drag: false }),
+      drop: e => { e.preventDefault(); this.readFile(e.dataTransfer.files[0]); },
+      dropBorder: I.drag ? 'var(--color-accent)' : 'var(--color-divider)', dropBg: I.drag ? 'var(--color-accent-100)' : 'var(--color-neutral-100)',
+      useSample: e => { e.stopPropagation(); this.loadText('scenarios-october.csv', SAMPLE); },
+      validLabel: `${validN} ready`, hasInvalid: validN < I.rows.length, invalidLabel: `${I.rows.length - validN} need fixing`,
+      confirmLabel: `Create ${inc} pilgi${inc === 1 ? '' : 's'}`, noneSelected: inc === 0,
+      reset: () => setI({ step: 'upload', rows: [], fileName: '', error: '' }), confirm: () => this.confirmImport(),
+      rows: I.rows.map((r, i) => {
+        const invalid = !(r.top && r.bottom);
+        return { n: i + 1, top: r.top || '—', bottomShown: r.bottom || '—', include: r.include, invalid, opacity: invalid || !r.include ? 0.55 : 1, tagCls: invalid ? 'tag-outline' : 'tag-accent-2', check: invalid ? (r.top ? 'Missing bottom sentence' : 'Missing top sentence') : 'Ready', toggle: () => setI({ rows: I.rows.map((x, j) => j === i ? { ...x, include: !x.include } : x) }) };
+      })
+    };
+
+    const r = recs.find(x => x.id === s.selId) || recs[0];
+    const a = s.activeStage, v1 = shown1(r.stage1);
+    const steps = [1, 2, 3, 4, 5].map(n => {
+      const locked = n > r.currentStage, done = n < r.currentStage || (n === 5 && r.stage5.status === 'posted'), active = n === a;
+      let sub = 'Locked';
+      if (!locked) {
+        if (n < 5) { const st = r['stage' + n]; sub = done ? `Approved · v${st.selectedVersionNumber}` : (last(st) ? ST[last(st).status].label + ` · v${last(st).versionNumber}` : (n === 2 ? 'Not written yet' : 'Awaiting upload')); }
+        else sub = r.stage5.status === 'posted' ? 'Posted ' + fmt(r.stage5.postedAt).split(',')[0] : 'Ready to post';
+      }
+      return { n, name: SN[n], sub, locked, done, notDone: !done, bg: active ? 'var(--color-bg)' : 'transparent', shadow: active ? 'var(--shadow-md)' : 'none', opacity: locked ? 0.55 : 1, cursor: locked ? 'not-allowed' : 'pointer', circle: done ? 'var(--color-accent-2)' : locked ? 'var(--color-neutral-400)' : 'var(--color-accent)', onClick: () => !locked && this.setState({ activeStage: n, editor: null, linkDraft: '', linkError: '' }) };
+    });
+    const isLocked = a > r.currentStage, isReview = !isLocked && a < 5, st = a < 5 ? r['stage' + a] : null;
+    const vnSel = st ? (s.viewVn[a] ?? (last(st) ? last(st).versionNumber : null)) : null;
+    const V = st && st.versions.find(x => x.versionNumber === vnSel);
+    const isCur = a === r.currentStage, stageApproved = st ? approvedIn(st) : false;
+    const owner = V ? (a <= 2 ? V.createdBy : V.uploadedBy) : null;
+    const open = isCur || (a <= 4 && stageApproved);
+    const blocked = !!V && V.status === 'pending' && open && sep && owner === ME;
+    const vv = V ? {
+      label: `Version ${V.versionNumber}`, tagCls: ST[V.status].cls, statusLabel: ST[V.status].label, isFinal: st.selectedVersionNumber === V.versionNumber,
+      byLine: `${a <= 2 ? 'Written' : 'Uploaded'} by ${short(owner)} · ${fmt(a <= 2 ? V.createdAt : V.uploadedAt)}`,
+      hasReview: V.status !== 'pending' && (V.status === 'rejected' || !!V.reviewComments || true),
+      reviewLine: `${V.status === 'approved' ? 'Approved' : 'Rejected'} by ${short(V.reviewedBy)} · ${fmt(V.reviewedAt)}`,
+      comment: V.reviewComments || 'No comment.', commentBg: V.status === 'rejected' ? 'var(--color-accent-100)' : 'var(--color-accent-2-100)',
+      top: V.topSentence, bottom: V.bottomSentence, scenario: V.scenario || '',
+      link: V.imageLink || V.driveLink, thumb: a > 2 ? thumb(r.num, a, V.versionNumber) : {},
+      showBlocked: blocked, canReview: V.status === 'pending' && open && !blocked,
+      approveLabel: a === 1 ? 'Approve text' : a === 2 ? 'Approve scenario' : 'Approve & select as final',
+      approve: () => this.review('approve', a, V.versionNumber, ''),
+      reject: () => this.setState({ dialog: { mode: 'reject', stage: a, vn: V.versionNumber, comment: '', error: false } }),
+      canEdit: a <= 2 && V.status === 'pending' && open && !s.editor, editLabel: a === 1 ? 'Edit text' : 'Edit scenario',
+      edit: () => this.setState({ editor: { mode: 'edit', vn: V.versionNumber, top: V.topSentence || '', bottom: V.bottomSentence || '', scenario: V.scenario || '' } }),
+      canNew: a <= 2 && isCur && !stageApproved && last(st).status === 'rejected' && !s.editor,
+      canUpdate: a <= 4 && stageApproved && !(a > 2 && s.imgUpdate) && last(st).status !== 'pending' && !s.editor, updateLabel: a === 1 ? 'Update text' : a === 2 ? 'Update scenario' : a === 3 ? 'Update clean image' : 'Update image with text',
+      update: () => a > 2 ? this.setState({ imgUpdate: true, linkDraft: '', linkError: '' }) : (() => { const b = last(st); this.setState({ editor: { mode: 'new', top: b.topSentence || '', bottom: b.bottomSentence || '', scenario: b.scenario || '' } }); })(),
+      newVersion: () => { const b = last(st); this.setState({ editor: { mode: 'new', top: b.topSentence || '', bottom: b.bottomSentence || '', scenario: b.scenario || '' } }); }
+    } : { thumb: {} };
+    const E = s.editor, setE = k => e => { const v = e.target.value; this.setState(x => ({ editor: { ...x.editor, [k]: v } })); };
+    const ed = E ? { title: E.mode === 'edit' ? `Edit version ${E.vn}` : `Version ${st.versions.length + 1}`, top: E.top, bottom: E.bottom, scenario: E.scenario, setTop: setE('top'), setBottom: setE('bottom'), setScenario: setE('scenario'), isText: a === 1, isScenario: a === 2, cancel: () => this.setState({ editor: null }), save: () => this.saveEditor(), invalid: a === 1 ? !(E.top.trim() && E.bottom.trim()) : !E.scenario.trim(), saveLabel: E.mode === 'edit' ? 'Update' : 'Submit for review' } : {};
+    const versions = st ? st.versions.slice().reverse().map(x => ({
+      label: `v${x.versionNumber}`, tagCls: ST[x.status].cls, statusLabel: st.selectedVersionNumber === x.versionNumber ? 'Final' : ST[x.status].label,
+      byLine: `${short(a <= 2 ? x.createdBy : x.uploadedBy)} · ${fmt(a <= 2 ? x.createdAt : x.uploadedAt)}`,
+      hasComment: !!x.reviewComments, comment: x.reviewComments, reviewer: short(x.reviewedBy),
+      hasThumb: a > 2, thumb: a > 2 ? thumb(r.num, a, x.versionNumber) : {},
+      bg: x.versionNumber === vnSel ? 'var(--color-surface)' : 'var(--color-neutral-100)', ring: x.versionNumber === vnSel ? '2px solid var(--color-accent)' : 'none',
+      onClick: () => this.setState(y => ({ viewVn: { ...y.viewVn, [a]: x.versionNumber }, editor: null }))
+    })) : [];
+    const lastPending = !!(st && last(st) && last(st).status === 'pending');
+    const canAdd = a > 2 && a < 5 && !lastPending && ((isCur && !stageApproved) || (a > 2 && stageApproved && s.imgUpdate));
+    const d = {
+      id: r.id, file: `records/${r.id}.json`, createdBy: short(r.createdBy), createdAt: fmt(r.createdAt), lastBy: r.lastModifiedBy, lastAt: fmt(r.lastModifiedAt),
+      pickers: [0, 1].map(k => {
+        const val = (r.characters || [])[k] || '';
+        const ICONS = { Elephant: { glyph: 'E', bg: 'oklch(0.55 0.04 250)' }, Giraffe: { glyph: 'G', bg: 'oklch(0.68 0.13 75)' }, Fox: { glyph: 'F', bg: 'oklch(0.62 0.16 45)' } };
+        const mk = n => ({ name: n, ...ICONS[n] });
+        const setV = v => this.mutate(r.id, c => { const a = [...(c.characters || ['', ''])]; a[k] = v; c.characters = a; }, `Committed records/${r.id}.json — characters updated`);
+        return { label: k ? 'Character B:' : 'Character A:', open: this.state.charOpen === k,
+          cur: val ? mk(val) : { name: 'Choose…', glyph: '?', bg: 'var(--color-neutral-400, #aaa)' },
+          toggle: () => this.setState(s => ({ charOpen: s.charOpen === k ? null : k })),
+          opts: Object.keys(ICONS).map(n => ({ ...mk(n), rowBg: n === val ? 'var(--color-surface)' : 'transparent', pick: () => { this.setState({ charOpen: null }); setV(n); } })) };
+      }),
+      setChar1: e => { const v = e.target.value; this.mutate(r.id, c => { c.characters = [v, (c.characters || [])[1] || '']; }, `Committed records/${r.id}.json — characters updated`); },
+      setChar2: e => { const v = e.target.value; this.mutate(r.id, c => { c.characters = [(c.characters || [])[0] || '', v]; }, `Committed records/${r.id}.json — characters updated`); },
+      top: v1.topSentence, bottom: v1.bottomSentence, steps, isLocked, isReview, isPosting: a === 5 && !isLocked,
+      lockedMsg: `${SN[a]} opens once Stage ${r.currentStage} · ${SN[r.currentStage]} is approved.`, goCurrent: () => this.setState({ activeStage: r.currentStage }),
+      showCaption: a === 1 && !!V && !E, showScenario: a === 2 && !!V && !E, showScenarioEmpty: a === 2 && !V && !E && !isLocked,
+      writeScenario: () => this.setState({ editor: { mode: 'new', top: '', bottom: '', scenario: '' } }),
+      showEditor: a <= 2 && !!E, showImage: a > 2 && !!V, showEmpty: a > 2 && !V,
+      emptyMsg: a === 3 ? 'Generate the clean, text-free image and paste its Drive link to create version 1.' : 'Apply the caption to the approved clean image and paste the Drive link to create version 1.',
+      showReviewBlock: !!V && !E, canAdd, addNote: stageApproved ? 'The approved image stays final until this new version is approved.' : 'Every link is kept as its own version — nothing is overwritten.', showCancelAdd: stageApproved && s.imgUpdate, cancelAdd: () => this.setState({ imgUpdate: false, linkDraft: '', linkError: '' }), addTitle: st && st.versions.length ? `Upload version ${st.versions.length + 1}` : 'Upload version 1',
+      linkDraft: s.linkDraft, setLink: e => this.setState({ linkDraft: e.target.value, linkError: '' }), addVersion: () => this.addImage(a), hasLinkError: !!s.linkError, linkError: s.linkError,
+      listTitle: a <= 2 ? 'Version history' : a === 3 ? 'Version gallery' : 'Review history', versionCount: st ? `${st.versions.length} total` : '',
+      versions, isGallery: a === 3 && versions.length > 0, isList: a !== 3 && versions.length > 0, noVersions: !!st && !versions.length
+    };
+    const fin = r.stage4.versions.find(x => x.status === 'approved');
+    const posted = r.stage5.status === 'posted', id = r.id;
+    const rmList = r.remarks || [], people = [ME, ...PEOPLE], avBg = ['var(--color-accent)', 'var(--color-accent-2-600)', 'var(--color-neutral-600)', 'var(--color-accent-800)'];
+    const sendRemark = () => { const t = s.remarkDraft.trim(); if (!t) return; this.mutate(id, c => { c.remarks = [...(c.remarks || []), { by: ME, at: now(), stage: s.screen === 'detail' ? a : r.currentStage, text: t }]; }, `Committed records/${id}.json — remark added`); this.setState({ remarkDraft: '' }); };
+    const rm = {
+      open: s.remarksOpen, count: rmList.length, empty: !rmList.length, sub: `${r.id} · not tied to a stage`, listRef: this.remarksRef,
+      toggle: () => this.setState(x => ({ remarksOpen: !x.remarksOpen })), close: () => this.setState({ remarksOpen: false }),
+      draft: s.remarkDraft, cantSend: !s.remarkDraft.trim(), setDraft: e => this.setState({ remarkDraft: e.target.value }),
+      keyDown: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendRemark(); } },
+      send: e => { e.preventDefault(); sendRemark(); },
+      items: rmList.map(m => { const mine = m.by === ME, i = Math.max(0, people.indexOf(m.by)); return { mine, dir: mine ? 'row-reverse' : 'row', align: mine ? 'flex-end' : 'flex-start', who: m.by, name: mine ? 'You' : short(m.by), glyph: short(m.by).charAt(0).toUpperCase(), avatarBg: avBg[i % avBg.length], at: fmt(m.at), text: m.text, stage: `Written at Stage ${m.stage} · ${SN[m.stage]}`, bg: mine ? 'var(--color-accent-200)' : 'var(--color-surface)', radius: mine ? '18px 18px 6px 18px' : '18px 18px 18px 6px' }; })
+    };
+    const p4 = {
+      thumb: fin ? thumb(r.num, 4, fin.versionNumber) : {}, link: fin ? fin.driveLink : '#', finalLabel: fin ? `Stage 4 · v${fin.versionNumber}` : '',
+      isPosted: posted, isPending: !posted, headline: posted ? 'Posted' : 'Ready to post', panelBg: posted ? 'var(--color-accent-2-200)' : 'var(--color-surface)',
+      postedAt: fmt(r.stage5.postedAt), postedBy: r.stage5.postedBy,
+      editingDate: s.dateDraft != null, notEditingDate: s.dateDraft == null, dateDraft: s.dateDraft || '',
+      editDate: () => this.setState({ dateDraft: r.stage5.postedAt ? r.stage5.postedAt.slice(0, 16) : '' }),
+      setDateDraft: e => this.setState({ dateDraft: e.target.value }),
+      cancelDate: () => this.setState({ dateDraft: null }),
+      saveDate: () => { const v = s.dateDraft; if (!v) return; const iso = new Date(v + ':00Z').toISOString(); this.mutate(id, c => { c.stage5.postedAt = iso; }, `Committed records/${id}.json — post date updated`); this.setState({ dateDraft: null }); },
+      setPosted: () => this.mutate(id, c => { c.stage5 = { status: 'posted', postedBy: ME, postedAt: now() }; }, `Committed records/${id}.json — marked posted`),
+      setPending: () => this.mutate(id, c => { c.stage5 = { status: 'pending', postedBy: null, postedAt: null }; }, `Committed records/${id}.json — reverted to pending`)
+    };
+
+    const D = s.dialog;
+    const dlg = D ? {
+      open: true, title: D.mode === 'approve' ? `Approve version ${D.vn}?` : `Reject version ${D.vn}`,
+      body: D.mode === 'approve' ? (D.stage < 4 ? `v${D.vn} becomes the selected version and the pilgi moves to Stage ${D.stage + 1} · ${SN[D.stage + 1]}.` : `v${D.vn} becomes the final asset and the pilgi moves to Posting.`) : 'The pilgi stays at this stage. The creator can then submit a new version.',
+      commentLabel: D.mode === 'approve' ? 'Comment (optional)' : 'What needs to change? (required)', placeholder: D.mode === 'approve' ? 'Anything worth noting' : 'e.g. Caption covers the face — move it up',
+      comment: D.comment, hasError: D.error, confirmLabel: D.mode === 'approve' ? 'Approve' : 'Reject version',
+      setComment: e => { const v = e.target.value; this.setState(x => ({ dialog: { ...x.dialog, comment: v, error: false } })); },
+      cancel: () => this.setState({ dialog: null }), stop: e => e.stopPropagation(),
+      confirm: () => { if (D.mode === 'reject' && !D.comment.trim()) return this.setState(x => ({ dialog: { ...x.dialog, error: true } })); this.review(D.mode, D.stage, D.vn, D.comment.trim()); this.setState({ dialog: null }); }
+    } : { open: false, stop: e => e.stopPropagation() };
+
+    const N = s.nw, setN = k => e => { const v = e.target.value; this.setState(x => ({ nw: { ...x.nw, [k]: v } })); };
+    const nw = N ? {
+      open: true, ...N, setTop: setN('top'), setBottom: setN('bottom'), setScenario: setN('scenario'), invalid: !(N.top.trim() && N.bottom.trim()),
+      cancel: () => this.setState({ nw: null }),
+      create: () => {
+        const n = recs.reduce((m, x) => Math.max(m, x.num), 0) + 1, at = now(), nid = pad(n);
+        const rec = { id: nid, num: n, createdBy: ME, createdAt: at, currentStage: 1, stage1: { versions: [{ versionNumber: 1, topSentence: N.top.trim(), bottomSentence: N.bottom.trim(), createdBy: ME, createdAt: at, status: 'pending', reviewedBy: null, reviewedAt: null, reviewComments: '' }], selectedVersionNumber: null }, stage2: { versions: [], selectedVersionNumber: null }, stage3: { versions: [], selectedVersionNumber: null }, stage4: { versions: [], selectedVersionNumber: null }, stage5: { status: 'pending', postedBy: null, postedAt: null }, lastModifiedBy: ME, lastModifiedAt: at };
+        this.setState(x => ({ records: [...x.records, rec], nw: null, screen: 'detail', selId: nid, activeStage: 1, viewVn: {}, editor: null }));
+        this.toast(`Committed records/${nid}.json`);
+      }
+    } : { open: false };
+
+    return {
+      isLogin: s.screen === 'login', isApp: s.screen !== 'login', isDashboard: s.screen === 'dashboard', isImport: s.screen === 'import', isDetail: s.screen === 'detail',
+      lg, dash, imp, d, vv, ed, p4, rm, dlg, nw,
+      stageList: [1, 2, 3, 4, 5].map(n => ({ n, name: SN[n], desc: SD[n] })),
+      me: ME, repoLabel: `${L.repo} · ${L.branch}`,
+      navRecordsBg: s.screen === 'import' ? 'transparent' : 'var(--color-surface)', navImportBg: s.screen === 'import' ? 'var(--color-surface)' : 'transparent',
+      goDashboard: () => this.setState({ screen: 'dashboard' }), goImport: () => this.setState({ screen: 'import' }),
+      openNewDialog: () => this.setState({ nw: { top: '', bottom: '', scenario: '' } }),
+      lock: () => this.setState(x => ({ screen: 'login', login: { ...x.login, mode: 'unlock', pw: '', error: '' } })),
+      toast: { show: !!s.toast, msg: s.toast }
+    };
+  }
+}
+</script>
+</body>
+</html>
