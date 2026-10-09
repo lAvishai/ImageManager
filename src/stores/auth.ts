@@ -46,13 +46,22 @@ export const useAuthStore = defineStore('auth', () => {
     return true
   }
 
+  // Accepts "owner/name", "github.com/owner/name", full https URLs and ".git" suffixes
+  const normalizeRepo = (s: string) =>
+    s.trim().replace(/^https?:\/\//i, '').replace(/^(www\.)?github\.com\//i, '').replace(/\.git$/i, '').replace(/\/+$/, '')
+
   async function setup() {
+    form.repo = normalizeRepo(form.repo)
     if (!form.email || !form.repo || !form.token) return fail('Email, repository and token are all required.')
     if (!/^[^/\s]+\/[^/\s]+$/.test(form.repo)) return fail('Repository must look like owner/name.')
     if (form.pw.length < 8) return fail('Password needs at least 8 characters.')
     if (form.pw !== form.pw2) return fail("Passwords don't match.")
     busy.value = true
-    saveVault(await encryptToken(form.token.trim(), form.pw, { email: form.email, repo: form.repo, branch: form.branch || 'main' }))
+    try {
+      saveVault(await encryptToken(form.token.trim(), form.pw, { email: form.email, repo: form.repo, branch: form.branch || 'main' }))
+    } catch (e) {
+      return fail(`Couldn't encrypt the token: ${(e as Error).message}`)
+    }
     return finish(form.token.trim(), form.pw)
   }
 
