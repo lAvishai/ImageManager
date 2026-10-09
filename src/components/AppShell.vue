@@ -49,11 +49,15 @@ async function create() {
     <button class="btn btn-secondary btn-icon" title="Lock" @click="lock"><Icon name="lock" /></button>
   </nav>
 
-  <div v-if="store.demo" style="margin: 0 clamp(16px, 4vw, var(--space-8)) var(--space-3); padding: var(--space-2) var(--space-4); border-radius: 999px; background: var(--color-accent-100); color: var(--color-accent-800); font-size: 13px">
-    Demo data — the repository couldn't be read, so changes are not saved.
-  </div>
-
   <div v-if="!store.loaded" class="text-muted" style="padding: var(--space-8)">Loading pilgis from {{ auth.repo }}…</div>
+  <div v-else-if="store.loadError" style="margin: var(--space-6) clamp(16px, 4vw, var(--space-8)); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.3); background: var(--color-accent-100); max-width: 640px">
+    <h3 style="margin: 0 0 var(--space-2)">Can't load your repository</h3>
+    <p style="margin: 0 0 var(--space-4); overflow-wrap: anywhere">{{ store.loadError }}</p>
+    <div style="display: flex; gap: var(--space-2)">
+      <button class="btn btn-primary" @click="store.init()">Retry</button>
+      <button class="btn btn-secondary" @click="lock">Lock &amp; change repository</button>
+    </div>
+  </div>
   <RouterView v-else />
 
   <RemarksDrawer />

@@ -88,9 +88,6 @@ async function confirm() {
         <p class="text-muted" style="margin: 0">or click to browse your files</p>
         <div v-if="error" style="font-size: 13px; color: var(--color-accent-700)">{{ error }}</div>
         <input ref="fileEl" type="file" accept=".csv,.json" style="display: none" @change="onFile" />
-        <button v-if="store.sampleCsv" class="btn btn-secondary" style="margin-top: var(--space-2)" @click.stop="loadText('scenarios-october.csv', store.sampleCsv)">
-          Try with a sample file
-        </button>
       </div>
       <div style="display: flex; flex-direction: column; gap: var(--space-3)">
         <h6 style="margin: 0" class="text-muted">Expected format</h6>

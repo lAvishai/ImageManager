@@ -1,24 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import {
-  type PilgiRecord,
-  type Seed,
-  approvedIn,
-  build,
-  newRecord,
-  now,
-  stageData,
-  stageOf,
-} from '../domain'
+import { type PilgiRecord, newRecord, now, stageData, stageOf } from '../domain'
 import { RecordsRepo } from '../services/github'
 import { useAuthStore } from './auth'
 
 export const useRecordsStore = defineStore('records', () => {
   const auth = useAuthStore()
   const records = ref<PilgiRecord[]>([])
-  const sampleCsv = ref('')
   const loaded = ref(false)
-  const demo = ref(false) // true when the repo was unreachable and seed data is shown
+  const loadError = ref('') // set when the configured repo can't be read
   const toastMsg = ref<string | null>(null)
   let repo: RecordsRepo | null = null
   let toastTimer: ReturnType<typeof setTimeout> | undefined
@@ -29,27 +19,17 @@ export const useRecordsStore = defineStore('records', () => {
     toastTimer = setTimeout(() => (toastMsg.value = null), 3200)
   }
 
-  async function loadSeed() {
-    const d: Seed = await (await fetch(`${import.meta.env.BASE_URL}data/seed.json`)).json()
-    sampleCsv.value = d.sampleCsv
-    return d.records.map((def, i) => build(def, i, d.me, d.people, d.rejectComments))
-  }
-
-  /** Loads records from the repo; falls back to demo data if it can't be reached. */
+  /** Loads records from the repo entered at login. The repo is the only data source. */
   async function init() {
     loaded.value = false
-    try {
-      sampleCsv.value = (await (await fetch(`${import.meta.env.BASE_URL}data/seed.json`)).json()).sampleCsv
-    } catch { /* sample file is optional */ }
+    loadError.value = ''
+    records.value = []
     try {
       repo = new RecordsRepo(auth.token, { repo: auth.repo, branch: auth.branch })
       records.value = await repo.list()
-      demo.value = false
     } catch (e) {
       repo = null
-      demo.value = true
-      records.value = await loadSeed()
-      toast(`Couldn't read ${auth.repo} (${(e as Error).message}) — showing demo data, changes aren't saved`)
+      loadError.value = `Couldn't read ${auth.repo}@${auth.branch}: ${(e as Error).message}`
     }
     loaded.value = true
   }
@@ -58,10 +38,11 @@ export const useRecordsStore = defineStore('records', () => {
     records.value = []
     repo = null
     loaded.value = false
+    loadError.value = ''
   }
 
   async function persist(rs: PilgiRecord[], msg: string) {
-    if (!repo) return toast(`${msg} (demo — not saved)`)
+    if (!repo) return toast(`Not saved: ${loadError.value || 'no repository connected'}`)
     try {
       for (const r of rs) await repo.save(r, msg)
       toast(`Committed: ${msg}`)
@@ -164,5 +145,5 @@ export const useRecordsStore = defineStore('records', () => {
   const setPostDate = (id: string, iso: string) =>
     mutate(id, (c) => { c.stage5.postedAt = iso }, `${id}: post date updated`)
 
-  return { records, sampleCsv, loaded, demo, toastMsg, toast, init, reset, byId, mutate, review, addImage, saveText, create, createMany, setCharacter, addRemark, setPosted, setPostDate, approvedIn }
+  return { records, loaded, loadError, toastMsg, toast, init, reset, byId, mutate, review, addImage, saveText, create, createMany, setCharacter, addRemark, setPosted, setPostDate }
 })

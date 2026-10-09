@@ -12,7 +12,7 @@ if (!repoArg || !token) {
 }
 const repoName = repoArg.replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/i, '')
 
-const seed = JSON.parse(readFileSync(new URL('../public/data/seed.json', import.meta.url), 'utf8'))
+const seed = JSON.parse(readFileSync(new URL('./seed.json', import.meta.url), 'utf8'))
 const records = seed.records.map((d, i) => build(d, i, seed.me, seed.people, seed.rejectComments))
 
 const repo = new RecordsRepo(token, { repo: repoName, branch })
