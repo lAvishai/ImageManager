@@ -1,13 +1,96 @@
 import { Octokit } from 'octokit'
+import type { PilgiRecord } from '../domain'
 
-// Token is a fine-grained PAT (Contents: read/write) pasted by the user.
-const TOKEN_KEY = 'gh_token'
+export interface RepoRef {
+  repo: string // "owner/name"
+  branch: string
+}
 
-export const getToken = () => localStorage.getItem(TOKEN_KEY)
-export const setToken = (t: string) => localStorage.setItem(TOKEN_KEY, t)
+const utf8 = {
+  enc: (s: string) => {
+    const bytes = new TextEncoder().encode(s)
+    let bin = ''
+    bytes.forEach((b) => (bin += String.fromCharCode(b)))
+    return btoa(bin)
+  },
+  dec: (b64: string) => {
+    const bin = atob(b64.replace(/\n/g, ''))
+    return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)))
+  },
+}
 
-export function client() {
-  const token = getToken()
-  if (!token) throw new Error('GitHub token not set')
-  return new Octokit({ auth: token })
+const status = (e: unknown) => (e as { status?: number }).status
+
+/** Stores each record as records/<id>.json in the configured GitHub repo. */
+export class RecordsRepo {
+  private kit: Octokit
+  private owner: string
+  private name: string
+  private branch: string
+  private shas = new Map<string, string>()
+
+  constructor(token: string, ref: RepoRef) {
+    const [owner, name] = ref.repo.split('/')
+    if (!owner || !name) throw new Error('Repository must look like owner/name.')
+    this.owner = owner
+    this.name = name
+    this.branch = ref.branch || 'main'
+    this.kit = new Octokit({ auth: token })
+  }
+
+  private path = (id: string) => `records/${id}.json`
+
+  /** Throws if the token/repo are invalid; returns [] for an empty repo. */
+  async list(): Promise<PilgiRecord[]> {
+    await this.kit.rest.repos.get({ owner: this.owner, repo: this.name })
+    let entries
+    try {
+      const res = await this.kit.rest.repos.getContent({ owner: this.owner, repo: this.name, path: 'records', ref: this.branch })
+      entries = Array.isArray(res.data) ? res.data : []
+    } catch (e) {
+      if (status(e) === 404) return []
+      throw e
+    }
+    const files = entries.filter((f) => f.type === 'file' && f.name.endsWith('.json'))
+    return Promise.all(
+      files.map(async (f) => {
+        const res = await this.kit.rest.repos.getContent({ owner: this.owner, repo: this.name, path: f.path, ref: this.branch })
+        const data = res.data as { content: string; sha: string }
+        this.shas.set(f.path, data.sha)
+        return JSON.parse(utf8.dec(data.content)) as PilgiRecord
+      }),
+    )
+  }
+
+  private async fetchSha(path: string) {
+    try {
+      const res = await this.kit.rest.repos.getContent({ owner: this.owner, repo: this.name, path, ref: this.branch })
+      return (res.data as { sha: string }).sha
+    } catch (e) {
+      if (status(e) === 404) return undefined
+      throw e
+    }
+  }
+
+  async save(r: PilgiRecord, message: string) {
+    const path = this.path(r.id)
+    const put = (sha?: string) =>
+      this.kit.rest.repos.createOrUpdateFileContents({
+        owner: this.owner,
+        repo: this.name,
+        path,
+        branch: this.branch,
+        message,
+        content: utf8.enc(JSON.stringify(r, null, 2) + '\n'),
+        sha,
+      })
+    try {
+      const res = await put(this.shas.get(path))
+      this.shas.set(path, res.data.content!.sha!)
+    } catch (e) {
+      if (status(e) !== 409 && status(e) !== 422) throw e
+      const res = await put(await this.fetchSha(path)) // stale sha: refetch once and retry
+      this.shas.set(path, res.data.content!.sha!)
+    }
+  }
 }

@@ -1,11 +1,11 @@
 <template>
-  <header class="app-header"><h1>Image Manager</h1></header>
-  <main><RouterView /></main>
+  <div style="min-height: 100vh; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body)">
+    <RouterView />
+  </div>
 </template>
 
 <style>
-body { margin: 0; font-family: system-ui, sans-serif; }
-.app-header { padding: 1rem 1.5rem; border-bottom: 1px solid #ddd; }
-.app-header h1 { margin: 0; font-size: 1.25rem; }
-main { padding: 1.5rem; }
+a { color: var(--color-accent-700); }
+a:hover { color: var(--color-accent-600); }
+input[type='checkbox'] { accent-color: var(--color-accent); width: 16px; height: 16px; cursor: pointer; }
 </style>
