@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import Icon from '../components/Icon.vue'
 import Thumb from '../components/Thumb.vue'
 import ReviewDialog from '../components/ReviewDialog.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import {
   CHARACTER_ICONS,
   SN,
@@ -35,6 +36,24 @@ const linkError = ref('')
 const dateDraft = ref<string | null>(null)
 const charOpen = ref<number | null>(null)
 const dialog = ref<{ stage: number; vn: number } | null>(null)
+const deleteConfirmOpen = ref(false)
+
+async function onDeleteConfirm() {
+  deleteConfirmOpen.value = false
+  if (!r.value) return
+  await store.remove(r.value.id)
+  router.push('/')
+}
+
+watch(
+  r,
+  (rec) => {
+    if (rec?.deleted) {
+      router.replace('/')
+    }
+  },
+  { immediate: true },
+)
 
 // Reset local state whenever a different record is opened
 watch(
@@ -249,11 +268,22 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
         <span class="tag tag-neutral">{{ r.id }}</span>
         <span class="text-muted" style="font-size: 12px"> Created by {{ short(r.createdBy) }} · {{ fmt(r.createdAt) }}</span>
       </div>
-      <button class="btn btn-secondary" style="align-self: flex-start; display: flex; align-items: center; gap: var(--space-2)" @click="ui.openRemarks(r.id, a)">
-        <Icon name="chat" />
-        Remarks
-        <span style="min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--color-accent); color: var(--color-bg); font-size: 12px; font-weight: 700">{{ r.remarks.length }}</span>
-      </button>
+      <div style="display: flex; flex-direction: column; gap: var(--space-2); align-self: flex-start">
+        <button class="btn btn-secondary" style="display: flex; align-items: center; gap: var(--space-2); width: 100%" @click="ui.openRemarks(r.id, a)">
+          <Icon name="chat" />
+          Remarks
+          <span style="min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--color-accent); color: var(--color-bg); font-size: 12px; font-weight: 700">{{ r.remarks.length }}</span>
+        </button>
+        <button
+          class="btn btn-secondary"
+          style="display: flex; align-items: center; justify-content: center; gap: var(--space-2); width: 100%; color: #b23b3b; border-color: color-mix(in srgb, #b23b3b 35%, transparent)"
+          title="Delete this record"
+          @click="deleteConfirmOpen = true"
+        >
+          <Icon name="trash" />
+          Delete
+        </button>
+      </div>
       <div style="display: flex; flex-direction: column; gap: var(--space-2); align-self: flex-start; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); font-size: 13px">
         <div v-for="pk in pickers" :key="pk.k" style="display: flex; align-items: center; gap: var(--space-2); position: relative">
           <span style="width: 92px; flex: none">{{ pk.label }}</span>
@@ -454,5 +484,22 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
       @cancel="dialog = null"
       @confirm="onReject"
     />
+
+    <ConfirmDialog
+      v-if="deleteConfirmOpen"
+      title="Delete record"
+      :body="`Are you sure you want to delete ${r.id}? It will be marked as deleted in the record data and hidden from the records list.`"
+      confirm-label="Approve"
+      cancel-label="Cancel"
+      :danger="true"
+      @cancel="deleteConfirmOpen = false"
+      @confirm="onDeleteConfirm"
+    />
   </main>
+  <div v-else class="text-muted" style="padding: var(--space-8)">
+    Record not found or has been deleted.
+    <div style="margin-top: var(--space-4)">
+      <button class="btn btn-secondary" @click="router.push('/')">Back to records</button>
+    </div>
+  </div>
 </template>

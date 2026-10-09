@@ -1,5 +1,18 @@
 <script setup lang="ts">
-defineProps<{ title: string; body: string; confirmLabel: string }>()
+withDefaults(
+  defineProps<{
+    title: string
+    body: string
+    confirmLabel?: string
+    cancelLabel?: string
+    danger?: boolean
+  }>(),
+  {
+    confirmLabel: 'Approve',
+    cancelLabel: 'Cancel',
+    danger: false,
+  },
+)
 const emit = defineEmits<{ cancel: []; confirm: [] }>()
 </script>
 
@@ -9,8 +22,15 @@ const emit = defineEmits<{ cancel: []; confirm: [] }>()
       <div class="dialog-title">{{ title }}</div>
       <div class="dialog-body">{{ body }}</div>
       <div class="dialog-actions">
-        <button class="btn btn-ghost" @click="emit('cancel')">Cancel</button>
-        <button class="btn btn-primary" @click="emit('confirm')">{{ confirmLabel }}</button>
+        <button class="btn btn-ghost" type="button" @click="emit('cancel')">{{ cancelLabel }}</button>
+        <button
+          class="btn btn-primary"
+          type="button"
+          :style="danger ? 'background: #b23b3b; color: #fff; border-color: #b23b3b' : ''"
+          @click="emit('confirm')"
+        >
+          {{ confirmLabel }}
+        </button>
       </div>
     </div>
   </div>

@@ -10,7 +10,7 @@ const store = useRecordsStore()
 const ui = useUiStore()
 const router = useRouter()
 
-const recs = computed(() => store.records)
+const recs = computed(() => store.visible)
 const pend = (n: number) => `${recs.value.filter((r) => r.currentStage === n && recStatus(r) === 'pending').length} need review`
 
 const tiles = computed(() => {
@@ -182,7 +182,7 @@ const summary = computed(() => `${recs.value.length} pilgis · ${recs.value.filt
       <div v-if="!rows.length" style="padding: var(--space-8) var(--space-4)">
         <h4 style="margin: 0 0 4px">Nothing here</h4>
         <p class="text-muted" style="margin: 0">
-          {{ store.records.length ? 'No pilgis match these filters.' : 'This repo has no pilgis yet — create one or import a batch.' }}
+          {{ store.visible.length ? 'No pilgis match these filters.' : 'This repo has no pilgis yet — create one or import a batch.' }}
         </p>
       </div>
     </div>
