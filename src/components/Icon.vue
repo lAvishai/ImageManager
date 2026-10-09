@@ -1,0 +1,39 @@
+<script setup lang="ts">
+const props = defineProps<{ name: string; size?: number; stroke?: number }>()
+
+// Lucide-style paths used by the prototype
+const PATHS: Record<string, string[]> = {
+  plus: ['M5 12h14', 'M12 5v14'],
+  upload: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M17 8 12 3 7 8', 'M12 3v12'],
+  check: ['M20 6 9 17l-5-5'],
+  x: ['M18 6 6 18', 'm6 6 12 12'],
+  lock: ['M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z', 'M7 11V7a5 5 0 0 1 10 0v4'],
+  branch: ['M6 3v12', 'M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z', 'M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z', 'M18 9c0 6-12 3-12 6'],
+  search: ['M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z', 'm21 21-4.3-4.3'],
+  back: ['m12 19-7-7 7-7', 'M19 12H5'],
+  chat: ['M7.9 20A9 9 0 1 0 4 16.1L2 22Z'],
+  image: ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z', 'M9 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z', 'm21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21'],
+  link: ['M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71', 'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'],
+  file: ['M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z', 'M14 2v4a2 2 0 0 0 2 2h4'],
+  pencil: ['M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z', 'm15 5 4 4'],
+  send: ['M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z', 'm21.854 2.147-10.94 10.939'],
+  chevron: ['m6 9 6 6 6-6'],
+  commit: ['M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z', 'M3 12h6', 'M15 12h6'],
+}
+</script>
+
+<template>
+  <svg
+    :width="props.size ?? 16"
+    :height="props.size ?? 16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    :stroke-width="props.stroke ?? 2.75"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path v-for="d in PATHS[props.name]" :key="d" :d="d" />
+  </svg>
+</template>
