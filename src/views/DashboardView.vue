@@ -129,8 +129,24 @@ const summary = computed(() => `${recs.value.length} pilgis · ${recs.value.filt
         </label>
       </div>
       <div style="position: relative; flex: 1 1 220px; min-width: 0; max-width: 340px; margin-left: auto">
-        <Icon name="search" :size="15" style="position: absolute; left: 14px; top: 11px; opacity: 0.55" />
-        <input v-model="ui.q" class="input" placeholder="Search sentences or pilgi id" style="padding-left: 36px" />
+        <Icon name="search" :size="15" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); opacity: 0.55; pointer-events: none" />
+        <input
+          v-model="ui.q"
+          class="input"
+          placeholder="Search sentences or pilgi id"
+          :style="`padding-left: 36px; padding-right: ${ui.q ? '36px' : '14px'}`"
+          @keydown.esc="ui.q = ''"
+        />
+        <button
+          v-if="ui.q"
+          type="button"
+          class="clear-search-btn"
+          aria-label="Clear search"
+          title="Clear search"
+          @click="ui.q = ''"
+        >
+          <Icon name="x" :size="13" />
+        </button>
       </div>
     </div>
 
@@ -190,3 +206,27 @@ const summary = computed(() => `${recs.value.length} pilgis · ${recs.value.filt
     </div>
   </main>
 </template>
+
+<style scoped>
+.clear-search-btn {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--color-neutral-600);
+  background: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.clear-search-btn:hover {
+  background: var(--color-neutral-300);
+  color: var(--color-neutral-900);
+}
+</style>
