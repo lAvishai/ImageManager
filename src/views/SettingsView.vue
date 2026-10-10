@@ -2,6 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Icon from '../components/Icon.vue'
+import VersionHistoryModal from '../components/VersionHistoryModal.vue'
 import { CHARACTER_ICONS, fmt, now } from '../domain'
 import { useRecordsStore } from '../stores/records'
 import { type AppSettings, useSettingsStore } from '../stores/settings'
@@ -72,6 +73,7 @@ const isDirty = computed(() => {
 })
 
 const savedNotification = ref(false)
+const versionHistoryOpen = ref(false)
 
 async function onSave() {
   const payload: AppSettings = {
@@ -140,13 +142,15 @@ const appVersion = computed(() => {
       <h1 style="margin: 0; font-size: clamp(24px, 3vw, 36px)">Settings</h1>
 
       <div style="display: flex; gap: var(--space-3); align-items: center; flex-shrink: 0">
-        <span
-          style="display: inline-flex; align-items: center; gap: var(--space-2); font-size: 13px; white-space: nowrap"
-          title="Application version (last build date)"
+        <button
+          type="button"
+          class="version-badge-btn"
+          title="Click to view version history and changelog"
+          @click="versionHistoryOpen = true"
         >
           <span style="width: 28px; height: 28px; border-radius: 50%; background: var(--color-accent-200); color: var(--color-accent-800); display: grid; place-items: center; font-weight: 700; font-size: 11px">v</span>
           <span>{{ appVersion }}</span>
-        </span>
+        </button>
         <button class="btn btn-secondary" @click="onReset">Reset to defaults</button>
         <button class="btn btn-primary" :disabled="!isDirty" @click="onSave">
           <Icon name="check" />Save settings
@@ -372,5 +376,27 @@ const appVersion = computed(() => {
         </button>
       </div>
     </form>
+
+    <VersionHistoryModal :open="versionHistoryOpen" @close="versionHistoryOpen = false" />
   </main>
 </template>
+
+<style scoped>
+.version-badge-btn {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  white-space: nowrap;
+  padding: 3px 10px 3px 3px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.version-badge-btn:hover {
+  background: var(--color-surface);
+  border-color: var(--color-divider);
+}
+</style>

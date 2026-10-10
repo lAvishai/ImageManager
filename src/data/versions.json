@@ -1,0 +1,94 @@
+[
+  {
+    "version": "v1.9.0",
+    "date": "10/10/2026 22:35",
+    "title": "Version History Changelog Modal",
+    "changes": [
+      "Added interactive Version History dialog in Settings view, opened by clicking the version badge.",
+      "Created versions.json data file to record and track changes across all application releases."
+    ]
+  },
+  {
+    "version": "v1.8.0",
+    "date": "10/10/2026 22:20",
+    "title": "Interactive Records Table Column Sorting",
+    "changes": [
+      "Added column header sorting for all columns in the Dashboard Records table.",
+      "Clicking the PilGi header sorts records by record number (with ascending/descending toggle).",
+      "Added visual chevron direction indicators and hover states for sortable headers."
+    ]
+  },
+  {
+    "version": "v1.7.0",
+    "date": "10/10/2026 20:00",
+    "title": "Tech Data Prompt Generation & Copy Tools",
+    "changes": [
+      "Added Top Image prompt and Bottom Image prompt preview text areas in Text Generation card.",
+      "Implemented automated @ token replacements (@Record, @TopText, @BottomText, @FontSize, @TextCenter, @TopLocation, @BottomLocation).",
+      "Added copy-to-clipboard icons for individual prompts and a combined copy button for both prompts."
+    ]
+  },
+  {
+    "version": "v1.6.0",
+    "date": "10/10/2026 19:45",
+    "title": "Top Text Location Configuration",
+    "changes": [
+      "Set default 'Top Text Location' coordinate to 700 across configuration and Tech Data fallbacks."
+    ]
+  },
+  {
+    "version": "v1.5.0",
+    "date": "10/10/2026 19:35",
+    "title": "Application Version Badge & Settings Header Redesign",
+    "changes": [
+      "Added build date version indicator badge in Settings with user avatar pill styling.",
+      "Restructured Settings header layout placing descriptive subtitle beneath action controls.",
+      "Added 'Center Align' setting with default value 768."
+    ]
+  },
+  {
+    "version": "v1.4.0",
+    "date": "10/10/2026 19:10",
+    "title": "Tech Data Side Drawer",
+    "changes": [
+      "Added 'Tech Data' slide-over drawer accessible from Record Detail under 'Last modified'.",
+      "Card 1: Scenario preview with dynamic #A and #B character replacements and Image Prompt template.",
+      "Card 2: Text Generation technical overrides (Top Text Offset, Bottom Text Offset, Font Size) saved to record."
+    ]
+  },
+  {
+    "version": "v1.3.0",
+    "date": "10/10/2026 18:40",
+    "title": "Line Break Editing for Approved Records",
+    "changes": [
+      "Allowed updating line breaks directly on the final approved text version without creating a new version."
+    ]
+  },
+  {
+    "version": "v1.2.0",
+    "date": "10/10/2026 18:15",
+    "title": "Text Area Inputs for Top and Bottom Sentences",
+    "changes": [
+      "Converted single-line text inputs for top and bottom sentences to multi-line text areas across New PilGi creation and Stage 1 editing."
+    ]
+  },
+  {
+    "version": "v1.1.0",
+    "date": "10/10/2026 15:00",
+    "title": "GitHub Sync & Time Zone Settings",
+    "changes": [
+      "Added direct GitHub repository persistence for records and settings.",
+      "Implemented time zone preferences with support for Israel, UTC, US, European, and Asian time zones."
+    ]
+  },
+  {
+    "version": "v1.0.0",
+    "date": "10/10/2026 10:00",
+    "title": "Initial Release",
+    "changes": [
+      "Full 5-stage PilGi pipeline (Text, Scenario, Clean Image, Image with Text, Posting).",
+      "Dashboard with review metrics, filtering, and live search.",
+      "CSV and JSON batch import support."
+    ]
+  }
+]

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Icon from '../components/Icon.vue'
 import { SN, ST, type RecStatus, fmt, fmtPostDate, recStatus, recThumb, shown1, short } from '../domain'
@@ -58,39 +58,87 @@ const statusOpts = [
   ['posted', 'Posted'],
 ]
 
+type SortCol = 'pilgi' | 'stage' | 'remarks' | 'status' | 'posted' | 'lastModified'
+type SortDir = 'asc' | 'desc'
+
+const sortCol = ref<SortCol>('lastModified')
+const sortDir = ref<SortDir>('desc')
+
+function toggleSort(col: SortCol) {
+  if (sortCol.value === col) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortCol.value = col
+    sortDir.value = col === 'lastModified' || col === 'posted' ? 'desc' : 'asc'
+  }
+}
+
 const rows = computed(() => {
   const q = ui.q.trim().toLowerCase()
-  return recs.value
-    .filter(
-      (r) =>
-        (ui.stageF === 'all' || r.currentStage === ui.stageF) &&
-        (ui.statusF === 'all' || recStatus(r) === ui.statusF) &&
-        (!q || (r.id + ' ' + shown1(r.stage1).topSentence + ' ' + shown1(r.stage1).bottomSentence).toLowerCase().includes(q)),
-    )
-    .sort((a, b) => b.lastModifiedAt.localeCompare(a.lastModifiedAt))
-    .map((r) => {
-      const k = recStatus(r)
-      const v1 = shown1(r.stage1)
-      const done = (n: number) => n < r.currentStage || (n === 5 && r.stage5.status === 'posted')
-      const rc = r.remarks.length
-      return {
-        id: r.id,
-        top: v1.topSentence,
-        bottom: v1.bottomSentence,
-        stageNum: r.currentStage,
-        stageName: SN[r.currentStage],
-        tagCls: ST[k].cls,
-        statusLabel: ST[k].label,
-        postedAt: r.stage5.status === 'posted' ? fmtPostDate(r.stage5.postedAt, settings.current.timeZone) : '—',
-        by: short(r.lastModifiedBy),
-        at: fmt(r.lastModifiedAt, settings.current.timeZone),
-        hasThumb: !!recThumb(r),
-        dots: [1, 2, 3, 4, 5].map((n) => (done(n) ? 'var(--color-accent-2)' : n === r.currentStage ? 'var(--color-accent)' : 'var(--color-neutral-300)')),
-        rc,
-        remarksTitle: rc > 0 ? `${rc} remark${rc === 1 ? '' : 's'}` : 'Add a remark',
-        currentStage: r.currentStage,
+  const filtered = recs.value.filter(
+    (r) =>
+      (ui.stageF === 'all' || r.currentStage === ui.stageF) &&
+      (ui.statusF === 'all' || recStatus(r) === ui.statusF) &&
+      (!q || (r.id + ' ' + shown1(r.stage1).topSentence + ' ' + shown1(r.stage1).bottomSentence).toLowerCase().includes(q)),
+  )
+
+  const mult = sortDir.value === 'asc' ? 1 : -1
+
+  filtered.sort((a, b) => {
+    let cmp = 0
+    switch (sortCol.value) {
+      case 'pilgi':
+        cmp = (a.num || 0) - (b.num || 0)
+        break
+      case 'stage':
+        cmp = a.currentStage - b.currentStage
+        break
+      case 'remarks':
+        cmp = a.remarks.length - b.remarks.length
+        break
+      case 'status':
+        cmp = (ST[recStatus(a)]?.label || '').localeCompare(ST[recStatus(b)]?.label || '')
+        break
+      case 'posted': {
+        const pa = a.stage5.status === 'posted' ? (a.stage5.postedAt || '') : ''
+        const pb = b.stage5.status === 'posted' ? (b.stage5.postedAt || '') : ''
+        if (!pa && pb) cmp = 1
+        else if (pa && !pb) cmp = -1
+        else cmp = pa.localeCompare(pb)
+        break
       }
-    })
+      case 'lastModified':
+      default:
+        cmp = a.lastModifiedAt.localeCompare(b.lastModifiedAt)
+        break
+    }
+    if (cmp !== 0) return cmp * mult
+    return b.lastModifiedAt.localeCompare(a.lastModifiedAt)
+  })
+
+  return filtered.map((r) => {
+    const k = recStatus(r)
+    const v1 = shown1(r.stage1)
+    const done = (n: number) => n < r.currentStage || (n === 5 && r.stage5.status === 'posted')
+    const rc = r.remarks.length
+    return {
+      id: r.id,
+      top: v1.topSentence,
+      bottom: v1.bottomSentence,
+      stageNum: r.currentStage,
+      stageName: SN[r.currentStage],
+      tagCls: ST[k].cls,
+      statusLabel: ST[k].label,
+      postedAt: r.stage5.status === 'posted' ? fmtPostDate(r.stage5.postedAt, settings.current.timeZone) : '—',
+      by: short(r.lastModifiedBy),
+      at: fmt(r.lastModifiedAt, settings.current.timeZone),
+      hasThumb: !!recThumb(r),
+      dots: [1, 2, 3, 4, 5].map((n) => (done(n) ? 'var(--color-accent-2)' : n === r.currentStage ? 'var(--color-accent)' : 'var(--color-neutral-300)')),
+      rc,
+      remarksTitle: rc > 0 ? `${rc} remark${rc === 1 ? '' : 's'}` : 'Add a remark',
+      currentStage: r.currentStage,
+    }
+  })
 })
 
 const summary = computed(() => `${recs.value.length} pilgis · ${recs.value.filter((r) => recStatus(r) === 'pending').length} waiting on review`)
@@ -152,7 +200,56 @@ const summary = computed(() => `${recs.value.length} pilgis · ${recs.value.filt
     <div style="background: var(--color-neutral-100); border-radius: calc(var(--radius-lg) * 1.15); padding: var(--space-2) var(--space-3); overflow-x: auto">
       <table class="table" style="min-width: 720px">
         <thead>
-          <tr><th>PilGi</th><th>Stage</th><th>Remarks</th><th>Status</th><th>Posted</th><th>Last modified</th></tr>
+          <tr>
+            <th class="sortable-th" title="Sort by PilGi record number" @click="toggleSort('pilgi')">
+              <span class="th-content">
+                <span>PilGi</span>
+                <span class="sort-icon" :class="{ active: sortCol === 'pilgi' }">
+                  <Icon name="chevron" :size="12" :style="sortCol === 'pilgi' && sortDir === 'asc' ? 'transform: rotate(180deg)' : ''" />
+                </span>
+              </span>
+            </th>
+            <th class="sortable-th" title="Sort by stage" @click="toggleSort('stage')">
+              <span class="th-content">
+                <span>Stage</span>
+                <span class="sort-icon" :class="{ active: sortCol === 'stage' }">
+                  <Icon name="chevron" :size="12" :style="sortCol === 'stage' && sortDir === 'asc' ? 'transform: rotate(180deg)' : ''" />
+                </span>
+              </span>
+            </th>
+            <th class="sortable-th" title="Sort by remarks count" @click="toggleSort('remarks')">
+              <span class="th-content">
+                <span>Remarks</span>
+                <span class="sort-icon" :class="{ active: sortCol === 'remarks' }">
+                  <Icon name="chevron" :size="12" :style="sortCol === 'remarks' && sortDir === 'asc' ? 'transform: rotate(180deg)' : ''" />
+                </span>
+              </span>
+            </th>
+            <th class="sortable-th" title="Sort by status" @click="toggleSort('status')">
+              <span class="th-content">
+                <span>Status</span>
+                <span class="sort-icon" :class="{ active: sortCol === 'status' }">
+                  <Icon name="chevron" :size="12" :style="sortCol === 'status' && sortDir === 'asc' ? 'transform: rotate(180deg)' : ''" />
+                </span>
+              </span>
+            </th>
+            <th class="sortable-th" title="Sort by posted date" @click="toggleSort('posted')">
+              <span class="th-content">
+                <span>Posted</span>
+                <span class="sort-icon" :class="{ active: sortCol === 'posted' }">
+                  <Icon name="chevron" :size="12" :style="sortCol === 'posted' && sortDir === 'asc' ? 'transform: rotate(180deg)' : ''" />
+                </span>
+              </span>
+            </th>
+            <th class="sortable-th" title="Sort by last modified date" @click="toggleSort('lastModified')">
+              <span class="th-content">
+                <span>Last modified</span>
+                <span class="sort-icon" :class="{ active: sortCol === 'lastModified' }">
+                  <Icon name="chevron" :size="12" :style="sortCol === 'lastModified' && sortDir === 'asc' ? 'transform: rotate(180deg)' : ''" />
+                </span>
+              </span>
+            </th>
+          </tr>
         </thead>
         <tbody>
           <tr v-for="row in rows" :key="row.id" style="cursor: pointer" @click="router.push(`/record/${row.id}`)">
@@ -227,5 +324,31 @@ const summary = computed(() => `${recs.value.length} pilgis · ${recs.value.filt
 .clear-search-btn:hover {
   background: var(--color-neutral-300);
   color: var(--color-neutral-900);
+}
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+.sortable-th:hover {
+  color: var(--color-neutral-900);
+}
+.th-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.sort-icon {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.sortable-th:hover .sort-icon {
+  opacity: 0.5;
+}
+.sort-icon.active {
+  opacity: 1;
+  color: var(--color-accent);
 }
 </style>
