@@ -105,9 +105,9 @@ async function copyImagePrompt() {
 }
 
 // Card 2: Text Generation
-const topTextOffset = ref<number>(700)
-const bottomTextOffset = ref<number>(2300)
-const fontSize = ref<number>(120)
+const topTextOffset = ref<number>(0)
+const bottomTextOffset = ref<number>(0)
+const fontSize = ref<number>(0)
 const saving = ref(false)
 const saved = ref(false)
 
@@ -157,13 +157,9 @@ async function copyBothPrompts() {
 
 function syncTextGen() {
   if (!props.record) return
-  const defTop = settings.current.topTextLocation ?? 700
-  const defBottom = settings.current.bottomTextLocation ?? 2300
-  const defFont = settings.current.defaultFontSize ?? 120
-
-  topTextOffset.value = typeof props.record.topTextOffset === 'number' ? props.record.topTextOffset : defTop
-  bottomTextOffset.value = typeof props.record.bottomTextOffset === 'number' ? props.record.bottomTextOffset : defBottom
-  fontSize.value = typeof props.record.fontSize === 'number' ? props.record.fontSize : defFont
+  topTextOffset.value = typeof props.record.topTextOffset === 'number' ? props.record.topTextOffset : 0
+  bottomTextOffset.value = typeof props.record.bottomTextOffset === 'number' ? props.record.bottomTextOffset : 0
+  fontSize.value = typeof props.record.fontSize === 'number' ? props.record.fontSize : 0
 }
 
 function syncTextGenPrompts() {
@@ -179,14 +175,21 @@ function syncTextGenPrompts() {
     : parseInt(props.record.id.replace(/\D/g, '') || '0', 10)
   const recordStr = recNum < 1000 ? String(recNum).padStart(3, '0') : String(recNum)
 
-  // 2. @TopText - The Final Top Text of the record
-  // 3. @BottomText - The Final Top Text of the record (i.e. final bottom text)
+  const formatSentenceForPrompt = (text: string) =>
+    (text || '')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .join('|')
+
+  // 2. @TopText - The Final Top Text of the record (trimmed lines, newlines replaced with |)
+  // 3. @BottomText - The Final Bottom Text of the record (trimmed lines, newlines replaced with |)
   const v1 = shown1(props.record.stage1)
-  const topText = v1?.topSentence || ''
-  const bottomText = v1?.bottomSentence || ''
+  const topText = formatSentenceForPrompt(v1?.topSentence || '')
+  const bottomText = formatSentenceForPrompt(v1?.bottomSentence || '')
 
   // 4. @FontSize - If record font sise has value us it else font Size from the settings
-  const fontSizeVal = typeof props.record.fontSize === 'number' && !isNaN(props.record.fontSize)
+  const fontSizeVal = typeof props.record.fontSize === 'number' && !isNaN(props.record.fontSize) && props.record.fontSize > 0
     ? props.record.fontSize
     : (Number(settings.current.defaultFontSize) || 120)
 
@@ -245,9 +248,9 @@ watch(
 
 const hasChanges = computed(() => {
   if (!props.record) return false
-  const curTop = typeof props.record.topTextOffset === 'number' ? props.record.topTextOffset : (settings.current.topTextLocation ?? 700)
-  const curBottom = typeof props.record.bottomTextOffset === 'number' ? props.record.bottomTextOffset : (settings.current.bottomTextLocation ?? 2300)
-  const curFont = typeof props.record.fontSize === 'number' ? props.record.fontSize : (settings.current.defaultFontSize ?? 120)
+  const curTop = typeof props.record.topTextOffset === 'number' ? props.record.topTextOffset : 0
+  const curBottom = typeof props.record.bottomTextOffset === 'number' ? props.record.bottomTextOffset : 0
+  const curFont = typeof props.record.fontSize === 'number' ? props.record.fontSize : 0
 
   return (
     topTextOffset.value !== curTop ||
@@ -262,7 +265,7 @@ async function saveTextGen() {
   await store.updateTechData(props.record.id, {
     topTextOffset: Number(topTextOffset.value) || 0,
     bottomTextOffset: Number(bottomTextOffset.value) || 0,
-    fontSize: Number(fontSize.value) || (settings.current.defaultFontSize ?? 120),
+    fontSize: Number(fontSize.value) || 0,
   })
   syncTextGenPrompts()
   saving.value = false
@@ -271,9 +274,9 @@ async function saveTextGen() {
 }
 
 function resetToDefaults() {
-  topTextOffset.value = settings.current.topTextLocation ?? 700
-  bottomTextOffset.value = settings.current.bottomTextLocation ?? 2300
-  fontSize.value = settings.current.defaultFontSize ?? 120
+  topTextOffset.value = 0
+  bottomTextOffset.value = 0
+  fontSize.value = 0
 }
 </script>
 
@@ -412,7 +415,7 @@ function resetToDefaults() {
                 type="number"
                 class="input"
                 style="background: var(--color-bg)"
-                placeholder="700"
+                placeholder="0"
               />
             </div>
 
@@ -424,7 +427,7 @@ function resetToDefaults() {
                 type="number"
                 class="input"
                 style="background: var(--color-bg)"
-                placeholder="2300"
+                placeholder="0"
               />
             </div>
           </div>
@@ -437,8 +440,8 @@ function resetToDefaults() {
               type="number"
               class="input"
               style="background: var(--color-bg)"
-              placeholder="120"
-              min="1"
+              placeholder="0"
+              min="0"
             />
           </div>
 

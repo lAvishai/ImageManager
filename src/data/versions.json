@@ -1,5 +1,23 @@
 [
   {
+    "version": "v1.13.0",
+    "date": "10/10/2026 23:00",
+    "title": "Text Generation Defaults to 0",
+    "changes": [
+      "Set defaults for 'Top Text Offset', 'Bottom Text Offset', and 'Font Size' in Text Generation to 0.",
+      "Updated placeholders, fallback values, and reset actions in Tech Data drawer."
+    ]
+  },
+  {
+    "version": "v1.12.0",
+    "date": "10/10/2026 22:55",
+    "title": "Tech Data Text Embedding Formatting",
+    "changes": [
+      "In Tech Data Top and Bottom Image prompt previews, trimmed lines of @TopText and @BottomText.",
+      "Replaced newlines with pipe (|) separator for text generation embedding."
+    ]
+  },
+  {
     "version": "v1.11.0",
     "date": "10/10/2026 22:50",
     "title": "Project Rules & Guidelines (GEMINI.md)",

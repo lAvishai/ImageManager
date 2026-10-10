@@ -49,8 +49,8 @@ This document outlines the core architecture, coding standards, business logic, 
   - Prompts: `Top Image prompt` and `Bottom Image prompt` previews (unsaved).
   - Dynamic token replacements:
     - `@Record`: Record number padded to 3 digits if `< 1000` (e.g., `005`).
-    - `@TopText`: Final approved top sentence (`shown1(stage1).topSentence`).
-    - `@BottomText`: Final approved bottom sentence (`shown1(stage1).bottomSentence`).
+    - `@TopText`: Final approved top sentence (`shown1(stage1).topSentence`), with each line trimmed and newlines replaced with `|`.
+    - `@BottomText`: Final approved bottom sentence (`shown1(stage1).bottomSentence`), with each line trimmed and newlines replaced with `|`.
     - `@FontSize`: Record `fontSize` override if present, otherwise `defaultFontSize` from settings.
     - `@TextCenter`: `centerAlign` from settings (default `768`).
     - `@TopLocation`: Settings `topTextLocation` (default `700`) + record `topTextOffset`.
