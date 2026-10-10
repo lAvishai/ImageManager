@@ -105,17 +105,17 @@ async function copyImagePrompt() {
 }
 
 // Card 2: Text Generation
-const topTextOffset = ref<number>(10)
-const bottomTextOffset = ref<number>(85)
-const fontSize = ref<number>(24)
+const topTextOffset = ref<number>(700)
+const bottomTextOffset = ref<number>(2300)
+const fontSize = ref<number>(120)
 const saving = ref(false)
 const saved = ref(false)
 
 function syncTextGen() {
   if (!props.record) return
-  const defTop = settings.current.topTextLocation ?? 10
-  const defBottom = settings.current.bottomTextLocation ?? 85
-  const defFont = settings.current.defaultFontSize ?? 24
+  const defTop = settings.current.topTextLocation ?? 700
+  const defBottom = settings.current.bottomTextLocation ?? 2300
+  const defFont = settings.current.defaultFontSize ?? 120
 
   topTextOffset.value = typeof props.record.topTextOffset === 'number' ? props.record.topTextOffset : defTop
   bottomTextOffset.value = typeof props.record.bottomTextOffset === 'number' ? props.record.bottomTextOffset : defBottom
@@ -138,9 +138,9 @@ watch(
 
 const hasChanges = computed(() => {
   if (!props.record) return false
-  const curTop = typeof props.record.topTextOffset === 'number' ? props.record.topTextOffset : (settings.current.topTextLocation ?? 10)
-  const curBottom = typeof props.record.bottomTextOffset === 'number' ? props.record.bottomTextOffset : (settings.current.bottomTextLocation ?? 85)
-  const curFont = typeof props.record.fontSize === 'number' ? props.record.fontSize : (settings.current.defaultFontSize ?? 24)
+  const curTop = typeof props.record.topTextOffset === 'number' ? props.record.topTextOffset : (settings.current.topTextLocation ?? 700)
+  const curBottom = typeof props.record.bottomTextOffset === 'number' ? props.record.bottomTextOffset : (settings.current.bottomTextLocation ?? 2300)
+  const curFont = typeof props.record.fontSize === 'number' ? props.record.fontSize : (settings.current.defaultFontSize ?? 120)
 
   return (
     topTextOffset.value !== curTop ||
@@ -163,9 +163,9 @@ async function saveTextGen() {
 }
 
 function resetToDefaults() {
-  topTextOffset.value = settings.current.topTextLocation ?? 10
-  bottomTextOffset.value = settings.current.bottomTextLocation ?? 85
-  fontSize.value = settings.current.defaultFontSize ?? 24
+  topTextOffset.value = settings.current.topTextLocation ?? 700
+  bottomTextOffset.value = settings.current.bottomTextLocation ?? 2300
+  fontSize.value = settings.current.defaultFontSize ?? 120
 }
 </script>
 
@@ -304,7 +304,7 @@ function resetToDefaults() {
                 type="number"
                 class="input"
                 style="background: var(--color-bg)"
-                placeholder="10"
+                placeholder="700"
               />
             </div>
 
@@ -316,7 +316,7 @@ function resetToDefaults() {
                 type="number"
                 class="input"
                 style="background: var(--color-bg)"
-                placeholder="85"
+                placeholder="2300"
               />
             </div>
           </div>
@@ -329,7 +329,7 @@ function resetToDefaults() {
               type="number"
               class="input"
               style="background: var(--color-bg)"
-              placeholder="24"
+              placeholder="120"
               min="1"
             />
           </div>

@@ -17,10 +17,10 @@ export interface AppSettings {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   topImagePrompt: '',
-  topTextLocation: 10,
+  topTextLocation: 700,
   bottomImagePrompt: '',
-  bottomTextLocation: 85,
-  defaultFontSize: 24,
+  bottomTextLocation: 2300,
+  defaultFontSize: 120,
   centerAlign: 768,
   elephantDescription: '',
   giraffeDescription: '',

@@ -12,10 +12,10 @@ const recordsStore = useRecordsStore()
 
 const form = reactive<AppSettings>({
   topImagePrompt: '',
-  topTextLocation: 0,
+  topTextLocation: 700,
   bottomImagePrompt: '',
-  bottomTextLocation: 0,
-  defaultFontSize: 24,
+  bottomTextLocation: 2300,
+  defaultFontSize: 120,
   centerAlign: 768,
   elephantDescription: '',
   giraffeDescription: '',
@@ -76,7 +76,7 @@ const savedNotification = ref(false)
 async function onSave() {
   const payload: AppSettings = {
     topImagePrompt: form.topImagePrompt.trim(),
-    topTextLocation: Number(form.topTextLocation) || 0,
+    topTextLocation: Number(form.topTextLocation) || 700,
     bottomImagePrompt: form.bottomImagePrompt.trim(),
     bottomTextLocation: Number(form.bottomTextLocation) || 0,
     defaultFontSize: Number(form.defaultFontSize) || 24,
@@ -106,25 +106,57 @@ async function onReset() {
     recordsStore.toast('Settings reset to defaults')
   }
 }
+
+const appVersion = computed(() => {
+  const rawIso = typeof __APP_BUILD_DATE__ !== 'undefined' ? __APP_BUILD_DATE__ : ''
+  if (!rawIso) return 'dev'
+  try {
+    const d = new Date(rawIso)
+    if (isNaN(d.getTime())) return rawIso
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: form.timeZone || 'Asia/Jerusalem',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).formatToParts(d)
+    const day = parts.find((p) => p.type === 'day')?.value || ''
+    const month = parts.find((p) => p.type === 'month')?.value || ''
+    const year = parts.find((p) => p.type === 'year')?.value || ''
+    const hour = parts.find((p) => p.type === 'hour')?.value || ''
+    const min = parts.find((p) => p.type === 'minute')?.value || ''
+    return `${day}/${month}/${year} ${hour}:${min}`
+  } catch {
+    return rawIso
+  }
+})
 </script>
 
 <template>
   <main data-screen-label="Settings" style="padding: var(--space-1) clamp(16px, 4vw, var(--space-8)) var(--space-8); max-width: 960px">
-    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-6)">
-      <div>
-        <h1 style="margin: 0; font-size: clamp(24px, 3vw, 36px)">Settings</h1>
-        <p class="text-muted" style="margin: var(--space-1) 0 0; max-width: 560px; font-size: 14px">
-          General prompt configuration, text positioning, and character profiles for the application.
-        </p>
-      </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-2)">
+      <h1 style="margin: 0; font-size: clamp(24px, 3vw, 36px)">Settings</h1>
 
-      <div style="display: flex; gap: var(--space-2); align-items: center">
+      <div style="display: flex; gap: var(--space-3); align-items: center; flex-shrink: 0">
+        <span
+          style="display: inline-flex; align-items: center; gap: var(--space-2); font-size: 13px; white-space: nowrap"
+          title="Application version (last build date)"
+        >
+          <span style="width: 28px; height: 28px; border-radius: 50%; background: var(--color-accent-200); color: var(--color-accent-800); display: grid; place-items: center; font-weight: 700; font-size: 11px">v</span>
+          <span>{{ appVersion }}</span>
+        </span>
         <button class="btn btn-secondary" @click="onReset">Reset to defaults</button>
         <button class="btn btn-primary" :disabled="!isDirty" @click="onSave">
           <Icon name="check" />Save settings
         </button>
       </div>
     </div>
+
+    <p class="text-muted" style="margin: 0 0 var(--space-6); font-size: 14px">
+      General prompt configuration, text positioning, and character profiles for the application.
+    </p>
 
     <form style="display: flex; flex-direction: column; gap: var(--space-6)" @submit.prevent="onSave">
       <!-- Regional & Time Zone Section -->
@@ -184,7 +216,7 @@ async function onReset() {
               v-model.number="form.topTextLocation"
               type="number"
               class="input"
-              placeholder="10"
+              placeholder="700"
             />
           </div>
 
@@ -206,7 +238,7 @@ async function onReset() {
               v-model.number="form.bottomTextLocation"
               type="number"
               class="input"
-              placeholder="85"
+              placeholder="2300"
             />
           </div>
 
