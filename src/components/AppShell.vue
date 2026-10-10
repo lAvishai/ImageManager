@@ -48,6 +48,15 @@ async function create() {
       {{ auth.email }}
     </span>
     <button
+      class="btn btn-secondary btn-icon"
+      :title="store.refreshing ? 'Refreshing from GitHub…' : 'Refresh data from GitHub'"
+      :aria-label="store.refreshing ? 'Refreshing from GitHub…' : 'Refresh data from GitHub'"
+      :disabled="store.refreshing"
+      @click="store.refresh()"
+    >
+      <Icon name="refresh" :class="{ 'spin-icon': store.refreshing }" />
+    </button>
+    <button
       class="btn btn-icon"
       :class="route.path === '/settings' ? 'btn-primary' : 'btn-secondary'"
       title="Settings"
@@ -88,3 +97,18 @@ async function create() {
     <Icon name="commit" :size="15" />{{ store.toastMsg }}
   </div>
 </template>
+
+<style scoped>
+@keyframes spin-anim {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin-icon {
+  animation: spin-anim 0.85s linear infinite;
+  transform-origin: center;
+}
+</style>

@@ -3,11 +3,13 @@ import { computed, ref } from 'vue'
 import { type PilgiRecord, newRecord, now, stageData, stageOf } from '../domain'
 import { RecordsRepo } from '../services/github'
 import { useAuthStore } from './auth'
+import { useSettingsStore } from './settings'
 
 export const useRecordsStore = defineStore('records', () => {
   const auth = useAuthStore()
   const records = ref<PilgiRecord[]>([])
   const loaded = ref(false)
+  const refreshing = ref(false)
   const loadError = ref('') // set when the configured repo can't be read
   const toastMsg = ref<string | null>(null)
   let repo: RecordsRepo | null = null
@@ -30,12 +32,47 @@ export const useRecordsStore = defineStore('records', () => {
       const remoteSettings = await repo.getSettings()
       if (remoteSettings) {
         localStorage.setItem('pilgi_settings', JSON.stringify(remoteSettings))
+        try {
+          useSettingsStore().reload()
+        } catch {}
       }
     } catch (e) {
       repo = null
       loadError.value = `Couldn't read ${auth.repo}@${auth.branch}: ${(e as Error).message}`
     }
     loaded.value = true
+  }
+
+  /** Refreshes records and settings from GitHub without clearing existing state during load. */
+  async function refresh(): Promise<boolean> {
+    if (!auth.token || !auth.repo) {
+      toast('No repository configured')
+      return false
+    }
+    refreshing.value = true
+    try {
+      if (!repo) {
+        repo = new RecordsRepo(auth.token, { repo: auth.repo, branch: auth.branch })
+      }
+      const [latest, remoteSettings] = await Promise.all([
+        repo.list(),
+        repo.getSettings(),
+      ])
+      records.value = latest
+      if (remoteSettings) {
+        localStorage.setItem('pilgi_settings', JSON.stringify(remoteSettings))
+        try {
+          useSettingsStore().reload()
+        } catch {}
+      }
+      toast('Refreshed data from GitHub')
+      return true
+    } catch (e) {
+      toast(`Refresh failed: ${(e as Error).message}`)
+      return false
+    } finally {
+      refreshing.value = false
+    }
   }
 
   function reset() {
@@ -167,5 +204,5 @@ export const useRecordsStore = defineStore('records', () => {
     }
   }
 
-  return { records, visible, loaded, loadError, toastMsg, toast, init, reset, byId, mutate, review, addImage, saveText, create, createMany, setCharacter, addRemark, setPosted, setPostDate, remove, persistSettings }
+  return { records, visible, loaded, loadError, refreshing, refresh, toastMsg, toast, init, reset, byId, mutate, review, addImage, saveText, create, createMany, setCharacter, addRemark, setPosted, setPostDate, remove, persistSettings }
 })
