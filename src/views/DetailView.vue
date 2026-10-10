@@ -417,6 +417,18 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
           <div style="display: flex; gap: var(--space-2); align-items: center; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--color-surface); max-width: 75%">
             <Icon name="link" :size="15" style="flex: none; opacity: 0.6" />
             <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px">{{ vv.link }}</span>
+            <a
+              v-if="vv.driveId || extractGoogleDriveId(vv.link)"
+              class="btn btn-secondary"
+              :href="`https://drive.google.com/uc?export=download&id=${vv.driveId || extractGoogleDriveId(vv.link)}`"
+              target="_blank"
+              rel="noreferrer"
+              style="padding-block: 6px; display: inline-flex; align-items: center; gap: 6px"
+              download
+            >
+              <Icon name="download" :size="14" />
+              Download
+            </a>
             <a class="btn btn-secondary" :href="vv.link" target="_blank" rel="noreferrer" style="padding-block: 6px">Open in Drive</a>
           </div>
         </template>
@@ -538,7 +550,22 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
           ></iframe>
           <Thumb v-else-if="fin" v-bind="thumb(r.num, 4, fin.versionNumber)" />
         </div>
-        <span v-if="fin" class="text-muted" style="font-size: 13px">Final asset · Stage 4 · v{{ fin.versionNumber }} · <a :href="fin.driveLink" target="_blank" rel="noreferrer">Open in Drive</a></span>
+        <span v-if="fin" class="text-muted" style="display: inline-flex; align-items: center; gap: var(--space-2); font-size: 13px; flex-wrap: wrap">
+          Final asset · Stage 4 · v{{ fin.versionNumber }} ·
+          <a
+            v-if="finDriveId || extractGoogleDriveId(fin.driveLink)"
+            class="btn btn-secondary"
+            :href="`https://drive.google.com/uc?export=download&id=${finDriveId || extractGoogleDriveId(fin.driveLink)}`"
+            target="_blank"
+            rel="noreferrer"
+            style="padding: 2px 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; border-radius: 999px"
+            download
+          >
+            <Icon name="download" :size="12" />
+            Download
+          </a>
+          <a :href="fin.driveLink" target="_blank" rel="noreferrer">Open in Drive</a>
+        </span>
       </div>
       <div :style="`display:flex; flex-direction:column; gap:var(--space-4); padding:var(--space-6); border-radius:calc(var(--radius-lg) * 1.3); background:${posted ? 'var(--color-accent-2-200)' : 'var(--color-surface)'}`">
         <h6 style="margin: 0" class="text-muted">Posting status</h6>

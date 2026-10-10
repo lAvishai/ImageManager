@@ -1,5 +1,23 @@
 [
   {
+    "version": "v1.11.0",
+    "date": "10/10/2026 22:50",
+    "title": "Project Rules & Guidelines (GEMINI.md)",
+    "changes": [
+      "Created GEMINI.md documenting architectural conventions, workflow stages, and coding rules.",
+      "Codified rules for Tech Data panel, Drive direct downloads, table sorting, and versioning."
+    ]
+  },
+  {
+    "version": "v1.10.0",
+    "date": "10/10/2026 22:45",
+    "title": "Google Drive Direct Download Links",
+    "changes": [
+      "Added 'Download' button alongside 'Open in Drive' buttons in Record Detail view.",
+      "Uses Google Drive direct download URL structure: https://drive.google.com/uc?export=download&id=[ID]."
+    ]
+  },
+  {
     "version": "v1.9.0",
     "date": "10/10/2026 22:35",
     "title": "Version History Changelog Modal",

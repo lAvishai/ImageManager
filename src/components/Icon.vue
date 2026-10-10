@@ -34,6 +34,11 @@ const PATHS: Record<string, string[]> = {
     'M9 9h11a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z',
     'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1',
   ],
+  download: [
+    'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4',
+    'M7 10l5 5 5-5',
+    'M12 15V3',
+  ],
 }
 </script>
 
