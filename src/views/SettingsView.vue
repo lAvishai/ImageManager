@@ -103,8 +103,7 @@ async function onReset() {
 </script>
 
 <template>
-  <main data-screen-label="Settings" style="padding: var(--space-4) clamp(16px, 4vw, var(--space-8)) var(--space-8); max-width: 960px">
-
+  <main data-screen-label="Settings" style="padding: var(--space-1) clamp(16px, 4vw, var(--space-8)) var(--space-8); max-width: 960px">
     <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-6)">
       <div>
         <h1 style="margin: 0; font-size: clamp(24px, 3vw, 36px)">Settings</h1>

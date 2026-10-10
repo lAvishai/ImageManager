@@ -66,7 +66,7 @@ async function confirm() {
 </script>
 
 <template>
-  <main data-screen-label="Batch Import" style="padding: var(--space-4) clamp(16px, 4vw, var(--space-8)) var(--space-8); max-width: 1180px">
+  <main data-screen-label="Batch Import" style="padding: var(--space-1) clamp(16px, 4vw, var(--space-8)) var(--space-8); max-width: 1180px">
     <button class="btn btn-ghost" style="margin-bottom: var(--space-3)" @click="router.push('/')"><Icon name="back" />Records</button>
     <h1 style="margin: 0">Batch import scenarios</h1>
     <p class="text-muted" style="margin: 0 0 var(--space-6); max-width: 560px; text-wrap: pretty">

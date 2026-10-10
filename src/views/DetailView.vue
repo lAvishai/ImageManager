@@ -270,7 +270,7 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
 </script>
 
 <template>
-  <main v-if="r" data-screen-label="Record Detail" style="padding: var(--space-4) clamp(16px, 4vw, var(--space-8)) var(--space-8)">
+  <main v-if="r" data-screen-label="Record Detail" style="padding: var(--space-1) clamp(16px, 4vw, var(--space-8)) var(--space-8)">
     <div style="display: flex; gap: var(--space-6); align-items: flex-end; flex-wrap: wrap; margin-bottom: var(--space-6)">
       <div style="flex: 1 1 0; min-width: 200px; max-width: 720px; margin-right: auto; align-self: flex-start">
         <h2 style="margin: 0; font-size: clamp(15px, 2vw, 34px); text-wrap: balance">{{ v1.topSentence }}</h2>

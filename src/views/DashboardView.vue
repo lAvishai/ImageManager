@@ -97,9 +97,7 @@ const summary = computed(() => `${recs.value.length} pilgis · ${recs.value.filt
 </script>
 
 <template>
-  <main data-screen-label="Records Dashboard" style="padding: var(--space-4) clamp(16px, 4vw, var(--space-8)) var(--space-8)">
-    <p class="text-muted" style="margin: 0 0 var(--space-3); font-size: 13px">{{ summary }}</p>
-
+  <main data-screen-label="Records Dashboard" style="padding: var(--space-1) clamp(16px, 4vw, var(--space-8)) var(--space-8)">
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: var(--space-3); margin-bottom: var(--space-6)">
       <button
         v-for="t in tiles"
@@ -128,6 +126,7 @@ const summary = computed(() => `${recs.value.length} pilgis · ${recs.value.filt
           <input v-model="ui.statusF" type="radio" name="statusf" :value="k" />{{ label }}
         </label>
       </div>
+      <span class="text-muted" style="font-size: 13px; white-space: nowrap">{{ summary }}</span>
       <div style="position: relative; flex: 1 1 220px; min-width: 0; max-width: 340px; margin-left: auto">
         <Icon name="search" :size="15" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); opacity: 0.55; pointer-events: none" />
         <input
