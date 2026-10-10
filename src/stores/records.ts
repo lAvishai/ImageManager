@@ -147,7 +147,7 @@ export const useRecordsStore = defineStore('records', () => {
     )
   }
 
-  function saveText(id: string, stage: 1 | 2, e: { mode: 'edit' | 'new'; vn?: number; top: string; bottom: string; scenario: string }) {
+  function saveText(id: string, stage: 1 | 2, e: { mode: 'edit' | 'new'; vn?: number; top: string; bottom: string; scenario: string; isLineBreak?: boolean }) {
     const body = stage === 1 ? { topSentence: e.top.trim(), bottomSentence: e.bottom.trim() } : { scenario: e.scenario.trim() }
     return mutate(
       id,
@@ -157,7 +157,11 @@ export const useRecordsStore = defineStore('records', () => {
         else
           vs.push({ versionNumber: vs.length + 1, ...body, createdBy: auth.email, createdAt: now(), status: 'pending', reviewedBy: null, reviewedAt: null, reviewComments: '' })
       },
-      e.mode === 'edit' ? `${id}: v${e.vn} updated` : `${id}: new ${stage === 1 ? 'text' : 'scenario'} version`,
+      e.mode === 'edit'
+        ? e.isLineBreak
+          ? `${id}: v${e.vn} line break updated`
+          : `${id}: v${e.vn} updated`
+        : `${id}: new ${stage === 1 ? 'text' : 'scenario'} version`,
     )
   }
 

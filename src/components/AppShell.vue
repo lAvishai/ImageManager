@@ -84,8 +84,14 @@ async function create() {
   <div v-if="ui.newOpen" class="dialog-backdrop" style="z-index: 50" @click="ui.newOpen = false">
     <div class="dialog" style="width: min(520px, 100%)" @click.stop>
       <div class="dialog-title">New scenario</div>
-      <div class="field"><label>Top sentence</label><input v-model="top" class="input" /></div>
-      <div class="field"><label>Bottom sentence</label><input v-model="bottom" class="input" /></div>
+      <div class="field">
+        <label>Top sentence</label>
+        <textarea v-model="top" class="input" rows="2" style="border-radius: var(--radius-md); min-height: 60px; resize: vertical"></textarea>
+      </div>
+      <div class="field">
+        <label>Bottom sentence</label>
+        <textarea v-model="bottom" class="input" rows="2" style="border-radius: var(--radius-md); min-height: 60px; resize: vertical"></textarea>
+      </div>
       <div class="dialog-actions">
         <button class="btn btn-ghost" @click="ui.newOpen = false">Cancel</button>
         <button class="btn btn-primary" :disabled="invalid" @click="create">Create PilGi</button>

@@ -36,7 +36,7 @@ const r = computed(() => store.byId(String(route.params.id)))
 
 const active = ref(1)
 const viewVn = reactive<Record<number, number | undefined>>({})
-const editor = ref<{ mode: 'edit' | 'new'; vn?: number; top: string; bottom: string; scenario: string } | null>(null)
+const editor = ref<{ mode: 'edit' | 'new'; vn?: number; top: string; bottom: string; scenario: string; isLineBreak?: boolean } | null>(null)
 const imgUpdate = ref(false)
 const linkDraft = ref('')
 const linkError = ref('')
@@ -139,6 +139,16 @@ const vv = computed(() => {
     canEdit: n <= 2 && v.status === 'pending' && open.value && !editor.value,
     editLabel: n === 1 ? 'Edit text' : 'Edit scenario',
     canNew: n <= 2 && isCur.value && !stageApproved.value && lastV.status === 'rejected' && !editor.value,
+    canUpdateLineBreak: n === 1 && s.selectedVersionNumber === v.versionNumber && !editor.value,
+    startUpdateLineBreak: () =>
+      (editor.value = {
+        mode: 'edit',
+        vn: v.versionNumber,
+        top: v.topSentence || '',
+        bottom: v.bottomSentence || '',
+        scenario: '',
+        isLineBreak: true,
+      }),
     canUpdate: n <= 4 && stageApproved.value && !(n > 2 && imgUpdate.value) && lastV.status !== 'pending' && !editor.value,
     updateLabel: n === 1 ? 'Update text' : n === 2 ? 'Update scenario' : n === 3 ? 'Update clean image' : 'Update image with text',
     startEdit: () => (editor.value = { mode: 'edit', vn: v.versionNumber, top: v.topSentence || '', bottom: v.bottomSentence || '', scenario: v.scenario || '' }),
@@ -273,8 +283,8 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
   <main v-if="r" data-screen-label="Record Detail" style="padding: var(--space-1) clamp(16px, 4vw, var(--space-8)) var(--space-8)">
     <div style="display: flex; gap: var(--space-6); align-items: flex-end; flex-wrap: wrap; margin-bottom: var(--space-6)">
       <div style="flex: 1 1 0; min-width: 200px; max-width: 720px; margin-right: auto; align-self: flex-start">
-        <h2 style="margin: 0; font-size: clamp(15px, 2vw, 34px); text-wrap: balance">{{ v1.topSentence }}</h2>
-        <h2 style="margin: 4px 0 0; font-size: clamp(15px, 2vw, 34px); text-wrap: balance">{{ v1.bottomSentence }}</h2>
+        <h2 style="margin: 0; font-size: clamp(15px, 2vw, 34px); text-wrap: balance; white-space: pre-line">{{ v1.topSentence }}</h2>
+        <h2 style="margin: 4px 0 0; font-size: clamp(15px, 2vw, 34px); text-wrap: balance; white-space: pre-line">{{ v1.bottomSentence }}</h2>
         <span class="tag tag-neutral">{{ r.id }}</span>
         <span class="text-muted" style="font-size: 12px"> Created by {{ short(r.createdBy) }} · {{ fmt(r.createdAt, tz) }}</span>
       </div>
@@ -338,8 +348,8 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
     <div v-if="isReview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--space-6); align-items: start">
       <div style="display: flex; flex-direction: column; gap: var(--space-4)">
         <div v-if="showCaption && vv" style="width: 75%; max-width: 75%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-6); min-height: 320px; padding: clamp(20px, 4vw, var(--space-8)); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-accent-2-200)">
-          <div style="font-family: var(--font-heading); font-size: 28px; line-height: 1.15; text-wrap: balance; text-align: center">{{ vv.v.topSentence }}</div>
-          <div style="font-family: var(--font-heading); font-size: 28px; line-height: 1.15; text-wrap: balance; text-align: center">{{ vv.v.bottomSentence }}</div>
+          <div style="font-family: var(--font-heading); font-size: 28px; line-height: 1.15; text-wrap: balance; text-align: center; white-space: pre-line">{{ vv.v.topSentence }}</div>
+          <div style="font-family: var(--font-heading); font-size: 28px; line-height: 1.15; text-wrap: balance; text-align: center; white-space: pre-line">{{ vv.v.bottomSentence }}</div>
         </div>
         <div v-if="showScenario && vv" style="width: 75%; max-width: 75%; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--space-4); min-height: 320px; padding: clamp(20px, 4vw, var(--space-8)); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-accent-100)">
           <span class="tag tag-neutral" style="align-self: flex-start">Scenario</span>
@@ -352,10 +362,22 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
           <button class="btn btn-primary" @click="editor = { mode: 'new', top: '', bottom: '', scenario: '' }">Write scenario</button>
         </div>
         <div v-if="showEditor && editor && st" style="width: 75%; max-width: 75%; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-surface)">
-          <h4 style="margin: 0">{{ editor.mode === 'edit' ? `Edit version ${editor.vn}` : `Version ${st.versions.length + 1}` }}</h4>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-2)">
+            <h4 style="margin: 0">{{ editor.isLineBreak ? `Update line break · v${editor.vn}` : editor.mode === 'edit' ? `Edit version ${editor.vn}` : `Version ${st.versions.length + 1}` }}</h4>
+            <span v-if="editor.isLineBreak" class="tag tag-accent-2" style="font-size: 11px">Final version</span>
+          </div>
+          <p v-if="editor.isLineBreak" class="text-muted" style="margin: 0; font-size: 13px">
+            Adjust line breaks or sentence text directly on this final version. It will update in place without creating a new version.
+          </p>
           <template v-if="a === 1">
-            <div class="field"><label>Top sentence</label><input v-model="editor.top" class="input" /></div>
-            <div class="field"><label>Bottom sentence</label><input v-model="editor.bottom" class="input" /></div>
+            <div class="field">
+              <label>Top sentence</label>
+              <textarea v-model="editor.top" class="input" rows="2" style="border-radius: var(--radius-md); min-height: 60px; resize: vertical"></textarea>
+            </div>
+            <div class="field">
+              <label>Bottom sentence</label>
+              <textarea v-model="editor.bottom" class="input" rows="2" style="border-radius: var(--radius-md); min-height: 60px; resize: vertical"></textarea>
+            </div>
           </template>
           <div v-else class="field">
             <label>Scenario description</label>
@@ -363,7 +385,7 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
           </div>
           <div style="display: flex; gap: var(--space-2); justify-content: flex-end">
             <button class="btn btn-ghost" @click="editor = null">Cancel</button>
-            <button class="btn btn-primary" :disabled="editorInvalid" @click="saveEditor">{{ editor.mode === 'edit' ? 'Update' : 'Submit for review' }}</button>
+            <button class="btn btn-primary" :disabled="editorInvalid" @click="saveEditor">{{ editor.isLineBreak ? 'Update line break' : editor.mode === 'edit' ? 'Update' : 'Submit for review' }}</button>
           </div>
         </div>
         <template v-if="showImage && vv && (vv.driveId || vv.thumb)">
@@ -408,6 +430,14 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
             </template>
             <button v-if="vv.canEdit" class="btn btn-ghost" @click="vv.startEdit">{{ vv.editLabel }}</button>
             <button v-if="vv.canNew" class="btn btn-primary" @click="vv.startNew">Write new version</button>
+            <button
+              v-if="vv.canUpdateLineBreak"
+              class="btn btn-secondary"
+              title="Update line breaks on this final version without creating a new version"
+              @click="vv.startUpdateLineBreak"
+            >
+              <Icon name="pencil" />Update line break
+            </button>
             <button v-if="vv.canUpdate" class="btn btn-secondary" title="Creates a new version for review; the approved version stays final until the new one is approved" @click="vv.startUpdate">{{ vv.updateLabel }}</button>
           </div>
         </div>

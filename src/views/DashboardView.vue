@@ -162,8 +162,8 @@ const summary = computed(() => `${recs.value.length} pilgis · ${recs.value.filt
                   <Icon name="image" :size="18" />
                 </span>
                 <div style="min-width: 0">
-                  <div style="font-weight: 600; line-height: 1.3">{{ row.top }}</div>
-                  <div style="font-weight: 600; line-height: 1.3">{{ row.bottom }}</div>
+                  <div style="font-weight: 600; line-height: 1.3; white-space: pre-line">{{ row.top }}</div>
+                  <div style="font-weight: 600; line-height: 1.3; white-space: pre-line">{{ row.bottom }}</div>
                   <div style="font-size: 11px; color: var(--color-neutral-600); margin-top: 2px">{{ row.id }}</div>
                 </div>
               </div>
