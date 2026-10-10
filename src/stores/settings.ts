@@ -60,6 +60,10 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
+  function reload() {
+    current.value = loadSavedSettings()
+  }
+
   function reset() {
     save({ ...DEFAULT_SETTINGS })
   }
@@ -68,5 +72,6 @@ export const useSettingsStore = defineStore('settings', () => {
     current,
     save,
     reset,
+    reload,
   }
 })
