@@ -6,6 +6,7 @@ export interface AppSettings {
   topTextLocation: number
   bottomImagePrompt: string
   bottomTextLocation: number
+  defaultFontSize: number
   elephantDescription: string
   giraffeDescription: string
   foxDescription: string
@@ -18,6 +19,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   topTextLocation: 10,
   bottomImagePrompt: '',
   bottomTextLocation: 85,
+  defaultFontSize: 24,
   elephantDescription: '',
   giraffeDescription: '',
   foxDescription: '',
@@ -37,6 +39,7 @@ function loadSavedSettings(): AppSettings {
       topTextLocation: typeof parsed.topTextLocation === 'number' ? parsed.topTextLocation : DEFAULT_SETTINGS.topTextLocation,
       bottomImagePrompt: typeof parsed.bottomImagePrompt === 'string' ? parsed.bottomImagePrompt : DEFAULT_SETTINGS.bottomImagePrompt,
       bottomTextLocation: typeof parsed.bottomTextLocation === 'number' ? parsed.bottomTextLocation : DEFAULT_SETTINGS.bottomTextLocation,
+      defaultFontSize: typeof parsed.defaultFontSize === 'number' ? parsed.defaultFontSize : DEFAULT_SETTINGS.defaultFontSize,
       elephantDescription: typeof parsed.elephantDescription === 'string' ? parsed.elephantDescription : DEFAULT_SETTINGS.elephantDescription,
       giraffeDescription: typeof parsed.giraffeDescription === 'string' ? parsed.giraffeDescription : DEFAULT_SETTINGS.giraffeDescription,
       foxDescription: typeof parsed.foxDescription === 'string' ? parsed.foxDescription : DEFAULT_SETTINGS.foxDescription,

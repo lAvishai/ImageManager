@@ -15,6 +15,7 @@ const form = reactive<AppSettings>({
   topTextLocation: 0,
   bottomImagePrompt: '',
   bottomTextLocation: 0,
+  defaultFontSize: 24,
   elephantDescription: '',
   giraffeDescription: '',
   foxDescription: '',
@@ -59,6 +60,7 @@ const isDirty = computed(() => {
     form.topTextLocation !== cur.topTextLocation ||
     form.bottomImagePrompt !== cur.bottomImagePrompt ||
     form.bottomTextLocation !== cur.bottomTextLocation ||
+    form.defaultFontSize !== cur.defaultFontSize ||
     form.elephantDescription !== cur.elephantDescription ||
     form.giraffeDescription !== cur.giraffeDescription ||
     form.foxDescription !== cur.foxDescription ||
@@ -75,6 +77,7 @@ async function onSave() {
     topTextLocation: Number(form.topTextLocation) || 0,
     bottomImagePrompt: form.bottomImagePrompt.trim(),
     bottomTextLocation: Number(form.bottomTextLocation) || 0,
+    defaultFontSize: Number(form.defaultFontSize) || 24,
     elephantDescription: form.elephantDescription.trim(),
     giraffeDescription: form.giraffeDescription.trim(),
     foxDescription: form.foxDescription.trim(),
@@ -201,6 +204,18 @@ async function onReset() {
               type="number"
               class="input"
               placeholder="85"
+            />
+          </div>
+
+          <div class="field">
+            <label for="defaultFontSize">Default font size</label>
+            <input
+              id="defaultFontSize"
+              v-model.number="form.defaultFontSize"
+              type="number"
+              class="input"
+              placeholder="24"
+              min="1"
             />
           </div>
         </div>

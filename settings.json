@@ -3,6 +3,7 @@
   "topTextLocation": 10,
   "bottomImagePrompt": "",
   "bottomTextLocation": 85,
+  "defaultFontSize": 24,
   "elephantDescription": "",
   "giraffeDescription": "",
   "foxDescription": "",
