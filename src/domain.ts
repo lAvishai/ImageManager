@@ -139,6 +139,16 @@ export const thumb = (num: number, stage: number, vn: number) => {
   const c = TILE[(num * 3 + stage + vn) % TILE.length]
   return { bg: c[0], fg: c[1], text: stage === 4 }
 }
+export const extractGoogleDriveId = (url: string | null | undefined): string | null => {
+  if (!url) return null
+  const str = url.trim()
+  if (!/drive\.google\.com|docs\.google\.com/i.test(str)) return null
+  const dMatch = str.match(/\/d\/([a-zA-Z0-9_-]+)/)
+  if (dMatch?.[1]) return dMatch[1]
+  const idMatch = str.match(/[?&]id=([a-zA-Z0-9_-]+)/)
+  if (idMatch?.[1]) return idMatch[1]
+  return null
+}
 export const recStatus = (r: PilgiRecord): RecStatus => {
   if (r.currentStage === 5) return r.stage5.status === 'posted' ? 'posted' : 'ready'
   const v = last(stageData(r, r.currentStage))

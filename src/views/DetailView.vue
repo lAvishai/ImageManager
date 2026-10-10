@@ -10,6 +10,7 @@ import {
   SN,
   ST,
   approvedIn,
+  extractGoogleDriveId,
   fmt,
   last,
   shown1,
@@ -125,6 +126,7 @@ const vv = computed(() => {
     comment: v.reviewComments || 'No comment.',
     commentBg: v.status === 'rejected' ? 'var(--color-accent-100)' : 'var(--color-accent-2-100)',
     link: v.imageLink || v.driveLink || '',
+    driveId: n > 2 ? extractGoogleDriveId(v.imageLink || v.driveLink) : null,
     thumb: n > 2 ? thumb(rec.value.num, n, v.versionNumber) : null,
     canReview: v.status === 'pending' && open.value,
     approveLabel: n === 1 ? 'Approve text' : n === 2 ? 'Approve scenario' : 'Approve & select as final',
@@ -170,6 +172,7 @@ const versions = computed(() => {
       byLine: `${short(a.value <= 2 ? x.createdBy : x.uploadedBy)} · ${fmt(a.value <= 2 ? x.createdAt : x.uploadedAt)}`,
       comment: x.reviewComments,
       reviewer: short(x.reviewedBy),
+      driveId: a.value > 2 ? extractGoogleDriveId(x.imageLink || x.driveLink) : null,
       thumb: a.value > 2 ? thumb(rec.value.num, a.value, x.versionNumber) : null,
       bg: x.versionNumber === vnSel.value ? 'var(--color-surface)' : 'var(--color-neutral-100)',
       ring: x.versionNumber === vnSel.value ? '2px solid var(--color-accent)' : 'none',
@@ -245,6 +248,7 @@ function pickChar(k: number, n: string) {
 
 // Posting
 const fin = computed(() => rec.value.stage4.versions.find((x) => x.status === 'approved'))
+const finDriveId = computed(() => (fin.value ? extractGoogleDriveId(fin.value.driveLink || fin.value.imageLink) : null))
 const posted = computed(() => rec.value.stage5.status === 'posted')
 function editDate() {
   dateDraft.value = rec.value.stage5.postedAt ? rec.value.stage5.postedAt.slice(0, 16) : ''
@@ -356,11 +360,20 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
             <button class="btn btn-primary" :disabled="editorInvalid" @click="saveEditor">{{ editor.mode === 'edit' ? 'Update' : 'Submit for review' }}</button>
           </div>
         </div>
-        <template v-if="showImage && vv && vv.thumb">
-          <div style="aspect-ratio: 4 / 3; border-radius: calc(var(--radius-lg) * 1.4); overflow: hidden" class="washed">
-            <Thumb v-bind="vv.thumb" />
+        <template v-if="showImage && vv && (vv.driveId || vv.thumb)">
+          <div style="width: 75%; aspect-ratio: 4 / 3; border-radius: calc(var(--radius-lg) * 1.4); overflow: hidden; background: var(--color-surface); position: relative" class="washed">
+            <iframe
+              v-if="vv.driveId"
+              :src="`https://drive.google.com/file/d/${vv.driveId}/preview`"
+              width="100%"
+              height="100%"
+              style="border: 0; display: block; width: 100%; height: 100%"
+              allow="autoplay"
+              loading="lazy"
+            ></iframe>
+            <Thumb v-else-if="vv.thumb" v-bind="vv.thumb" />
           </div>
-          <div style="display: flex; gap: var(--space-2); align-items: center; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--color-surface)">
+          <div style="display: flex; gap: var(--space-2); align-items: center; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--color-surface); max-width: 80%">
             <Icon name="link" :size="15" style="flex: none; opacity: 0.6" />
             <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px">{{ vv.link }}</span>
             <a class="btn btn-secondary" :href="vv.link" target="_blank" rel="noreferrer" style="padding-block: 6px">Open in Drive</a>
@@ -417,7 +430,17 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
 
         <div v-if="a === 3 && versions.length" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: var(--space-3)">
           <button v-for="v in versions" :key="v.vn" :style="`all:unset; cursor:pointer; display:flex; flex-direction:column; gap:6px; padding:6px; border-radius:var(--radius-lg); background:${v.bg}; outline:${v.ring}; outline-offset:-2px`" @click="pickVersion(v.vn)">
-            <div style="position: relative; aspect-ratio: 4 / 3; border-radius: 22px; overflow: hidden" class="washed"><Thumb v-if="v.thumb" v-bind="v.thumb" /></div>
+            <div style="position: relative; aspect-ratio: 4 / 3; border-radius: 22px; overflow: hidden; background: var(--color-surface)" class="washed">
+              <iframe
+                v-if="v.driveId"
+                :src="`https://drive.google.com/file/d/${v.driveId}/preview`"
+                width="100%"
+                height="100%"
+                style="border: 0; display: block; width: 100%; height: 100%; pointer-events: none"
+                loading="lazy"
+              ></iframe>
+              <Thumb v-else-if="v.thumb" v-bind="v.thumb" />
+            </div>
             <div style="display: flex; align-items: center; gap: 6px; padding: 0 6px 4px">
               <span style="font-family: var(--font-heading); font-size: 14px; margin-right: auto">{{ v.label }}</span>
               <span class="tag" :class="v.tagCls">{{ v.statusLabel }}</span>
@@ -427,7 +450,17 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
 
         <div v-if="a !== 3 && versions.length" style="display: flex; flex-direction: column; gap: var(--space-2)">
           <button v-for="v in versions" :key="v.vn" :style="`all:unset; cursor:pointer; display:flex; gap:var(--space-3); padding:var(--space-3) var(--space-4); border-radius:var(--radius-lg); background:${v.bg}; outline:${v.ring}; outline-offset:-2px`" @click="pickVersion(v.vn)">
-            <div v-if="v.thumb" style="width: 64px; height: 48px; flex: none; border-radius: 12px; overflow: hidden"><Thumb v-bind="v.thumb" /></div>
+            <div v-if="v.driveId || v.thumb" style="width: 64px; height: 48px; flex: none; border-radius: 12px; overflow: hidden; position: relative; background: var(--color-surface)">
+              <iframe
+                v-if="v.driveId"
+                :src="`https://drive.google.com/file/d/${v.driveId}/preview`"
+                width="100%"
+                height="100%"
+                style="border: 0; display: block; width: 100%; height: 100%; pointer-events: none"
+                loading="lazy"
+              ></iframe>
+              <Thumb v-else-if="v.thumb" v-bind="v.thumb" />
+            </div>
             <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
               <div style="display: flex; align-items: center; gap: 6px">
                 <span style="font-family: var(--font-heading); font-size: 14px; margin-right: auto">{{ v.label }}</span>
@@ -444,8 +477,17 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
 
     <div v-if="isPosting" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--space-6); align-items: start">
       <div style="display: flex; flex-direction: column; gap: var(--space-3)">
-        <div style="aspect-ratio: 4 / 3; border-radius: calc(var(--radius-lg) * 1.4); overflow: hidden" class="washed">
-          <Thumb v-if="fin" v-bind="thumb(r.num, 4, fin.versionNumber)" />
+        <div style="width: 80%; aspect-ratio: 4 / 3; border-radius: calc(var(--radius-lg) * 1.4); overflow: hidden; background: var(--color-surface); position: relative" class="washed">
+          <iframe
+            v-if="finDriveId"
+            :src="`https://drive.google.com/file/d/${finDriveId}/preview`"
+            width="100%"
+            height="100%"
+            style="border: 0; display: block; width: 100%; height: 100%"
+            allow="autoplay"
+            loading="lazy"
+          ></iframe>
+          <Thumb v-else-if="fin" v-bind="thumb(r.num, 4, fin.versionNumber)" />
         </div>
         <span v-if="fin" class="text-muted" style="font-size: 13px">Final asset · Stage 4 · v{{ fin.versionNumber }} · <a :href="fin.driveLink" target="_blank" rel="noreferrer">Open in Drive</a></span>
       </div>
