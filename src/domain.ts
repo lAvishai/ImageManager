@@ -118,14 +118,135 @@ export const CHARACTER_ICONS: Record<string, { glyph: string; bg: string }> = {
 }
 
 const MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-export const fmt = (iso: string | null | undefined) => {
+export const fmt = (iso: string | null | undefined, timeZone?: string) => {
   if (!iso) return '—'
   const d = new Date(iso)
-  return `${MO[d.getUTCMonth()]} ${d.getUTCDate()}, ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`
+  if (isNaN(d.getTime())) return '—'
+  let tz = timeZone
+  if (!tz && typeof localStorage !== 'undefined') {
+    try {
+      const s = JSON.parse(localStorage.getItem('pilgi_settings') || '{}')
+      if (s?.timeZone) tz = s.timeZone
+    } catch {}
+  }
+  tz = tz || 'Asia/Jerusalem'
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).formatToParts(d)
+    const m = parts.find((p) => p.type === 'month')?.value || ''
+    const day = parts.find((p) => p.type === 'day')?.value || ''
+    const hour = parts.find((p) => p.type === 'hour')?.value || ''
+    const min = parts.find((p) => p.type === 'minute')?.value || ''
+    return `${m} ${day}, ${hour}:${min}`
+  } catch {
+    return `${MO[d.getUTCMonth()]} ${d.getUTCDate()}, ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`
+  }
 }
+
+/** Formats a post date ISO string as dd/MM/yyyy in the specified timeZone */
+export const fmtPostDate = (iso: string | null | undefined, timeZone?: string): string => {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return '—'
+  let tz = timeZone
+  if (!tz && typeof localStorage !== 'undefined') {
+    try {
+      const s = JSON.parse(localStorage.getItem('pilgi_settings') || '{}')
+      if (s?.timeZone) tz = s.timeZone
+    } catch {}
+  }
+  tz = tz || 'Asia/Jerusalem'
+  try {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: tz,
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).formatToParts(d)
+    const day = parts.find((p) => p.type === 'day')?.value || ''
+    const month = parts.find((p) => p.type === 'month')?.value || ''
+    const year = parts.find((p) => p.type === 'year')?.value || ''
+    return `${day}/${month}/${year}`
+  } catch {
+    const day = String(d.getUTCDate()).padStart(2, '0')
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0')
+    const year = d.getUTCFullYear()
+    return `${day}/${month}/${year}`
+  }
+}
+
 export const short = (e: string | null | undefined) => (e ? e.split('@')[0] : '—')
 export const now = () => new Date().toISOString()
 export const pad = (n: number) => 'rec_' + String(n).padStart(4, '0')
+
+/** Converts an ISO UTC date string into YYYY-MM-DDTHH:mm in the specified timeZone */
+export const isoToTzLocal = (iso: string | null | undefined, timeZone = 'Asia/Jerusalem'): string => {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).formatToParts(d)
+    const y = parts.find((p) => p.type === 'year')?.value || ''
+    const m = parts.find((p) => p.type === 'month')?.value || ''
+    const day = parts.find((p) => p.type === 'day')?.value || ''
+    const hour = parts.find((p) => p.type === 'hour')?.value || ''
+    const min = parts.find((p) => p.type === 'minute')?.value || ''
+    return `${y}-${m}-${day}T${hour}:${min}`
+  } catch {
+    return iso.slice(0, 16)
+  }
+}
+
+/** Converts a YYYY-MM-DDTHH:mm string assumed to be in timeZone into an ISO UTC string */
+export const tzLocalToIso = (localStr: string, timeZone = 'Asia/Jerusalem'): string => {
+  if (!localStr) return ''
+  const [datePart, timePart] = localStr.split('T')
+  if (!datePart || !timePart) return new Date(localStr).toISOString()
+  const [year, month, day] = datePart.split('-').map(Number)
+  const [hour, min] = timePart.split(':').map(Number)
+  const naiveUtc = Date.UTC(year, month - 1, day, hour, min, 0)
+  try {
+    const invDate = new Date(naiveUtc)
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false,
+    }).formatToParts(invDate)
+    const getPart = (type: string) => Number(parts.find((p) => p.type === type)?.value)
+    const tzYear = getPart('year')
+    const tzMonth = getPart('month')
+    const tzDay = getPart('day')
+    let tzHour = getPart('hour')
+    if (tzHour === 24) tzHour = 0
+    const tzMin = getPart('minute')
+    const tzSec = getPart('second')
+
+    const tzTime = Date.UTC(tzYear, tzMonth - 1, tzDay, tzHour, tzMin, tzSec)
+    const offsetMs = tzTime - naiveUtc
+    return new Date(naiveUtc - offsetMs).toISOString()
+  } catch {
+    return new Date(localStr + ':00Z').toISOString()
+  }
+}
 
 export const approvedIn = (st: Stage) => st.versions.some((v) => v.status === 'approved')
 export const stageOf = (r: PilgiRecord) =>

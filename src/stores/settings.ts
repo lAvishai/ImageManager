@@ -10,6 +10,7 @@ export interface AppSettings {
   giraffeDescription: string
   foxDescription: string
   promptText: string
+  timeZone: string
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -21,6 +22,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   giraffeDescription: '',
   foxDescription: '',
   promptText: '',
+  timeZone: 'Asia/Jerusalem',
 }
 
 const STORAGE_KEY = 'pilgi_settings'
@@ -39,6 +41,7 @@ function loadSavedSettings(): AppSettings {
       giraffeDescription: typeof parsed.giraffeDescription === 'string' ? parsed.giraffeDescription : DEFAULT_SETTINGS.giraffeDescription,
       foxDescription: typeof parsed.foxDescription === 'string' ? parsed.foxDescription : DEFAULT_SETTINGS.foxDescription,
       promptText: typeof parsed.promptText === 'string' ? parsed.promptText : DEFAULT_SETTINGS.promptText,
+      timeZone: typeof parsed.timeZone === 'string' && parsed.timeZone ? parsed.timeZone : DEFAULT_SETTINGS.timeZone,
     }
   } catch {
     return { ...DEFAULT_SETTINGS }

@@ -2,12 +2,14 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import Icon from '../components/Icon.vue'
-import { SN, ST, type RecStatus, fmt, recStatus, recThumb, shown1, short } from '../domain'
+import { SN, ST, type RecStatus, fmt, fmtPostDate, recStatus, recThumb, shown1, short } from '../domain'
 import { useRecordsStore } from '../stores/records'
 import { useUiStore } from '../stores/ui'
+import { useSettingsStore } from '../stores/settings'
 
 const store = useRecordsStore()
 const ui = useUiStore()
+const settings = useSettingsStore()
 const router = useRouter()
 
 const recs = computed(() => store.visible)
@@ -79,9 +81,9 @@ const rows = computed(() => {
         stageName: SN[r.currentStage],
         tagCls: ST[k].cls,
         statusLabel: ST[k].label,
-        postedAt: r.stage5.status === 'posted' ? fmt(r.stage5.postedAt) : '—',
+        postedAt: r.stage5.status === 'posted' ? fmtPostDate(r.stage5.postedAt, settings.current.timeZone) : '—',
         by: short(r.lastModifiedBy),
-        at: fmt(r.lastModifiedAt),
+        at: fmt(r.lastModifiedAt, settings.current.timeZone),
         hasThumb: !!recThumb(r),
         dots: [1, 2, 3, 4, 5].map((n) => (done(n) ? 'var(--color-accent-2)' : n === r.currentStage ? 'var(--color-accent)' : 'var(--color-neutral-300)')),
         rc,

@@ -12,19 +12,25 @@ import {
   approvedIn,
   extractGoogleDriveId,
   fmt,
+  fmtPostDate,
+  isoToTzLocal,
   last,
   shown1,
   short,
   stageData,
   thumb,
+  tzLocalToIso,
 } from '../domain'
 import { useRecordsStore } from '../stores/records'
 import { useUiStore } from '../stores/ui'
+import { useSettingsStore } from '../stores/settings'
 
 const route = useRoute()
 const router = useRouter()
 const store = useRecordsStore()
 const ui = useUiStore()
+const settings = useSettingsStore()
+const tz = computed(() => settings.current.timeZone || 'Asia/Jerusalem')
 
 const r = computed(() => store.byId(String(route.params.id)))
 
@@ -87,7 +93,7 @@ const steps = computed(() =>
         const st = stageData(x, n)
         const l = last(st)
         sub = done ? `Approved · v${st.selectedVersionNumber}` : l ? `${ST[l.status].label} · v${l.versionNumber}` : n === 2 ? 'Not written yet' : 'Awaiting upload'
-      } else sub = x.stage5.status === 'posted' ? 'Posted ' + fmt(x.stage5.postedAt).split(',')[0] : 'Ready to post'
+      } else sub = x.stage5.status === 'posted' ? 'Posted ' + fmtPostDate(x.stage5.postedAt, tz.value) : 'Ready to post'
     }
     return {
       n, name: SN[n], sub, locked, done,
@@ -120,9 +126,9 @@ const vv = computed(() => {
     v,
     label: `Version ${v.versionNumber}`,
     isFinal: s.selectedVersionNumber === v.versionNumber,
-    byLine: `${n <= 2 ? 'Written' : 'Uploaded'} by ${short(owner)} · ${fmt(n <= 2 ? v.createdAt : v.uploadedAt)}`,
+    byLine: `${n <= 2 ? 'Written' : 'Uploaded'} by ${short(owner)} · ${fmt(n <= 2 ? v.createdAt : v.uploadedAt, tz.value)}`,
     hasReview: v.status !== 'pending',
-    reviewLine: `${v.status === 'approved' ? 'Approved' : 'Rejected'} by ${short(v.reviewedBy)} · ${fmt(v.reviewedAt)}`,
+    reviewLine: `${v.status === 'approved' ? 'Approved' : 'Rejected'} by ${short(v.reviewedBy)} · ${fmt(v.reviewedAt, tz.value)}`,
     comment: v.reviewComments || 'No comment.',
     commentBg: v.status === 'rejected' ? 'var(--color-accent-100)' : 'var(--color-accent-2-100)',
     link: v.imageLink || v.driveLink || '',
@@ -169,7 +175,7 @@ const versions = computed(() => {
       vn: x.versionNumber,
       tagCls: ST[x.status].cls,
       statusLabel: s.selectedVersionNumber === x.versionNumber ? 'Final' : ST[x.status].label,
-      byLine: `${short(a.value <= 2 ? x.createdBy : x.uploadedBy)} · ${fmt(a.value <= 2 ? x.createdAt : x.uploadedAt)}`,
+      byLine: `${short(a.value <= 2 ? x.createdBy : x.uploadedBy)} · ${fmt(a.value <= 2 ? x.createdAt : x.uploadedAt, tz.value)}`,
       comment: x.reviewComments,
       reviewer: short(x.reviewedBy),
       driveId: a.value > 2 ? extractGoogleDriveId(x.imageLink || x.driveLink) : null,
@@ -251,13 +257,13 @@ const fin = computed(() => rec.value.stage4.versions.find((x) => x.status === 'a
 const finDriveId = computed(() => (fin.value ? extractGoogleDriveId(fin.value.driveLink || fin.value.imageLink) : null))
 const posted = computed(() => rec.value.stage5.status === 'posted')
 function editDate() {
-  dateDraft.value = rec.value.stage5.postedAt ? rec.value.stage5.postedAt.slice(0, 16) : ''
+  dateDraft.value = rec.value.stage5.postedAt ? isoToTzLocal(rec.value.stage5.postedAt, tz.value) : ''
 }
 async function saveDate() {
   const v = dateDraft.value
   if (!v) return
   dateDraft.value = null
-  await store.setPostDate(rec.value.id, new Date(v + ':00Z').toISOString())
+  await store.setPostDate(rec.value.id, tzLocalToIso(v, tz.value))
 }
 
 const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${dialog.value.vn}` } : null))
@@ -270,7 +276,7 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
         <h2 style="margin: 0; font-size: clamp(15px, 2vw, 34px); text-wrap: balance">{{ v1.topSentence }}</h2>
         <h2 style="margin: 4px 0 0; font-size: clamp(15px, 2vw, 34px); text-wrap: balance">{{ v1.bottomSentence }}</h2>
         <span class="tag tag-neutral">{{ r.id }}</span>
-        <span class="text-muted" style="font-size: 12px"> Created by {{ short(r.createdBy) }} · {{ fmt(r.createdAt) }}</span>
+        <span class="text-muted" style="font-size: 12px"> Created by {{ short(r.createdBy) }} · {{ fmt(r.createdAt, tz) }}</span>
       </div>
       <div style="display: flex; flex-direction: column; gap: var(--space-2); align-self: flex-start">
         <button class="btn btn-secondary" style="display: flex; align-items: center; gap: var(--space-2); width: 100%" @click="ui.openRemarks(r.id, a)">
@@ -306,7 +312,7 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
       </div>
       <div style="display: flex; flex-direction: column; gap: 2px; align-self: flex-start; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); font-size: 13px">
         <span class="text-muted" style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase">Last modified</span>
-        <span><b>{{ r.lastModifiedBy }}</b> · {{ fmt(r.lastModifiedAt) }}</span>
+        <span><b>{{ r.lastModifiedBy }}</b> · {{ fmt(r.lastModifiedAt, tz) }}</span>
       </div>
     </div>
 
@@ -331,21 +337,21 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
 
     <div v-if="isReview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--space-6); align-items: start">
       <div style="display: flex; flex-direction: column; gap: var(--space-4)">
-        <div v-if="showCaption && vv" style="display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-6); min-height: 320px; padding: clamp(20px, 4vw, var(--space-8)); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-accent-2-200)">
+        <div v-if="showCaption && vv" style="width: 75%; max-width: 75%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-6); min-height: 320px; padding: clamp(20px, 4vw, var(--space-8)); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-accent-2-200)">
           <div style="font-family: var(--font-heading); font-size: 28px; line-height: 1.15; text-wrap: balance; text-align: center">{{ vv.v.topSentence }}</div>
           <div style="font-family: var(--font-heading); font-size: 28px; line-height: 1.15; text-wrap: balance; text-align: center">{{ vv.v.bottomSentence }}</div>
         </div>
-        <div v-if="showScenario && vv" style="display: flex; flex-direction: column; gap: var(--space-4); min-height: 320px; padding: clamp(20px, 4vw, var(--space-8)); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-accent-100)">
+        <div v-if="showScenario && vv" style="width: 75%; max-width: 75%; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--space-4); min-height: 320px; padding: clamp(20px, 4vw, var(--space-8)); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-accent-100)">
           <span class="tag tag-neutral" style="align-self: flex-start">Scenario</span>
           <div style="font-size: 22px; line-height: 1.45; color: var(--color-accent-900); text-wrap: pretty; max-width: 620px">{{ vv.v.scenario }}</div>
           <div class="text-muted" style="margin-top: auto; font-size: 13px">For “{{ v1.topSentence }} / {{ v1.bottomSentence }}”</div>
         </div>
-        <div v-if="showScenarioEmpty" style="min-height: 300px; border-radius: calc(var(--radius-lg) * 1.4); border: 2px dashed var(--color-divider); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: var(--space-8); gap: var(--space-3)">
+        <div v-if="showScenarioEmpty" style="width: 75%; max-width: 75%; box-sizing: border-box; min-height: 300px; border-radius: calc(var(--radius-lg) * 1.4); border: 2px dashed var(--color-divider); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: var(--space-8); gap: var(--space-3)">
           <h3 style="margin: 0">No scenario yet</h3>
           <p class="text-muted" style="margin: 0; max-width: 380px">Describe the scene the image should show. It goes to review like the text.</p>
           <button class="btn btn-primary" @click="editor = { mode: 'new', top: '', bottom: '', scenario: '' }">Write scenario</button>
         </div>
-        <div v-if="showEditor && editor && st" style="display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-surface)">
+        <div v-if="showEditor && editor && st" style="width: 75%; max-width: 75%; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-surface)">
           <h4 style="margin: 0">{{ editor.mode === 'edit' ? `Edit version ${editor.vn}` : `Version ${st.versions.length + 1}` }}</h4>
           <template v-if="a === 1">
             <div class="field"><label>Top sentence</label><input v-model="editor.top" class="input" /></div>
@@ -501,7 +507,7 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
         <div v-if="posted" style="display: grid; grid-template-columns: auto 1fr; gap: 4px var(--space-4); font-size: 14px">
           <span class="text-muted" style="align-self: center">Posted</span>
           <span v-if="dateDraft == null" style="display: flex; align-items: center; gap: var(--space-2)">
-            <span>{{ fmt(r.stage5.postedAt) }}</span>
+            <span :title="fmt(r.stage5.postedAt, tz)">{{ fmtPostDate(r.stage5.postedAt, tz) }}</span>
             <button class="btn btn-ghost btn-icon" title="Edit post date" aria-label="Edit post date" style="width: 30px; height: 30px; padding: 0" @click="editDate"><Icon name="pencil" :size="15" /></button>
           </span>
           <span v-else style="display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap">

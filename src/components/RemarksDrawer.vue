@@ -5,10 +5,12 @@ import { SN, fmt, short } from '../domain'
 import { useAuthStore } from '../stores/auth'
 import { useRecordsStore } from '../stores/records'
 import { useUiStore } from '../stores/ui'
+import { useSettingsStore } from '../stores/settings'
 
 const ui = useUiStore()
 const auth = useAuthStore()
 const store = useRecordsStore()
+const settings = useSettingsStore()
 
 const draft = ref('')
 const listEl = ref<HTMLElement | null>(null)
@@ -26,7 +28,7 @@ const items = computed(() => {
       name: mine ? 'You' : short(m.by),
       glyph: short(m.by).charAt(0).toUpperCase(),
       avatarBg: AV[i % AV.length],
-      at: fmt(m.at),
+      at: fmt(m.at, settings.current.timeZone),
       stageLabel: `Written at Stage ${m.stage} · ${SN[m.stage]}`,
     }
   })
