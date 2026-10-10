@@ -5,6 +5,7 @@ import Icon from '../components/Icon.vue'
 import Thumb from '../components/Thumb.vue'
 import ReviewDialog from '../components/ReviewDialog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
+import TechDataDrawer from '../components/TechDataDrawer.vue'
 import {
   CHARACTER_ICONS,
   SN,
@@ -44,6 +45,7 @@ const dateDraft = ref<string | null>(null)
 const charOpen = ref<number | null>(null)
 const dialog = ref<{ stage: number; vn: number } | null>(null)
 const deleteConfirmOpen = ref(false)
+const techDataOpen = ref(false)
 
 async function onDeleteConfirm() {
   deleteConfirmOpen.value = false
@@ -320,9 +322,20 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
           </div>
         </div>
       </div>
-      <div style="display: flex; flex-direction: column; gap: 2px; align-self: flex-start; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); font-size: 13px">
-        <span class="text-muted" style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase">Last modified</span>
-        <span><b>{{ r.lastModifiedBy }}</b> · {{ fmt(r.lastModifiedAt, tz) }}</span>
+      <div style="display: flex; flex-direction: column; gap: var(--space-2); align-self: flex-start">
+        <div style="display: flex; flex-direction: column; gap: 2px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); font-size: 13px">
+          <span class="text-muted" style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase">Last modified</span>
+          <span><b>{{ r.lastModifiedBy }}</b> · {{ fmt(r.lastModifiedAt, tz) }}</span>
+        </div>
+        <button
+          class="btn btn-secondary"
+          style="display: flex; align-items: center; justify-content: center; gap: var(--space-2); width: 100%"
+          title="Open technical parameters & scenario prompt"
+          @click="techDataOpen = true"
+        >
+          <Icon name="gear" :size="15" />
+          <span>Tech Data</span>
+        </button>
       </div>
     </div>
 
@@ -572,6 +585,12 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
       :danger="true"
       @cancel="deleteConfirmOpen = false"
       @confirm="onDeleteConfirm"
+    />
+
+    <TechDataDrawer
+      :open="techDataOpen"
+      :record="r"
+      @close="techDataOpen = false"
     />
   </main>
   <div v-else class="text-muted" style="padding: var(--space-8)">

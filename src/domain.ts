@@ -55,6 +55,9 @@ export interface PilgiRecord {
   stage5: Stage5
   remarks: Remark[]
   characters?: string[]
+  topTextOffset?: number
+  bottomTextOffset?: number
+  fontSize?: number
   // Soft delete: the JSON file stays in the repo but the record is hidden in the app
   deleted?: boolean
   deletedBy?: string

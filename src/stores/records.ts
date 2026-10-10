@@ -189,6 +189,16 @@ export const useRecordsStore = defineStore('records', () => {
     mutate(id, (c) => { c.stage5 = posted ? { status: 'posted', postedBy: auth.email, postedAt: now() } : { status: 'pending', postedBy: null, postedAt: null } }, `${id}: ${posted ? 'marked posted' : 'reverted to pending'}`)
   const setPostDate = (id: string, iso: string) =>
     mutate(id, (c) => { c.stage5.postedAt = iso }, `${id}: post date updated`)
+  const updateTechData = (id: string, data: { topTextOffset?: number; bottomTextOffset?: number; fontSize?: number }) =>
+    mutate(
+      id,
+      (c) => {
+        if (data.topTextOffset !== undefined) c.topTextOffset = data.topTextOffset
+        if (data.bottomTextOffset !== undefined) c.bottomTextOffset = data.bottomTextOffset
+        if (data.fontSize !== undefined) c.fontSize = data.fontSize
+      },
+      `${id}: tech data updated`,
+    )
   /** Soft delete: flags the record in its JSON file; the file itself is kept in the repo. */
   const remove = (id: string) =>
     mutate(id, (c) => { c.deleted = true; c.deletedBy = auth.email; c.deletedAt = now() }, `${id}: marked as deleted`)
@@ -208,5 +218,6 @@ export const useRecordsStore = defineStore('records', () => {
     }
   }
 
-  return { records, visible, loaded, loadError, refreshing, refresh, toastMsg, toast, init, reset, byId, mutate, review, addImage, saveText, create, createMany, setCharacter, addRemark, setPosted, setPostDate, remove, persistSettings }
+  return { records, visible, loaded, loadError, refreshing, refresh, toastMsg, toast, init, reset, byId, mutate, review, addImage, saveText, create, createMany, setCharacter, addRemark, setPosted, setPostDate, updateTechData, remove, persistSettings }
 })
+
