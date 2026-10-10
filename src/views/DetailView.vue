@@ -373,18 +373,18 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
             ></iframe>
             <Thumb v-else-if="vv.thumb" v-bind="vv.thumb" />
           </div>
-          <div style="display: flex; gap: var(--space-2); align-items: center; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--color-surface); max-width: 80%">
+          <div style="display: flex; gap: var(--space-2); align-items: center; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--color-surface); max-width: 75%">
             <Icon name="link" :size="15" style="flex: none; opacity: 0.6" />
             <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px">{{ vv.link }}</span>
             <a class="btn btn-secondary" :href="vv.link" target="_blank" rel="noreferrer" style="padding-block: 6px">Open in Drive</a>
           </div>
         </template>
-        <div v-if="showEmpty" style="min-height: 300px; border-radius: calc(var(--radius-lg) * 1.4); border: 2px dashed var(--color-divider); display: flex; flex-direction: column; justify-content: center; padding: var(--space-8); gap: var(--space-2)">
+        <div v-if="showEmpty" style="min-height: 300px; border-radius: calc(var(--radius-lg) * 1.4); border: 2px dashed var(--color-divider); display: flex; flex-direction: column; justify-content: center; padding: var(--space-8); gap: var(--space-2); max-width: 75%">
           <h3 style="margin: 0">No image yet</h3>
           <p class="text-muted" style="margin: 0; max-width: 380px">{{ emptyMsg }}</p>
         </div>
 
-        <div v-if="vv && !editor" style="display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6); border-radius: calc(var(--radius-lg) * 1.15); background: var(--color-neutral-100)">
+        <div v-if="vv && !editor" style="display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6); border-radius: calc(var(--radius-lg) * 1.15); background: var(--color-neutral-100); max-width: 75%">
           <div style="display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap">
             <span style="font-family: var(--font-heading); font-size: 18px">{{ vv.label }}</span>
             <span class="tag" :class="ST[vv.v.status].cls">{{ ST[vv.v.status].label }}</span>
