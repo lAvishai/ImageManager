@@ -82,6 +82,9 @@ watch(
 const a = active
 const rec = computed(() => r.value!)
 const v1 = computed(() => shown1(rec.value.stage1))
+const inlineText = (s?: string) => (s ? s.replace(/\r?\n+/g, ' ').replace(/\s+/g, ' ').trim() : '')
+const headerTopSentence = computed(() => inlineText(v1.value?.topSentence))
+const headerBottomSentence = computed(() => inlineText(v1.value?.bottomSentence))
 
 const steps = computed(() =>
   [1, 2, 3, 4, 5].map((n) => {
@@ -284,9 +287,9 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
 <template>
   <main v-if="r" data-screen-label="Record Detail" style="padding: var(--space-1) clamp(16px, 4vw, var(--space-8)) var(--space-8)">
     <div style="display: flex; gap: var(--space-6); align-items: flex-end; flex-wrap: wrap; margin-bottom: var(--space-6)">
-      <div style="flex: 1 1 0; min-width: 200px; max-width: 720px; margin-right: auto; align-self: flex-start">
-        <h2 style="margin: 0; font-size: clamp(15px, 2vw, 34px); text-wrap: balance; white-space: pre-line">{{ v1.topSentence }}</h2>
-        <h2 style="margin: 4px 0 0; font-size: clamp(15px, 2vw, 34px); text-wrap: balance; white-space: pre-line">{{ v1.bottomSentence }}</h2>
+      <div style="flex: 1 1 0px; min-width: min(100%, 320px); max-width: 1000px; margin-right: auto; align-self: flex-start">
+        <h2 style="margin: 0; font-size: clamp(14px, 1.8vw, 30px); line-height: 1.25">{{ headerTopSentence }}</h2>
+        <h2 style="margin: 6px 0 0; font-size: clamp(14px, 1.8vw, 30px); line-height: 1.25">{{ headerBottomSentence }}</h2>
         <span class="tag tag-neutral">{{ r.id }}</span>
         <span class="text-muted" style="font-size: 12px"> Created by {{ short(r.createdBy) }} · {{ fmt(r.createdAt, tz) }}</span>
       </div>

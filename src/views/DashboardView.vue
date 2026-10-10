@@ -121,10 +121,11 @@ const rows = computed(() => {
     const v1 = shown1(r.stage1)
     const done = (n: number) => n < r.currentStage || (n === 5 && r.stage5.status === 'posted')
     const rc = r.remarks.length
+    const inline = (s?: string) => (s ? s.replace(/\r?\n+/g, ' ').replace(/\s+/g, ' ').trim() : '')
     return {
       id: r.id,
-      top: v1.topSentence,
-      bottom: v1.bottomSentence,
+      top: inline(v1.topSentence),
+      bottom: inline(v1.bottomSentence),
       stageNum: r.currentStage,
       stageName: SN[r.currentStage],
       tagCls: ST[k].cls,
@@ -259,8 +260,8 @@ const summary = computed(() => `${recs.value.length} pilgis · ${recs.value.filt
                   <Icon name="image" :size="18" />
                 </span>
                 <div style="min-width: 0">
-                  <div style="font-weight: 600; line-height: 1.3; white-space: pre-line">{{ row.top }}</div>
-                  <div style="font-weight: 600; line-height: 1.3; white-space: pre-line">{{ row.bottom }}</div>
+                  <div style="font-weight: 600; line-height: 1.3">{{ row.top }}</div>
+                  <div style="font-weight: 600; line-height: 1.3">{{ row.bottom }}</div>
                   <div style="font-size: 11px; color: var(--color-neutral-600); margin-top: 2px">{{ row.id }}</div>
                 </div>
               </div>

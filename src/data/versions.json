@@ -1,5 +1,29 @@
 [
   {
+    "version": "v1.16.0",
+    "date": "10/10/2026 23:20",
+    "title": "Extended Header Text in Record Detail",
+    "changes": [
+      "Removed max-width constraint and text-wrap balance on DetailView header sentences to allow text to extend with fewer line breaks."
+    ]
+  },
+  {
+    "version": "v1.15.0",
+    "date": "10/10/2026 23:15",
+    "title": "Inline Sentences in Record Detail Header",
+    "changes": [
+      "Removed line breaks from top and bottom sentences in the Record Detail view header."
+    ]
+  },
+  {
+    "version": "v1.14.0",
+    "date": "10/10/2026 23:10",
+    "title": "Inline Sentences in Records View",
+    "changes": [
+      "Removed line breaks from top and bottom sentences in the Dashboard records table for compact, single-line display."
+    ]
+  },
+  {
     "version": "v1.13.0",
     "date": "10/10/2026 23:00",
     "title": "Text Generation Defaults to 0",
