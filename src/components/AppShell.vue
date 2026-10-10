@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Icon from './Icon.vue'
 import RemarksDrawer from './RemarksDrawer.vue'
 import { useAuthStore } from '../stores/auth'
@@ -11,6 +11,7 @@ const auth = useAuthStore()
 const store = useRecordsStore()
 const ui = useUiStore()
 const router = useRouter()
+const route = useRoute()
 
 const top = ref('')
 const bottom = ref('')
@@ -46,6 +47,15 @@ async function create() {
       <span style="width: 30px; height: 30px; border-radius: 50%; background: var(--color-accent-200); color: var(--color-accent-800); display: grid; place-items: center; font-weight: 700; font-size: 12px">{{ initials }}</span>
       {{ auth.email }}
     </span>
+    <button
+      class="btn btn-icon"
+      :class="route.path === '/settings' ? 'btn-primary' : 'btn-secondary'"
+      title="Settings"
+      aria-label="Settings"
+      @click="router.push('/settings')"
+    >
+      <Icon name="gear" />
+    </button>
     <button class="btn btn-secondary btn-icon" title="Lock" @click="lock"><Icon name="lock" /></button>
   </nav>
 

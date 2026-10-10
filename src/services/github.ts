@@ -93,4 +93,38 @@ export class RecordsRepo {
       this.shas.set(path, res.data.content!.sha!)
     }
   }
+
+  async getSettings<T>(): Promise<T | null> {
+    try {
+      const res = await this.kit.rest.repos.getContent({ owner: this.owner, repo: this.name, path: 'settings.json', ref: this.branch })
+      const data = res.data as { content: string; sha: string }
+      this.shas.set('settings.json', data.sha)
+      return JSON.parse(utf8.dec(data.content)) as T
+    } catch (e) {
+      if (status(e) === 404) return null
+      throw e
+    }
+  }
+
+  async saveSettings<T>(settings: T, message: string): Promise<void> {
+    const path = 'settings.json'
+    const put = (sha?: string) =>
+      this.kit.rest.repos.createOrUpdateFileContents({
+        owner: this.owner,
+        repo: this.name,
+        path,
+        branch: this.branch,
+        message,
+        content: utf8.enc(JSON.stringify(settings, null, 2) + '\n'),
+        sha,
+      })
+    try {
+      const res = await put(this.shas.get(path))
+      this.shas.set(path, res.data.content!.sha!)
+    } catch (e) {
+      if (status(e) !== 409 && status(e) !== 422) throw e
+      const res = await put(await this.fetchSha(path))
+      this.shas.set(path, res.data.content!.sha!)
+    }
+  }
 }

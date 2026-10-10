@@ -27,6 +27,10 @@ export const useRecordsStore = defineStore('records', () => {
     try {
       repo = new RecordsRepo(auth.token, { repo: auth.repo, branch: auth.branch })
       records.value = await repo.list()
+      const remoteSettings = await repo.getSettings()
+      if (remoteSettings) {
+        localStorage.setItem('pilgi_settings', JSON.stringify(remoteSettings))
+      }
     } catch (e) {
       repo = null
       loadError.value = `Couldn't read ${auth.repo}@${auth.branch}: ${(e as Error).message}`
@@ -151,5 +155,17 @@ export const useRecordsStore = defineStore('records', () => {
   // Deleted records stay in `records` (so ids are never reused) but are hidden from lists
   const visible = computed(() => records.value.filter((r) => !r.deleted))
 
-  return { records, visible, loaded, loadError, toastMsg, toast, init, reset, byId, mutate, review, addImage, saveText, create, createMany, setCharacter, addRemark, setPosted, setPostDate, remove }
+  async function persistSettings<T>(settings: T, msg = 'settings.json: updated'): Promise<boolean> {
+    if (!repo) return false
+    try {
+      await repo.saveSettings(settings, msg)
+      toast(`Committed: ${msg}`)
+      return true
+    } catch (e) {
+      toast(`Commit failed: ${(e as Error).message}`)
+      return false
+    }
+  }
+
+  return { records, visible, loaded, loadError, toastMsg, toast, init, reset, byId, mutate, review, addImage, saveText, create, createMany, setCharacter, addRemark, setPosted, setPostDate, remove, persistSettings }
 })
