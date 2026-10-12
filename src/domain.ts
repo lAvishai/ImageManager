@@ -282,13 +282,24 @@ export const extractGoogleDriveId = (url: string | null | undefined): string | n
   if (idMatch?.[1]) return idMatch[1]
   return null
 }
-export const isRemarksDone = (r: PilgiRecord): boolean => {
-  if (!r.remarksDone) return false
-  const latestAt = r.remarksDoneHistory?.length
+export const latestRemarksDoneTime = (r: PilgiRecord): number => {
+  const at = r.remarksDoneHistory?.length
     ? r.remarksDoneHistory[r.remarksDoneHistory.length - 1].at
     : r.remarksDoneAt
-  if (!latestAt) return false
-  const tDone = new Date(latestAt).getTime()
+  return at ? new Date(at).getTime() : 0
+}
+
+export const openRemarksOf = (r: PilgiRecord): Remark[] => {
+  if (!r.remarks || r.remarks.length === 0) return []
+  const tDone = latestRemarksDoneTime(r)
+  if (tDone === 0) return r.remarks
+  return r.remarks.filter((m) => new Date(m.at).getTime() > tDone)
+}
+
+export const isRemarksDone = (r: PilgiRecord): boolean => {
+  if (!r.remarksDone) return false
+  const tDone = latestRemarksDoneTime(r)
+  if (tDone === 0) return false
   const hasNew = (r.remarks || []).some((m) => new Date(m.at).getTime() > tDone)
   return !hasNew
 }

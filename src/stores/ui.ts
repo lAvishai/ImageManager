@@ -1,10 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+export type RemarkFilter = 'all' | 'any' | 'open' | 'mine'
+
 /** UI state that should survive navigation between screens. */
 export const useUiStore = defineStore('ui', () => {
   const stageF = ref<'all' | number>('all')
   const statusF = ref('all')
+  const remarksF = ref<RemarkFilter>('all')
   const q = ref('')
 
   const remarksFor = ref<string | null>(null)
@@ -17,5 +20,5 @@ export const useUiStore = defineStore('ui', () => {
 
   const newOpen = ref(false)
 
-  return { stageF, statusF, q, remarksFor, remarksStage, openRemarks, closeRemarks, newOpen }
+  return { stageF, statusF, remarksF, q, remarksFor, remarksStage, openRemarks, closeRemarks, newOpen }
 })

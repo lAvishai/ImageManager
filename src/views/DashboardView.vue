@@ -2,11 +2,13 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Icon from '../components/Icon.vue'
-import { SN, ST, type RecStatus, fmt, fmtPostDate, isRemarksDone, recStatus, recThumb, shown1, short } from '../domain'
+import { SN, ST, type RecStatus, fmt, fmtPostDate, isRemarksDone, openRemarksOf, recStatus, recThumb, shown1, short } from '../domain'
+import { useAuthStore } from '../stores/auth'
 import { useRecordsStore } from '../stores/records'
 import { useUiStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 
+const auth = useAuthStore()
 const store = useRecordsStore()
 const ui = useUiStore()
 const settings = useSettingsStore()
@@ -58,6 +60,13 @@ const statusOpts = [
   ['posted', 'Posted'],
 ]
 
+const remarkOpts = [
+  { k: 'all', label: 'All', desc: 'Ignore remarks filter' },
+  { k: 'any', label: 'Any', desc: 'All records with remarks, ignore done status' },
+  { k: 'open', label: 'Open', desc: 'Remarks not by me but not set as done' },
+  { k: 'mine', label: 'Mine', desc: 'Remarks by me but not set as done' },
+] as const
+
 type SortCol = 'pilgi' | 'stage' | 'remarks' | 'status' | 'posted' | 'lastModified'
 type SortDir = 'asc' | 'desc'
 
@@ -75,12 +84,28 @@ function toggleSort(col: SortCol) {
 
 const rows = computed(() => {
   const q = ui.q.trim().toLowerCase()
-  const filtered = recs.value.filter(
-    (r) =>
-      (ui.stageF === 'all' || r.currentStage === ui.stageF) &&
-      (ui.statusF === 'all' || recStatus(r) === ui.statusF) &&
-      (!q || (r.id + ' ' + shown1(r.stage1).topSentence + ' ' + shown1(r.stage1).bottomSentence).toLowerCase().includes(q)),
-  )
+  const myEmail = (auth.email || '').trim().toLowerCase()
+
+  const filtered = recs.value.filter((r) => {
+    if (ui.stageF !== 'all' && r.currentStage !== ui.stageF) return false
+    if (ui.statusF !== 'all' && recStatus(r) !== ui.statusF) return false
+    if (q) {
+      const matchQ = (r.id + ' ' + shown1(r.stage1).topSentence + ' ' + shown1(r.stage1).bottomSentence).toLowerCase().includes(q)
+      if (!matchQ) return false
+    }
+
+    if (ui.remarksF === 'any') {
+      if ((r.remarks || []).length === 0) return false
+    } else if (ui.remarksF === 'open') {
+      const open = openRemarksOf(r)
+      if (!open.some((m) => m.by.trim().toLowerCase() !== myEmail)) return false
+    } else if (ui.remarksF === 'mine') {
+      const open = openRemarksOf(r)
+      if (!open.some((m) => m.by.trim().toLowerCase() === myEmail)) return false
+    }
+
+    return true
+  })
 
   const mult = sortDir.value === 'asc' ? 1 : -1
 
@@ -143,7 +168,15 @@ const rows = computed(() => {
   })
 })
 
-const summary = computed(() => `${recs.value.length} pilgis · ${recs.value.filter((r) => recStatus(r) === 'pending').length} waiting on review`)
+const summary = computed(() => {
+  const total = recs.value.length
+  const shown = rows.value.length
+  const pendingCount = recs.value.filter((r) => recStatus(r) === 'pending').length
+  if (shown !== total) {
+    return `${shown} of ${total} pilgis · ${pendingCount} waiting on review`
+  }
+  return `${total} pilgis · ${pendingCount} waiting on review`
+})
 </script>
 
 <template>
@@ -171,11 +204,20 @@ const summary = computed(() => `${recs.value.length} pilgis · ${recs.value.filt
     </div>
 
     <div style="display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; margin-bottom: var(--space-3)">
-      <div class="seg">
+      <div class="seg" title="Filter by stage status">
         <label v-for="[k, label] in statusOpts" :key="k" class="seg-opt">
           <input v-model="ui.statusF" type="radio" name="statusf" :value="k" />{{ label }}
         </label>
       </div>
+
+      <div class="seg" title="Filter by remarks">
+        <label v-for="opt in remarkOpts" :key="opt.k" class="seg-opt" :title="opt.desc">
+          <input v-model="ui.remarksF" type="radio" name="remarksf" :value="opt.k" />
+          <Icon v-if="opt.k !== 'all'" name="chat" :size="12" style="opacity: 0.75; margin-right: 2px" />
+          {{ opt.label }}
+        </label>
+      </div>
+
       <span class="text-muted" style="font-size: 13px; white-space: nowrap">{{ summary }}</span>
       <div style="position: relative; flex: 1 1 220px; min-width: 0; max-width: 340px; margin-left: auto">
         <Icon name="search" :size="15" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); opacity: 0.55; pointer-events: none" />

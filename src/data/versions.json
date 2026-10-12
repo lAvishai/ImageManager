@@ -1,5 +1,14 @@
 [
   {
+    "version": "v1.20.0",
+    "date": "12/10/2026 20:05",
+    "title": "Remarks Dashboard Filter",
+    "changes": [
+      "Added a new remarks filter on Dashboard with options: All (ignore filter), ∗ Remarks (all records with remarks, ignoring done status), Open Remarks (records with open remarks not by current user), and My Remarks (records with open remarks by current user).",
+      "Persisted remarks filter state in UI store across navigation."
+    ]
+  },
+  {
     "version": "v1.19.0",
     "date": "12/10/2026 19:55",
     "title": "Preserve Previous Remarks History on Reopen",
