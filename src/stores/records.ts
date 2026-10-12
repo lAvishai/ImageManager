@@ -196,9 +196,21 @@ export const useRecordsStore = defineStore('records', () => {
           c.remarksDoneBy = auth.email
           c.remarksDoneHistory = [...(c.remarksDoneHistory || []), { at: timestamp, by: auth.email }]
         } else {
-          c.remarksDoneAt = null
-          c.remarksDoneBy = null
-          c.remarksDoneHistory = []
+          // Reopen: only pop the latest done marker so previous conversations stay marked done
+          if (c.remarksDoneHistory && c.remarksDoneHistory.length > 0) {
+            c.remarksDoneHistory.pop()
+            if (c.remarksDoneHistory.length > 0) {
+              const prev = c.remarksDoneHistory[c.remarksDoneHistory.length - 1]
+              c.remarksDoneAt = prev.at
+              c.remarksDoneBy = prev.by
+            } else {
+              c.remarksDoneAt = null
+              c.remarksDoneBy = null
+            }
+          } else {
+            c.remarksDoneAt = null
+            c.remarksDoneBy = null
+          }
         }
       },
       `${id}: remarks ${done ? 'marked done' : 'reopened'}`,

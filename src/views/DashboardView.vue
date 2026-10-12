@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Icon from '../components/Icon.vue'
-import { SN, ST, type RecStatus, fmt, fmtPostDate, recStatus, recThumb, shown1, short } from '../domain'
+import { SN, ST, type RecStatus, fmt, fmtPostDate, isRemarksDone, recStatus, recThumb, shown1, short } from '../domain'
 import { useRecordsStore } from '../stores/records'
 import { useUiStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -136,8 +136,8 @@ const rows = computed(() => {
       hasThumb: !!recThumb(r),
       dots: [1, 2, 3, 4, 5].map((n) => (done(n) ? 'var(--color-accent-2)' : n === r.currentStage ? 'var(--color-accent)' : 'var(--color-neutral-300)')),
       rc,
-      remarksDone: !!r.remarksDone,
-      remarksTitle: rc > 0 ? (r.remarksDone ? `${rc} remark${rc === 1 ? '' : 's'} (Done)` : `${rc} remark${rc === 1 ? '' : 's'}`) : 'Add a remark',
+      remarksDone: isRemarksDone(r),
+      remarksTitle: rc > 0 ? (isRemarksDone(r) ? `${rc} remark${rc === 1 ? '' : 's'} (Done)` : `${rc} remark${rc === 1 ? '' : 's'}`) : 'Add a remark',
       currentStage: r.currentStage,
     }
   })

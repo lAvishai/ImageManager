@@ -17,20 +17,27 @@ const listEl = ref<HTMLElement | null>(null)
 const rec = computed(() => (ui.remarksFor ? store.byId(ui.remarksFor) : undefined))
 const AV = ['var(--color-accent)', 'var(--color-accent-2-600)', 'var(--color-neutral-600)', 'var(--color-accent-800)']
 
-const isDone = computed(() => !!rec.value?.remarksDone)
-
 const latestDoneAt = computed(() => {
-  if (!rec.value?.remarksDone) return null
-  if (rec.value.remarksDoneHistory?.length) {
+  if (rec.value?.remarksDoneHistory?.length) {
     return rec.value.remarksDoneHistory[rec.value.remarksDoneHistory.length - 1].at
   }
-  return rec.value.remarksDoneAt || null
+  return rec.value?.remarksDoneAt || null
+})
+
+const hasDoneMarkers = computed(() => {
+  return !!(rec.value?.remarksDoneHistory?.length || rec.value?.remarksDoneAt)
 })
 
 const hasNewRemarksAfterDone = computed(() => {
-  if (!isDone.value || !latestDoneAt.value) return false
+  if (!latestDoneAt.value) return false
   const tDone = new Date(latestDoneAt.value).getTime()
   return (rec.value?.remarks || []).some((m) => new Date(m.at).getTime() > tDone)
+})
+
+const isDone = computed(() => {
+  if (!rec.value?.remarksDone) return false
+  if (!latestDoneAt.value) return false
+  return !hasNewRemarksAfterDone.value
 })
 
 interface TimelineRemark {
@@ -78,13 +85,9 @@ const feed = computed<TimelineItem[]>(() => {
     }
   })
 
-  if (!rec.value?.remarksDone) {
-    return remarkItems
-  }
-
-  const history = rec.value.remarksDoneHistory?.length
+  const history = rec.value?.remarksDoneHistory?.length
     ? rec.value.remarksDoneHistory
-    : rec.value.remarksDoneAt
+    : rec.value?.remarksDoneAt
       ? [{ at: rec.value.remarksDoneAt, by: rec.value.remarksDoneBy || '' }]
       : []
 
@@ -161,11 +164,11 @@ async function setDoneStatus(val: boolean) {
             Open
           </span>
           <span
-            v-if="isDone && hasNewRemarksAfterDone"
+            v-if="hasDoneMarkers && hasNewRemarksAfterDone"
             class="text-muted"
             style="font-size: 11px; font-style: italic"
           >
-            (new remarks below)
+            (new remarks pending)
           </span>
         </div>
 
@@ -179,26 +182,15 @@ async function setDoneStatus(val: boolean) {
             <Icon name="check" :size="13" :stroke="2.5" />
             Mark as Done
           </button>
-          <template v-else>
-            <button
-              v-if="hasNewRemarksAfterDone"
-              class="btn btn-primary"
-              style="font-size: 12px; padding: 4px 12px; height: 30px; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px"
-              title="Mark newly added remarks as done"
-              @click="setDoneStatus(true)"
-            >
-              <Icon name="check" :size="13" :stroke="2.5" />
-              Mark as Done
-            </button>
-            <button
-              class="btn btn-ghost"
-              style="font-size: 12px; padding: 4px 8px; height: 30px; color: var(--color-neutral-600)"
-              title="Reopen remarks status"
-              @click="setDoneStatus(false)"
-            >
-              Reopen
-            </button>
-          </template>
+          <button
+            v-else
+            class="btn btn-ghost"
+            style="font-size: 12px; padding: 4px 8px; height: 30px; color: var(--color-neutral-600)"
+            title="Reopen latest remarks"
+            @click="setDoneStatus(false)"
+          >
+            Reopen
+          </button>
         </div>
       </div>
 

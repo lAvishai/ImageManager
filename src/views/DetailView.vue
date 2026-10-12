@@ -14,6 +14,7 @@ import {
   extractGoogleDriveId,
   fmt,
   fmtPostDate,
+  isRemarksDone,
   isoToTzLocal,
   last,
   shown1,
@@ -295,9 +296,9 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
       </div>
       <div style="display: flex; flex-direction: column; gap: var(--space-2); align-self: flex-start">
         <button class="btn btn-secondary" style="display: flex; align-items: center; gap: var(--space-2); width: 100%" @click="ui.openRemarks(r.id, a)">
-          <Icon :name="r.remarksDone ? 'check' : 'chat'" />
+          <Icon :name="isRemarksDone(r) ? 'check' : 'chat'" />
           Remarks
-          <span :style="`min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; display: inline-grid; place-items: center; background: ${r.remarksDone ? 'var(--color-accent-2)' : 'var(--color-accent)'}; color: var(--color-bg); font-size: 12px; font-weight: 700`">{{ r.remarks.length }}</span>
+          <span :style="`min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; display: inline-grid; place-items: center; background: ${isRemarksDone(r) ? 'var(--color-accent-2)' : 'var(--color-accent)'}; color: var(--color-bg); font-size: 12px; font-weight: 700`">{{ r.remarks.length }}</span>
         </button>
         <button
           class="btn btn-secondary"

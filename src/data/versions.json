@@ -1,5 +1,15 @@
 [
   {
+    "version": "v1.19.0",
+    "date": "12/10/2026 19:55",
+    "title": "Preserve Previous Remarks History on Reopen",
+    "changes": [
+      "Updated 'Reopen' in Remarks panel to only reopen the latest remarks cycle rather than reopening all previous conversations.",
+      "Preserved previous done markers and separating divider lines in the remarks timeline across cycles.",
+      "Maintained open status only for newly added remarks after a separating line."
+    ]
+  },
+  {
     "version": "v1.18.0",
     "date": "12/10/2026 19:40",
     "title": "Trailing Newline on Tech Data Prompts Copy",
