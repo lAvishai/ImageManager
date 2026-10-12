@@ -1,5 +1,16 @@
 [
   {
+    "version": "v1.17.0",
+    "date": "12/10/2026 19:25",
+    "title": "Remarks Done Status & Separating Line",
+    "changes": [
+      "Added option in Remarks side panel to set remarks status to Done or Reopen.",
+      "Rendered a distinguished separating divider line in the remarks timeline indicating when remarks were marked done and by whom.",
+      "Preserved ability to continuously add new remarks after setting done status, displaying them below the separating line.",
+      "Reflected remarks done status across Dashboard and Record Detail badges."
+    ]
+  },
+  {
     "version": "v1.16.0",
     "date": "10/10/2026 23:20",
     "title": "Extended Header Text in Record Detail",

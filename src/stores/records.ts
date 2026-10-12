@@ -185,6 +185,24 @@ export const useRecordsStore = defineStore('records', () => {
     mutate(id, (c) => { const a = [...(c.characters || ['', ''])]; a[k] = v; c.characters = a }, `${id}: characters updated`)
   const addRemark = (id: string, stage: number, text: string) =>
     mutate(id, (c) => { c.remarks = [...(c.remarks || []), { by: auth.email, at: now(), stage, text }] }, `${id}: remark added`)
+  const setRemarksDone = (id: string, done: boolean) =>
+    mutate(
+      id,
+      (c) => {
+        c.remarksDone = done
+        if (done) {
+          const timestamp = now()
+          c.remarksDoneAt = timestamp
+          c.remarksDoneBy = auth.email
+          c.remarksDoneHistory = [...(c.remarksDoneHistory || []), { at: timestamp, by: auth.email }]
+        } else {
+          c.remarksDoneAt = null
+          c.remarksDoneBy = null
+          c.remarksDoneHistory = []
+        }
+      },
+      `${id}: remarks ${done ? 'marked done' : 'reopened'}`,
+    )
   const setPosted = (id: string, posted: boolean) =>
     mutate(id, (c) => { c.stage5 = posted ? { status: 'posted', postedBy: auth.email, postedAt: now() } : { status: 'pending', postedBy: null, postedAt: null } }, `${id}: ${posted ? 'marked posted' : 'reverted to pending'}`)
   const setPostDate = (id: string, iso: string) =>
@@ -218,6 +236,6 @@ export const useRecordsStore = defineStore('records', () => {
     }
   }
 
-  return { records, visible, loaded, loadError, refreshing, refresh, toastMsg, toast, init, reset, byId, mutate, review, addImage, saveText, create, createMany, setCharacter, addRemark, setPosted, setPostDate, updateTechData, remove, persistSettings }
+  return { records, visible, loaded, loadError, refreshing, refresh, toastMsg, toast, init, reset, byId, mutate, review, addImage, saveText, create, createMany, setCharacter, addRemark, setRemarksDone, setPosted, setPostDate, updateTechData, remove, persistSettings }
 })
 

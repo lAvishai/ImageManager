@@ -136,7 +136,8 @@ const rows = computed(() => {
       hasThumb: !!recThumb(r),
       dots: [1, 2, 3, 4, 5].map((n) => (done(n) ? 'var(--color-accent-2)' : n === r.currentStage ? 'var(--color-accent)' : 'var(--color-neutral-300)')),
       rc,
-      remarksTitle: rc > 0 ? `${rc} remark${rc === 1 ? '' : 's'}` : 'Add a remark',
+      remarksDone: !!r.remarksDone,
+      remarksTitle: rc > 0 ? (r.remarksDone ? `${rc} remark${rc === 1 ? '' : 's'} (Done)` : `${rc} remark${rc === 1 ? '' : 's'}`) : 'Add a remark',
       currentStage: r.currentStage,
     }
   })
@@ -278,10 +279,11 @@ const summary = computed(() => `${recs.value.length} pilgis · ${recs.value.filt
               <button
                 :title="row.remarksTitle"
                 :aria-label="row.remarksTitle"
-                :style="`all:unset; cursor:pointer; min-width:34px; height:30px; padding:0 10px; box-sizing:border-box; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; gap:5px; font-size:13px; font-weight:700; background:${row.rc > 0 ? 'var(--color-accent-200)' : 'var(--color-neutral-200)'}; color:${row.rc > 0 ? 'var(--color-accent-800)' : 'var(--color-neutral-700)'}`"
+                :style="`all:unset; cursor:pointer; min-width:34px; height:30px; padding:0 10px; box-sizing:border-box; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; gap:5px; font-size:13px; font-weight:700; background:${row.rc > 0 ? (row.remarksDone ? 'var(--color-accent-2-200)' : 'var(--color-accent-200)') : 'var(--color-neutral-200)'}; color:${row.rc > 0 ? (row.remarksDone ? 'var(--color-accent-2-800)' : 'var(--color-accent-800)') : 'var(--color-neutral-700)'}`"
                 @click.stop="ui.openRemarks(row.id, row.currentStage)"
               >
-                <Icon v-if="row.rc > 0" name="chat" :size="13" />
+                <Icon v-if="row.rc > 0 && row.remarksDone" name="check" :size="12" :stroke="3" />
+                <Icon v-else-if="row.rc > 0" name="chat" :size="13" />
                 <span>{{ row.rc > 0 ? row.rc : '+' }}</span>
               </button>
             </td>

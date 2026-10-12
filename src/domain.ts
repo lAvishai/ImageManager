@@ -42,6 +42,11 @@ export interface Remark {
   text: string
 }
 
+export interface RemarkDoneHistoryItem {
+  at: string
+  by: string
+}
+
 export interface PilgiRecord {
   id: string
   num: number
@@ -54,6 +59,10 @@ export interface PilgiRecord {
   stage4: Stage
   stage5: Stage5
   remarks: Remark[]
+  remarksDone?: boolean
+  remarksDoneAt?: string | null
+  remarksDoneBy?: string | null
+  remarksDoneHistory?: RemarkDoneHistoryItem[]
   characters?: string[]
   topTextOffset?: number
   bottomTextOffset?: number
