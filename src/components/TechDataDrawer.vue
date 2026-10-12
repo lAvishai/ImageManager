@@ -88,20 +88,9 @@ async function copyScenario() {
 
 async function copyImagePrompt() {
   if (!imagePromptDraft.value) return
-  try {
-    await navigator.clipboard.writeText(imagePromptDraft.value)
-    copiedPrompt.value = true
-    setTimeout(() => (copiedPrompt.value = false), 2000)
-  } catch {
-    const ta = document.createElement('textarea')
-    ta.value = imagePromptDraft.value
-    document.body.appendChild(ta)
-    ta.select()
-    document.execCommand('copy')
-    document.body.removeChild(ta)
-    copiedPrompt.value = true
-    setTimeout(() => (copiedPrompt.value = false), 2000)
-  }
+  await copyToClipboard(imagePromptDraft.value.trimEnd() + '\n')
+  copiedPrompt.value = true
+  setTimeout(() => (copiedPrompt.value = false), 2000)
 }
 
 // Card 2: Text Generation
@@ -135,14 +124,14 @@ async function copyToClipboard(text: string): Promise<boolean> {
 
 async function copyTopPrompt() {
   if (!topImagePromptDraft.value) return
-  await copyToClipboard(topImagePromptDraft.value)
+  await copyToClipboard(topImagePromptDraft.value.trimEnd() + '\n')
   copiedTopPrompt.value = true
   setTimeout(() => (copiedTopPrompt.value = false), 2000)
 }
 
 async function copyBottomPrompt() {
   if (!bottomImagePromptDraft.value) return
-  await copyToClipboard(bottomImagePromptDraft.value)
+  await copyToClipboard(bottomImagePromptDraft.value.trimEnd() + '\n')
   copiedBottomPrompt.value = true
   setTimeout(() => (copiedBottomPrompt.value = false), 2000)
 }
@@ -150,7 +139,7 @@ async function copyBottomPrompt() {
 async function copyBothPrompts() {
   const parts = [topImagePromptDraft.value.trim(), bottomImagePromptDraft.value.trim()].filter(Boolean)
   if (parts.length === 0) return
-  await copyToClipboard(parts.join('\n\n'))
+  await copyToClipboard(parts.join('\n\n') + '\n')
   copiedBoth.value = true
   setTimeout(() => (copiedBoth.value = false), 2000)
 }

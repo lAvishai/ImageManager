@@ -1,5 +1,13 @@
 [
   {
+    "version": "v1.18.0",
+    "date": "12/10/2026 19:40",
+    "title": "Trailing Newline on Tech Data Prompts Copy",
+    "changes": [
+      "Appended a trailing newline to the end of the text when copying Image Prompts to clipboard in the Tech Data panel (Top Image prompt, Bottom Image prompt, both prompts, and scenario prompt template)."
+    ]
+  },
+  {
     "version": "v1.17.0",
     "date": "12/10/2026 19:25",
     "title": "Remarks Done Status & Separating Line",
