@@ -296,6 +296,11 @@ export const openRemarksOf = (r: PilgiRecord): Remark[] => {
   return r.remarks.filter((m) => new Date(m.at).getTime() > tDone)
 }
 
+export const lastOpenRemarkOf = (r: PilgiRecord): Remark | null => {
+  const open = openRemarksOf(r)
+  return open.length ? open[open.length - 1] : null
+}
+
 export const isRemarksDone = (r: PilgiRecord): boolean => {
   if (!r.remarksDone) return false
   const tDone = latestRemarksDoneTime(r)

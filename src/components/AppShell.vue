@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Icon from './Icon.vue'
 import RemarksDrawer from './RemarksDrawer.vue'
-import { openRemarksOf } from '../domain'
+import { lastOpenRemarkOf } from '../domain'
 import { useAuthStore } from '../stores/auth'
 import { useRecordsStore } from '../stores/records'
 import { useUiStore } from '../stores/ui'
@@ -24,16 +24,16 @@ const myEmail = computed(() => (auth.email || '').trim().toLowerCase())
 const openCount = computed(() => {
   const email = myEmail.value
   return store.visible.filter((r) => {
-    const open = openRemarksOf(r)
-    return open.some((m) => m.by.trim().toLowerCase() !== email)
+    const last = lastOpenRemarkOf(r)
+    return !!last && last.by.trim().toLowerCase() !== email
   }).length
 })
 
 const mineCount = computed(() => {
   const email = myEmail.value
   return store.visible.filter((r) => {
-    const open = openRemarksOf(r)
-    return open.some((m) => m.by.trim().toLowerCase() === email)
+    const last = lastOpenRemarkOf(r)
+    return !!last && last.by.trim().toLowerCase() === email
   }).length
 })
 
@@ -73,7 +73,7 @@ async function create() {
         type="button"
         class="split-btn-item"
         :class="{ active: ui.remarksF === 'open' && route.path === '/' }"
-        title="Open: remarks not by me but not set as done"
+        title="Open: all last remarks not by me and not set as done"
         aria-label="Open remarks filter"
         @click="selectRemarksFilter('open')"
       >
@@ -85,7 +85,7 @@ async function create() {
         type="button"
         class="split-btn-item"
         :class="{ active: ui.remarksF === 'mine' && route.path === '/' }"
-        title="Mine: remarks by me but not set as done"
+        title="Mine: all last remarks by me but not set as done"
         aria-label="My remarks filter"
         @click="selectRemarksFilter('mine')"
       >

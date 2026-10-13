@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Icon from '../components/Icon.vue'
-import { SN, ST, type RecStatus, fmt, fmtPostDate, isRemarksDone, openRemarksOf, recStatus, recThumb, shown1, short } from '../domain'
+import { SN, ST, type RecStatus, fmt, fmtPostDate, isRemarksDone, lastOpenRemarkOf, openRemarksOf, recStatus, recThumb, shown1, short } from '../domain'
 import { useAuthStore } from '../stores/auth'
 import { useRecordsStore } from '../stores/records'
 import { useUiStore } from '../stores/ui'
@@ -63,8 +63,8 @@ const statusOpts = [
 const remarkOpts = [
   { k: 'all', label: 'All', desc: 'Ignore remarks filter' },
   { k: 'any', label: 'Any', desc: 'All records with remarks, ignore done status' },
-  { k: 'open', label: 'Open', desc: 'Remarks not by me but not set as done' },
-  { k: 'mine', label: 'Mine', desc: 'Remarks by me but not set as done' },
+  { k: 'open', label: 'Open', desc: 'All last remarks not by me and not set as done' },
+  { k: 'mine', label: 'Mine', desc: 'All last remarks by me but not set as done' },
 ] as const
 
 type SortCol = 'pilgi' | 'stage' | 'remarks' | 'status' | 'posted' | 'lastModified'
@@ -97,11 +97,11 @@ const rows = computed(() => {
     if (ui.remarksF === 'any') {
       if ((r.remarks || []).length === 0) return false
     } else if (ui.remarksF === 'open') {
-      const open = openRemarksOf(r)
-      if (!open.some((m) => m.by.trim().toLowerCase() !== myEmail)) return false
+      const last = lastOpenRemarkOf(r)
+      if (!last || last.by.trim().toLowerCase() === myEmail) return false
     } else if (ui.remarksF === 'mine') {
-      const open = openRemarksOf(r)
-      if (!open.some((m) => m.by.trim().toLowerCase() === myEmail)) return false
+      const last = lastOpenRemarkOf(r)
+      if (!last || last.by.trim().toLowerCase() !== myEmail) return false
     }
 
     return true
