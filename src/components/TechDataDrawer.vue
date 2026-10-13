@@ -347,7 +347,7 @@ function resetToDefaults() {
           <!-- Image Prompt Subsection -->
           <div style="display: flex; flex-direction: column; gap: var(--space-2)">
             <div style="display: flex; align-items: center; justify-content: space-between">
-              <h4 style="margin: 0; font-size: 16px">Image Prompt</h4>
+              <h4 style="margin: 0; font-size: 16px">Scenario Prompt</h4>
               <span class="tag tag-neutral" style="font-size: 11px">Preview only</span>
             </div>
             <p class="text-muted" style="margin: 0; font-size: 12px; line-height: 1.4">
