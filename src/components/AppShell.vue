@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Icon from './Icon.vue'
 import RemarksDrawer from './RemarksDrawer.vue'
+import { openRemarksOf } from '../domain'
 import { useAuthStore } from '../stores/auth'
 import { useRecordsStore } from '../stores/records'
 import { useUiStore } from '../stores/ui'
@@ -17,6 +18,34 @@ const top = ref('')
 const bottom = ref('')
 const invalid = computed(() => !(top.value.trim() && bottom.value.trim()))
 const initials = computed(() => (auth.email.split('@')[0] || '?').slice(0, 2).toUpperCase())
+
+const myEmail = computed(() => (auth.email || '').trim().toLowerCase())
+
+const openCount = computed(() => {
+  const email = myEmail.value
+  return store.visible.filter((r) => {
+    const open = openRemarksOf(r)
+    return open.some((m) => m.by.trim().toLowerCase() !== email)
+  }).length
+})
+
+const mineCount = computed(() => {
+  const email = myEmail.value
+  return store.visible.filter((r) => {
+    const open = openRemarksOf(r)
+    return open.some((m) => m.by.trim().toLowerCase() === email)
+  }).length
+})
+
+function selectRemarksFilter(filter: 'open' | 'mine') {
+  ui.remarksF = filter
+  ui.stageF = 'all'
+  ui.statusF = 'all'
+  ui.q = ''
+  if (route.path !== '/') {
+    router.push('/')
+  }
+}
 
 function lock() {
   auth.lock()
@@ -39,6 +68,32 @@ async function create() {
       <h1 title="Back to pilgis" style="margin: 0; cursor: pointer" @click="router.push('/')">PilGi manager</h1>
     </div>
     <button class="btn btn-primary" @click="ui.newOpen = true"><Icon name="plus" />New PilGi</button>
+    <div class="split-btn-group" role="group" aria-label="Remarks quick filters">
+      <button
+        type="button"
+        class="split-btn-item"
+        :class="{ active: ui.remarksF === 'open' && route.path === '/' }"
+        title="Open: remarks not by me but not set as done"
+        aria-label="Open remarks filter"
+        @click="selectRemarksFilter('open')"
+      >
+        <Icon name="chat" :size="12" style="opacity: 0.8" />
+        <span>Open</span>
+        <span class="split-btn-badge" :class="{ 'has-count': openCount > 0 }">{{ openCount }}</span>
+      </button>
+      <button
+        type="button"
+        class="split-btn-item"
+        :class="{ active: ui.remarksF === 'mine' && route.path === '/' }"
+        title="Mine: remarks by me but not set as done"
+        aria-label="My remarks filter"
+        @click="selectRemarksFilter('mine')"
+      >
+        <Icon name="chat" :size="12" style="opacity: 0.8" />
+        <span>Mine</span>
+        <span class="split-btn-badge" :class="{ 'has-count': mineCount > 0 }">{{ mineCount }}</span>
+      </button>
+    </div>
     <button class="btn btn-secondary" @click="router.push('/import')"><Icon name="upload" />Import batch</button>
     <span class="text-muted" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; min-width: 0; overflow-wrap: anywhere">
       <Icon name="branch" :size="14" />{{ auth.repo }} · {{ auth.branch }}
@@ -105,6 +160,89 @@ async function create() {
 </template>
 
 <style scoped>
+.split-btn-group {
+  display: inline-flex;
+  align-items: stretch;
+  height: 36px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+  box-sizing: border-box;
+}
+
+.split-btn-item {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 calc(var(--space-3) * 0.9);
+  height: 100%;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: var(--font-heading-weight);
+  color: var(--color-text);
+  background: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.split-btn-item + .split-btn-item {
+  border-left: 1px solid var(--color-divider);
+}
+
+.split-btn-item:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.split-btn-item.active {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.split-btn-item.active:hover {
+  background: var(--color-accent-600);
+}
+
+.split-btn-item:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.split-btn-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  background: var(--color-neutral-300);
+  color: var(--color-neutral-700);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.split-btn-item:hover .split-btn-badge {
+  background: var(--color-neutral-400);
+  color: var(--color-neutral-900);
+}
+
+.split-btn-item:not(.active) .split-btn-badge.has-count {
+  background: var(--color-accent-200);
+  color: var(--color-accent-800);
+}
+
+.split-btn-item.active .split-btn-badge {
+  background: rgba(255, 255, 255, 0.28);
+  color: var(--color-bg);
+}
+
 @keyframes spin-anim {
   from {
     transform: rotate(0deg);

@@ -1,5 +1,16 @@
 [
   {
+    "version": "v1.21.0",
+    "date": "13/10/2026 07:50",
+    "title": "Quick Remarks Split Button in Navigation",
+    "changes": [
+      "Added a segmented split button in the top navigation bar to the right of '+ New PilGi' showing live counts for Open and Mine remarks.",
+      "Open counter displays records with open remarks not written by the current user.",
+      "Mine counter displays records with open remarks written by the current user.",
+      "Clicking either button navigates to the records dashboard and activates the corresponding remarks filter."
+    ]
+  },
+  {
     "version": "v1.20.0",
     "date": "12/10/2026 20:05",
     "title": "Remarks Dashboard Filter",
