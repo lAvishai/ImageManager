@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import Icon from './Icon.vue'
-import { last, shown1, type PilgiRecord } from '../domain'
+import { hasHebrew, last, shown1, type PilgiRecord } from '../domain'
 import { useRecordsStore } from '../stores/records'
 import { useSettingsStore } from '../stores/settings'
 
@@ -173,9 +173,9 @@ function syncTextGenPrompts() {
 
   // 2. @TopText - The Final Top Text of the record (trimmed lines, newlines replaced with |)
   // 3. @BottomText - The Final Bottom Text of the record (trimmed lines, newlines replaced with |)
-  const v1 = shown1(props.record.stage1)
-  const topText = formatSentenceForPrompt(v1?.topSentence || '')
-  const bottomText = formatSentenceForPrompt(v1?.bottomSentence || '')
+  const v1 = targetV1.value
+  const topText = formatSentenceForPrompt(topSentenceDraft.value || v1?.topSentence || '')
+  const bottomText = formatSentenceForPrompt(bottomSentenceDraft.value || v1?.bottomSentence || '')
 
   // 4. @FontSize - If record font sise has value us it else font Size from the settings
   const fontSizeVal = typeof props.record.fontSize === 'number' && !isNaN(props.record.fontSize) && props.record.fontSize > 0
@@ -223,6 +223,7 @@ watch(
     if (props.open && props.record) {
       syncScenario()
       syncTextGen()
+      syncStage1Text()
       syncTextGenPrompts()
       copied.value = false
       copiedPrompt.value = false
@@ -230,10 +231,56 @@ watch(
       copiedBottomPrompt.value = false
       copiedBoth.value = false
       saved.value = false
+      savedLineBreak.value = false
     }
   },
   { immediate: true },
 )
+
+// Stage 1 Text Line Breaks
+const targetV1 = computed(() => (props.record ? shown1(props.record.stage1) : undefined))
+const topSentenceDraft = ref('')
+const bottomSentenceDraft = ref('')
+const savingLineBreak = ref(false)
+const savedLineBreak = ref(false)
+
+function syncStage1Text() {
+  if (!targetV1.value) {
+    topSentenceDraft.value = ''
+    bottomSentenceDraft.value = ''
+    return
+  }
+  topSentenceDraft.value = targetV1.value.topSentence || ''
+  bottomSentenceDraft.value = targetV1.value.bottomSentence || ''
+}
+
+const hasLineBreakChanges = computed(() => {
+  if (!targetV1.value) return false
+  const curTop = targetV1.value.topSentence || ''
+  const curBottom = targetV1.value.bottomSentence || ''
+  return topSentenceDraft.value !== curTop || bottomSentenceDraft.value !== curBottom
+})
+
+async function saveLineBreak() {
+  if (!props.record || !targetV1.value) return
+  savingLineBreak.value = true
+  await store.saveText(props.record.id, 1, {
+    mode: 'edit',
+    vn: targetV1.value.versionNumber,
+    top: topSentenceDraft.value,
+    bottom: bottomSentenceDraft.value,
+    scenario: '',
+    isLineBreak: true,
+  })
+  syncTextGenPrompts()
+  savingLineBreak.value = false
+  savedLineBreak.value = true
+  setTimeout(() => (savedLineBreak.value = false), 2200)
+}
+
+watch([topSentenceDraft, bottomSentenceDraft], () => {
+  syncTextGenPrompts()
+})
 
 const hasChanges = computed(() => {
   if (!props.record) return false
@@ -278,7 +325,7 @@ function resetToDefaults() {
 
     <aside
       data-screen-label="Tech Data"
-      style="position: fixed; top: 0; right: 0; bottom: 0; z-index: 41; width: min(480px, 100%); display: flex; flex-direction: column; background: var(--color-bg); box-shadow: var(--shadow-lg); border-radius: calc(var(--radius-lg) * 1.4) 0 0 calc(var(--radius-lg) * 1.4); overflow: hidden"
+      style="position: fixed; top: 0; right: 0; bottom: 0; z-index: 41; width: min(680px, 100%); display: flex; flex-direction: column; background: var(--color-bg); box-shadow: var(--shadow-lg); border-radius: calc(var(--radius-lg) * 1.4) 0 0 calc(var(--radius-lg) * 1.4); overflow: hidden"
     >
       <!-- Header -->
       <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); padding: var(--space-6) var(--space-6) var(--space-4); border-bottom: 1px solid var(--color-divider)">
@@ -456,6 +503,70 @@ function resetToDefaults() {
 
           <hr style="border: 0; border-top: 1px solid var(--color-divider); margin: 0" />
 
+          <!-- Stage 1 Text Line Breaks Subsection -->
+          <div style="display: flex; flex-direction: column; gap: var(--space-3)">
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <span class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em">Stage 1 Text Line Breaks</span>
+              <span v-if="targetV1" class="tag tag-accent-2" style="font-size: 11px">v{{ targetV1.versionNumber }} · Final</span>
+            </div>
+            <p class="text-muted" style="margin: 0; font-size: 12px; line-height: 1.4">
+              Edit line breaks for Top and Bottom text. Line breaks are converted to <code>|</code> in the prompts below.
+            </p>
+
+            <!-- Top Sentence -->
+            <div class="field" style="margin: 0">
+              <label for="tdTopSentence">Top Sentence</label>
+              <textarea
+                id="tdTopSentence"
+                v-model="topSentenceDraft"
+                class="input"
+                rows="2"
+                :dir="hasHebrew(topSentenceDraft) ? 'rtl' : undefined"
+                style="border-radius: var(--radius-md); min-height: 52px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
+                :style="hasHebrew(topSentenceDraft) ? 'direction: rtl; text-align: right;' : ''"
+                placeholder="Top sentence…"
+              ></textarea>
+            </div>
+
+            <!-- Bottom Sentence -->
+            <div class="field" style="margin: 0">
+              <label for="tdBottomSentence">Bottom Sentence</label>
+              <textarea
+                id="tdBottomSentence"
+                v-model="bottomSentenceDraft"
+                class="input"
+                rows="2"
+                :dir="hasHebrew(bottomSentenceDraft) ? 'rtl' : undefined"
+                style="border-radius: var(--radius-md); min-height: 52px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
+                :style="hasHebrew(bottomSentenceDraft) ? 'direction: rtl; text-align: right;' : ''"
+                placeholder="Bottom sentence…"
+              ></textarea>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: 2px">
+              <button
+                class="btn btn-ghost"
+                style="font-size: 12px; padding-inline: var(--space-2)"
+                title="Reset to current saved text"
+                :disabled="!hasLineBreakChanges"
+                @click="syncStage1Text"
+              >
+                Reset text
+              </button>
+              <button
+                class="btn btn-secondary"
+                :disabled="savingLineBreak || !hasLineBreakChanges || !topSentenceDraft.trim() || !bottomSentenceDraft.trim()"
+                style="display: inline-flex; align-items: center; gap: var(--space-2); padding-block: 6px"
+                @click="saveLineBreak"
+              >
+                <Icon v-if="savedLineBreak" name="check" :size="15" />
+                <span>{{ savedLineBreak ? 'Updated!' : savingLineBreak ? 'Updating…' : 'Update line break' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid var(--color-divider); margin: 0" />
+
           <!-- Generated Prompts Subsection -->
           <div style="display: flex; flex-direction: column; gap: var(--space-3)">
             <div style="display: flex; align-items: center; justify-content: space-between">
@@ -472,7 +583,7 @@ function resetToDefaults() {
                   v-model="topImagePromptDraft"
                   class="input"
                   rows="2"
-                  style="flex: 1; min-height: 58px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
+                  style="border-radius: var(--radius-md); flex: 1; min-height: 58px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
                   placeholder="Settings Top Image prompt is empty"
                 ></textarea>
                 <button
@@ -496,7 +607,7 @@ function resetToDefaults() {
                   v-model="bottomImagePromptDraft"
                   class="input"
                   rows="2"
-                  style="flex: 1; min-height: 58px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
+                  style="border-radius: var(--radius-md); flex: 1; min-height: 58px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
                   placeholder="Settings Bottom Image prompt is empty"
                 ></textarea>
                 <button

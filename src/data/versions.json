@@ -1,5 +1,48 @@
 [
   {
+    "version": "v1.29.0",
+    "date": "17/10/2026 22:20",
+    "title": "Reduce Stage 1 Textarea Height in Tech Data Panel",
+    "changes": [
+      "Reduced the default height of the Top Sentence and Bottom Sentence text inputs in the Stage 1 Text Line Breaks section to a compact 52px."
+    ]
+  },
+  {
+    "version": "v1.28.0",
+    "date": "17/10/2026 22:18",
+    "title": "Match Image Prompts Textarea Border Radius",
+    "changes": [
+      "Applied var(--radius-md) border radius to the Top Image prompt and Bottom Image prompt textareas in the Tech Data panel."
+    ]
+  },
+  {
+    "version": "v1.27.0",
+    "date": "17/10/2026 22:16",
+    "title": "Match Input Border Radius in Tech Data Panel",
+    "changes": [
+      "Applied var(--radius-md) border radius to the Stage 1 Top and Bottom sentence text inputs in the Tech Data drawer to match the Scenario Prompt textarea styling."
+    ]
+  },
+  {
+    "version": "v1.26.0",
+    "date": "17/10/2026 22:10",
+    "title": "Extend Tech Data Panel Width",
+    "changes": [
+      "Extended width of the Tech Data drawer by 200px (from 480px to 680px) for a more spacious editing and prompt review layout."
+    ]
+  },
+  {
+    "version": "v1.25.0",
+    "date": "17/10/2026 22:08",
+    "title": "Edit Stage 1 Text Line Breaks in Tech Data Panel",
+    "changes": [
+      "Added Stage 1 Top and Bottom sentence line break editing directly in the Tech Data drawer under Text Generation.",
+      "Enabled real-time prompt updating with | delimiters as line breaks are adjusted in the editor.",
+      "Added 'Update line break' and 'Reset text' controls to persist line break adjustments in place on the record's version.",
+      "Added automatic RTL support for Hebrew text in the sentence textareas."
+    ]
+  },
+  {
     "version": "v1.24.0",
     "date": "17/10/2026 21:56",
     "title": "RTL Support for Approve and Reject Comments",
