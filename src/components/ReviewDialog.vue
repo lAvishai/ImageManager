@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { hasHebrew } from '../domain'
 
 const props = defineProps<{
   title: string
@@ -30,7 +31,14 @@ function confirm() {
       <div class="dialog-body">{{ body }}</div>
       <div class="field">
         <label>{{ commentLabel }}</label>
-        <textarea v-model="comment" class="input" :placeholder="placeholder" style="border-radius: var(--radius-md)" @input="err = false"></textarea>
+        <textarea
+          v-model="comment"
+          class="input"
+          :placeholder="placeholder"
+          :dir="hasHebrew(comment) ? 'rtl' : undefined"
+          :style="`border-radius: var(--radius-md); ${hasHebrew(comment) ? 'direction:rtl; text-align:right;' : ''}`"
+          @input="err = false"
+        ></textarea>
       </div>
       <span v-if="err" style="font-size: 13px; color: var(--color-accent-700)">Add a comment so the creator knows what to change.</span>
       <div class="dialog-actions">

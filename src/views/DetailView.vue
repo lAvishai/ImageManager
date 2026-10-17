@@ -14,6 +14,7 @@ import {
   extractGoogleDriveId,
   fmt,
   fmtPostDate,
+  hasHebrew,
   isRemarksDone,
   isoToTzLocal,
   last,
@@ -136,6 +137,7 @@ const vv = computed(() => {
     hasReview: v.status !== 'pending',
     reviewLine: `${v.status === 'approved' ? 'Approved' : 'Rejected'} by ${short(v.reviewedBy)} · ${fmt(v.reviewedAt, tz.value)}`,
     comment: v.reviewComments || 'No comment.',
+    commentRtl: hasHebrew(v.reviewComments),
     commentBg: v.status === 'rejected' ? 'var(--color-accent-100)' : 'var(--color-accent-2-100)',
     link: v.imageLink || v.driveLink || '',
     driveId: n > 2 ? extractGoogleDriveId(v.imageLink || v.driveLink) : null,
@@ -193,6 +195,7 @@ const versions = computed(() => {
       statusLabel: s.selectedVersionNumber === x.versionNumber ? 'Final' : ST[x.status].label,
       byLine: `${short(a.value <= 2 ? x.createdBy : x.uploadedBy)} · ${fmt(a.value <= 2 ? x.createdAt : x.uploadedAt, tz.value)}`,
       comment: x.reviewComments,
+      commentRtl: hasHebrew(x.reviewComments),
       reviewer: short(x.reviewedBy),
       driveId: a.value > 2 ? extractGoogleDriveId(x.imageLink || x.driveLink) : null,
       thumb: a.value > 2 ? thumb(rec.value.num, a.value, x.versionNumber) : null,
@@ -450,7 +453,11 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
           </div>
           <div v-if="vv.hasReview" :style="`display:flex; flex-direction:column; gap:2px; padding:var(--space-3) var(--space-4); border-radius:var(--radius-md); background:${vv.commentBg}`">
             <span style="font-size: 12px; color: var(--color-neutral-700)">{{ vv.reviewLine }}</span>
-            <span style="font-size: 14px">{{ vv.comment }}</span>
+            <div
+              :dir="vv.commentRtl ? 'rtl' : undefined"
+              :class="{ rtl: vv.commentRtl }"
+              :style="`font-size: 14px; white-space: pre-wrap; ${vv.commentRtl ? 'direction:rtl; text-align:right;' : ''}`"
+            >{{ vv.comment }}</div>
           </div>
           <div style="display: flex; gap: var(--space-2); flex-wrap: wrap">
             <template v-if="vv.canReview">
@@ -532,7 +539,12 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
                 <span class="tag" :class="v.tagCls">{{ v.statusLabel }}</span>
               </div>
               <span class="text-muted" style="font-size: 12px">{{ v.byLine }}</span>
-              <span v-if="v.comment" style="font-size: 13px; line-height: 1.4">“{{ v.comment }}” <span class="text-muted">— {{ v.reviewer }}</span></span>
+              <div
+                v-if="v.comment"
+                :dir="v.commentRtl ? 'rtl' : undefined"
+                :class="{ rtl: v.commentRtl }"
+                :style="`font-size: 13px; line-height: 1.4; white-space: pre-wrap; ${v.commentRtl ? 'direction:rtl; text-align:right;' : ''}`"
+              >“{{ v.comment }}” <span class="text-muted">— {{ v.reviewer }}</span></div>
             </div>
           </button>
         </div>

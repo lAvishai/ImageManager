@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import Icon from './Icon.vue'
-import { SN, fmt, short } from '../domain'
+import { SN, fmt, hasHebrew, short } from '../domain'
 import { useAuthStore } from '../stores/auth'
 import { useRecordsStore } from '../stores/records'
 import { useUiStore } from '../stores/ui'
@@ -52,6 +52,7 @@ interface TimelineRemark {
   glyph: string
   avatarBg: string
   stageLabel: string
+  isRtl: boolean
 }
 
 interface TimelineDone {
@@ -82,6 +83,7 @@ const feed = computed<TimelineItem[]>(() => {
       glyph: short(m.by).charAt(0).toUpperCase(),
       avatarBg: AV[i % AV.length],
       stageLabel: `Written at Stage ${m.stage} · ${SN[m.stage]}`,
+      isRtl: hasHebrew(m.text),
     }
   })
 
@@ -236,7 +238,9 @@ async function setDoneStatus(val: boolean) {
                 <span class="text-muted">{{ fmt(item.at, settings.current.timeZone) }}</span>
               </div>
               <div
-                :style="`padding:10px 14px; border-radius:${item.mine ? '18px 18px 6px 18px' : '18px 18px 18px 6px'}; background:${item.mine ? 'var(--color-accent-200)' : 'var(--color-surface)'}; font-size:14px; line-height:1.45; white-space:pre-wrap; text-wrap:pretty`"
+                :dir="item.isRtl ? 'rtl' : undefined"
+                :class="{ rtl: item.isRtl }"
+                :style="`padding:10px 14px; border-radius:${item.mine ? '18px 18px 6px 18px' : '18px 18px 18px 6px'}; background:${item.mine ? 'var(--color-accent-200)' : 'var(--color-surface)'}; font-size:14px; line-height:1.45; white-space:pre-wrap; text-wrap:pretty; ${item.isRtl ? 'direction:rtl; text-align:right;' : ''}`"
               >{{ item.text }}</div>
               <span class="tag tag-outline" style="font-size: 11px">{{ item.stageLabel }}</span>
             </div>
@@ -246,7 +250,15 @@ async function setDoneStatus(val: boolean) {
 
       <!-- Add Remark Form (Always active) -->
       <form style="display: flex; align-items: flex-end; gap: var(--space-2); padding: var(--space-3) var(--space-6) var(--space-6); border-top: 2px solid var(--color-neutral-200)" @submit.prevent="send">
-        <textarea v-model="draft" class="input" rows="2" placeholder="Write a remark… (Enter to send)" style="flex: 1; resize: none; border-radius: var(--radius-md); min-height: 48px" @keydown.enter.exact.prevent="send"></textarea>
+        <textarea
+          v-model="draft"
+          class="input"
+          rows="2"
+          placeholder="Write a remark… (Enter to send)"
+          :dir="hasHebrew(draft) ? 'rtl' : undefined"
+          :style="`flex: 1; resize: none; border-radius: var(--radius-md); min-height: 48px; ${hasHebrew(draft) ? 'direction:rtl; text-align:right;' : ''}`"
+          @keydown.enter.exact.prevent="send"
+        ></textarea>
         <button class="btn btn-primary btn-icon" type="submit" :disabled="!draft.trim()" aria-label="Send remark" style="width: 44px; height: 44px; padding: 0; flex: none"><Icon name="send" :size="18" /></button>
       </form>
     </aside>

@@ -477,3 +477,10 @@ export function parseFile(name: string, text: string): { top: string; bottom: st
     return { top: c[0] || '', bottom: c[1] || '' }
   })
 }
+
+/** Returns true if the string contains Hebrew characters. */
+export function hasHebrew(text?: string | null): boolean {
+  if (!text) return false
+  return /[\u0590-\u05FF\uFB1D-\uFB4F]/.test(text)
+}
+

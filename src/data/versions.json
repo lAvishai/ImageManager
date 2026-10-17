@@ -1,5 +1,24 @@
 [
   {
+    "version": "v1.24.0",
+    "date": "17/10/2026 21:56",
+    "title": "RTL Support for Approve and Reject Comments",
+    "changes": [
+      "Added automatic RTL direction and alignment to review comments on active version cards and version history items when Hebrew characters are present.",
+      "Added dynamic RTL direction styling and attribute to the rejection comment dialog textarea when typing Hebrew text."
+    ]
+  },
+  {
+    "version": "v1.23.0",
+    "date": "17/10/2026 21:50",
+    "title": "RTL Support for Hebrew Remarks",
+    "changes": [
+      "Added automatic RTL direction and alignment to the remark bubble div when Hebrew characters are present.",
+      "Added RTL direction styling and attribute to the remark draft input when typing Hebrew text.",
+      "Added hasHebrew helper in domain logic to detect Hebrew character ranges."
+    ]
+  },
+  {
     "version": "v1.22.0",
     "date": "13/10/2026 19:46",
     "title": "Evaluate Last Remark for Open and Mine Filters",
