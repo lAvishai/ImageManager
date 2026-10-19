@@ -13,7 +13,8 @@
       "Added automatic RTL direction and right-alignment support when speech bubbles display Hebrew sentences.",
       "Added idle auto-speech: if neither animal is clicked for at least 6 seconds, a speech bubble automatically appears on a random animal every 6–10 seconds, resetting seamlessly upon user clicks.",
       "Pauses animal movement on hover so users can easily click either animal to trigger dialogue and joyful hops.",
-      "Refined the Elephant vector illustration with a natural, less-curled trunk curve."
+      "Refined the Elephant vector illustration with a natural, less-curled trunk curve.",
+      "Preserved animal facing orientation during jump hops by isolating horizontal scaling from vertical bounce keyframes so animals never flip sides when hopping."
     ]
   },
   {

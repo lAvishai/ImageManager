@@ -391,19 +391,22 @@ onUnmounted(() => {
       </transition>
 
       <div
-        class="animal-wrapper"
-        :class="{
-          'is-bouncing': elephantBouncing,
-          'is-walking': elephantWalking && !elephantHovered,
-        }"
+        class="animal-orientation"
         :style="{ transform: `scaleX(${elephantDir})` }"
-        title="The Elephant (#A) — Click me!"
-        role="button"
-        tabindex="0"
-        @click="say('elephant')"
-        @keydown.enter="say('elephant')"
-        @keydown.space.prevent="say('elephant')"
       >
+        <div
+          class="animal-wrapper"
+          :class="{
+            'is-bouncing': elephantBouncing,
+            'is-walking': elephantWalking && !elephantHovered,
+          }"
+          title="The Elephant (#A) — Click me!"
+          role="button"
+          tabindex="0"
+          @click="say('elephant')"
+          @keydown.enter="say('elephant')"
+          @keydown.space.prevent="say('elephant')"
+        >
         <svg
           class="animal-svg elephant-svg"
           viewBox="0 0 54 44"
@@ -488,6 +491,7 @@ onUnmounted(() => {
             <circle cx="38.5" cy="40.5" r="0.9" fill="#edf2f7" />
           </g>
         </svg>
+        </div>
       </div>
     </div>
 
@@ -510,119 +514,123 @@ onUnmounted(() => {
       </transition>
 
       <div
-        class="animal-wrapper"
-        :class="{
-          'is-bouncing': giraffeBouncing,
-          'is-walking': giraffeWalking && !giraffeHovered,
-        }"
+        class="animal-orientation"
         :style="{ transform: `scaleX(${giraffeDir})` }"
-        title="The Giraffe (#B) — Click me!"
-        role="button"
-        tabindex="0"
-        @click="say('giraffe')"
-        @keydown.enter="say('giraffe')"
-        @keydown.space.prevent="say('giraffe')"
       >
-        <svg
-          class="animal-svg giraffe-svg"
-          viewBox="0 0 52 64"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+        <div
+          class="animal-wrapper"
+          :class="{
+            'is-bouncing': giraffeBouncing,
+            'is-walking': giraffeWalking && !giraffeHovered,
+          }"
+          title="The Giraffe (#B) — Click me!"
+          role="button"
+          tabindex="0"
+          @click="say('giraffe')"
+          @keydown.enter="say('giraffe')"
+          @keydown.space.prevent="say('giraffe')"
         >
-          <!-- Far Back Leg -->
-          <g class="leg leg-back-far" style="transform-origin: 15px 42px">
-            <rect x="13.5" y="41" width="3.5" height="21" rx="1.7" fill="#d99f2b" />
-            <rect x="13.5" y="60" width="3.5" height="2" rx="0.5" fill="#693910" />
-          </g>
+          <svg
+            class="animal-svg giraffe-svg"
+            viewBox="0 0 52 64"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <!-- Far Back Leg -->
+            <g class="leg leg-back-far" style="transform-origin: 15px 42px">
+              <rect x="13.5" y="41" width="3.5" height="21" rx="1.7" fill="#d99f2b" />
+              <rect x="13.5" y="60" width="3.5" height="2" rx="0.5" fill="#693910" />
+            </g>
 
-          <!-- Far Front Leg -->
-          <g class="leg leg-front-far" style="transform-origin: 29px 42px">
-            <rect x="27.5" y="41" width="3.5" height="21" rx="1.7" fill="#d99f2b" />
-            <rect x="27.5" y="60" width="3.5" height="2" rx="0.5" fill="#693910" />
-          </g>
+            <!-- Far Front Leg -->
+            <g class="leg leg-front-far" style="transform-origin: 29px 42px">
+              <rect x="27.5" y="41" width="3.5" height="21" rx="1.7" fill="#d99f2b" />
+              <rect x="27.5" y="60" width="3.5" height="2" rx="0.5" fill="#693910" />
+            </g>
 
-          <!-- Tail -->
-          <g class="tail giraffe-tail" style="transform-origin: 10px 42px">
-            <path
-              d="M10 42C7 45 6 50 8 54"
-              stroke="#d99f2b"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-            <path d="M8 53C9 55 9 57 7 58C6 57 7 55 8 53Z" fill="#8c471b" />
-          </g>
-
-          <!-- Body Bobbing Group -->
-          <g class="body-bob">
-            <!-- Torso -->
-            <path
-              d="M10 42C10 37 14 34 22 34C28 34 32 37 32 43C32 47 28 48 20 48C13 48 10 46 10 42Z"
-              fill="#f5ba42"
-            />
-
-            <!-- Body Spots -->
-            <ellipse cx="15" cy="40" rx="2.5" ry="2" fill="#c67139" />
-            <ellipse cx="23" cy="39" rx="3.2" ry="2.2" fill="#c67139" />
-            <ellipse cx="20" cy="44" rx="2" ry="1.8" fill="#c67139" />
-            <ellipse cx="28" cy="43" rx="2" ry="1.8" fill="#c67139" />
-
-            <!-- Long Neck & Head Group -->
-            <g class="giraffe-neck" style="transform-origin: 30px 40px">
-              <!-- Mane -->
-              <path d="M26 36L28 16L30 16L28 36Z" fill="#a05523" />
-              <path d="M25 34C24 30 25 24 26 17L28 17C27 24 27 30 27 34Z" fill="#8c471b" />
-
-              <!-- Neck column -->
-              <path d="M27 38L32 14L37 14L33 39Z" fill="#f5ba42" />
-
-              <!-- Neck Spots -->
-              <ellipse cx="30" cy="32" rx="1.8" ry="2.2" fill="#c67139" />
-              <ellipse cx="32" cy="24" rx="1.7" ry="2.4" fill="#c67139" />
-              <ellipse cx="33.5" cy="17" rx="1.5" ry="1.8" fill="#c67139" />
-
-              <!-- Horns / Ossicones -->
-              <path d="M34 14L34 8" stroke="#f5ba42" stroke-width="1.5" stroke-linecap="round" />
-              <circle cx="34" cy="7.5" r="1.3" fill="#8c471b" />
-              <path d="M37 14L38 8.5" stroke="#f5ba42" stroke-width="1.5" stroke-linecap="round" />
-              <circle cx="38" cy="8" r="1.3" fill="#8c471b" />
-
-              <!-- Ear -->
-              <path d="M30 12C28 10 28 8 30 9C32 10 32 12 30 12Z" fill="#f5ba42" />
-              <path d="M30 11C29 10 29 9 30 9.5C31 10 31 11 30 11Z" fill="#f2b5a5" />
-
-              <!-- Head & Snout -->
+            <!-- Tail -->
+            <g class="tail giraffe-tail" style="transform-origin: 10px 42px">
               <path
-                d="M32 15C32 12 35 11 39 12C43 13 46 15 45 18C44 20 40 20 37 19L33 19C32 18 32 16 32 15Z"
-                fill="#f5ba42"
-              />
-              <path
-                d="M40 14C43 14.5 45.5 15.8 45 18C44.5 19.5 42 19.5 40 18.5Z"
-                fill="#faecd0"
-              />
-              <path
-                d="M41 18C42 18.5 43 18.5 43.8 17.8"
-                stroke="#693910"
-                stroke-width="0.8"
+                d="M10 42C7 45 6 50 8 54"
+                stroke="#d99f2b"
+                stroke-width="1.8"
                 stroke-linecap="round"
               />
-              <circle cx="37" cy="14" r="1.5" fill="#201e1d" />
-              <circle cx="37.5" cy="13.5" r="0.5" fill="#ffffff" />
-              <ellipse cx="37" cy="17" rx="1.6" ry="1" fill="#f4a387" opacity="0.8" />
+              <path d="M8 53C9 55 9 57 7 58C6 57 7 55 8 53Z" fill="#8c471b" />
             </g>
-          </g>
 
-          <!-- Near Back Leg -->
-          <g class="leg leg-back-near" style="transform-origin: 17px 42px">
-            <rect x="15.5" y="41" width="3.6" height="21" rx="1.8" fill="#f5ba42" />
-            <rect x="15.5" y="60" width="3.6" height="2" rx="0.5" fill="#693910" />
-          </g>
+            <!-- Body Bobbing Group -->
+            <g class="body-bob">
+              <!-- Torso -->
+              <path
+                d="M10 42C10 37 14 34 22 34C28 34 32 37 32 43C32 47 28 48 20 48C13 48 10 46 10 42Z"
+                fill="#f5ba42"
+              />
 
-          <!-- Near Front Leg -->
-          <g class="leg leg-front-near" style="transform-origin: 31px 42px">
-            <rect x="29.5" y="41" width="3.6" height="21" rx="1.8" fill="#f5ba42" />
-            <rect x="29.5" y="60" width="3.6" height="2" rx="0.5" fill="#693910" />
-          </g>
-        </svg>
+              <!-- Body Spots -->
+              <ellipse cx="15" cy="40" rx="2.5" ry="2" fill="#c67139" />
+              <ellipse cx="23" cy="39" rx="3.2" ry="2.2" fill="#c67139" />
+              <ellipse cx="20" cy="44" rx="2" ry="1.8" fill="#c67139" />
+              <ellipse cx="28" cy="43" rx="2" ry="1.8" fill="#c67139" />
+
+              <!-- Long Neck & Head Group -->
+              <g class="giraffe-neck" style="transform-origin: 30px 40px">
+                <!-- Mane -->
+                <path d="M26 36L28 16L30 16L28 36Z" fill="#a05523" />
+                <path d="M25 34C24 30 25 24 26 17L28 17C27 24 27 30 27 34Z" fill="#8c471b" />
+
+                <!-- Neck column -->
+                <path d="M27 38L32 14L37 14L33 39Z" fill="#f5ba42" />
+
+                <!-- Neck Spots -->
+                <ellipse cx="30" cy="32" rx="1.8" ry="2.2" fill="#c67139" />
+                <ellipse cx="32" cy="24" rx="1.7" ry="2.4" fill="#c67139" />
+                <ellipse cx="33.5" cy="17" rx="1.5" ry="1.8" fill="#c67139" />
+
+                <!-- Horns / Ossicones -->
+                <path d="M34 14L34 8" stroke="#f5ba42" stroke-width="1.5" stroke-linecap="round" />
+                <circle cx="34" cy="7.5" r="1.3" fill="#8c471b" />
+                <path d="M37 14L38 8.5" stroke="#f5ba42" stroke-width="1.5" stroke-linecap="round" />
+                <circle cx="38" cy="8" r="1.3" fill="#8c471b" />
+
+                <!-- Ear -->
+                <path d="M30 12C28 10 28 8 30 9C32 10 32 12 30 12Z" fill="#f5ba42" />
+                <path d="M30 11C29 10 29 9 30 9.5C31 10 31 11 30 11Z" fill="#f2b5a5" />
+
+                <!-- Head & Snout -->
+                <path
+                  d="M32 15C32 12 35 11 39 12C43 13 46 15 45 18C44 20 40 20 37 19L33 19C32 18 32 16 32 15Z"
+                  fill="#f5ba42"
+                />
+                <path
+                  d="M40 14C43 14.5 45.5 15.8 45 18C44.5 19.5 42 19.5 40 18.5Z"
+                  fill="#faecd0"
+                />
+                <path
+                  d="M41 18C42 18.5 43 18.5 43.8 17.8"
+                  stroke="#693910"
+                  stroke-width="0.8"
+                  stroke-linecap="round"
+                />
+                <circle cx="37" cy="14" r="1.5" fill="#201e1d" />
+                <circle cx="37.5" cy="13.5" r="0.5" fill="#ffffff" />
+                <ellipse cx="37" cy="17" rx="1.6" ry="1" fill="#f4a387" opacity="0.8" />
+              </g>
+            </g>
+
+            <!-- Near Back Leg -->
+            <g class="leg leg-back-near" style="transform-origin: 17px 42px">
+              <rect x="15.5" y="41" width="3.6" height="21" rx="1.8" fill="#f5ba42" />
+              <rect x="15.5" y="60" width="3.6" height="2" rx="0.5" fill="#693910" />
+            </g>
+
+            <!-- Near Front Leg -->
+            <g class="leg leg-front-near" style="transform-origin: 31px 42px">
+              <rect x="29.5" y="41" width="3.6" height="21" rx="1.8" fill="#f5ba42" />
+              <rect x="29.5" y="60" width="3.6" height="2" rx="0.5" fill="#693910" />
+            </g>
+          </svg>
+        </div>
       </div>
     </div>
   </div>
@@ -649,13 +657,19 @@ onUnmounted(() => {
   will-change: left;
 }
 
+.animal-orientation {
+  transform-origin: center bottom;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: flex-end;
+}
+
 .animal-wrapper {
   position: relative;
   display: flex;
   align-items: flex-end;
   outline: none;
   transform-origin: center bottom;
-  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
   filter: drop-shadow(0 2px 3px rgba(46, 43, 37, 0.15));
 }
 
