@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Icon from './Icon.vue'
+import NavAnimals from './NavAnimals.vue'
 import RemarksDrawer from './RemarksDrawer.vue'
 import { lastOpenRemarkOf } from '../domain'
 import { useAuthStore } from '../stores/auth'
@@ -63,7 +64,7 @@ async function create() {
 </script>
 
 <template>
-  <nav class="nav" style="padding: var(--space-4) clamp(16px, 4vw, var(--space-8)); flex-wrap: wrap; gap: var(--space-3); border-bottom: 2px solid var(--color-neutral-300); margin-bottom: var(--space-4)">
+  <nav class="nav main-nav" style="position: relative; padding: var(--space-4) clamp(16px, 4vw, var(--space-8)) calc(var(--space-4) + 14px); flex-wrap: wrap; gap: var(--space-3); border-bottom: 2px solid var(--color-neutral-300); margin-bottom: var(--space-4)">
     <div style="display: flex; gap: var(--space-1); margin-right: auto">
       <h1 title="Back to pilgis" style="margin: 0; cursor: pointer" @click="router.push('/')">PilGi manager</h1>
     </div>
@@ -121,6 +122,7 @@ async function create() {
       <Icon name="gear" />
     </button>
     <button class="btn btn-secondary btn-icon" title="Lock" @click="lock"><Icon name="lock" /></button>
+    <NavAnimals />
   </nav>
 
   <div v-if="!store.loaded" class="text-muted" style="padding: var(--space-8)">Loading pilgis from {{ auth.repo }}…</div>
@@ -160,6 +162,11 @@ async function create() {
 </template>
 
 <style scoped>
+.main-nav > *:not(.nav-animals-track) {
+  position: relative;
+  z-index: 2;
+}
+
 .split-btn-group {
   display: inline-flex;
   align-items: stretch;

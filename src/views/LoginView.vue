@@ -27,7 +27,7 @@ const useCookie = async () => enter(await auth.useCookie())
     style="min-height: 100vh; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: var(--space-8); padding: clamp(16px, 4vw, var(--space-8))"
   >
     <div style="display: flex; flex-direction: column; gap: var(--space-6); max-width: 460px; padding: var(--space-4) 0 0 clamp(0px, 2vw, var(--space-6))">
-      <div class="nav-brand" style="font-size: 22px">PilGi Manager</div>
+      <div class="nav-brand" style="font-size: 46px">PilGi Manager</div>
 
       <template v-if="isSetup">
         <div>
@@ -71,7 +71,7 @@ const useCookie = async () => enter(await auth.useCookie())
 
       <template v-else>
         <div>
-          <h1 style="font-size: 46px">Welcome back</h1>
+          <h1 style="font-size: 22px">Welcome back</h1>
           <p class="text-muted" style="margin: 0">
             Unlock to decrypt your token and load pilgis from <b style="color: var(--color-text)">{{ auth.form.repo }}</b
             >.

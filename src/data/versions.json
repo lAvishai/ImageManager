@@ -1,5 +1,22 @@
 [
   {
+    "version": "v1.30.0",
+    "date": "20/10/2026 00:00",
+    "title": "Animated Elephant and Giraffe Companions in Nav Header",
+    "changes": [
+      "Added cute animated vector illustrations of the Elephant (#A) and Giraffe (#B) walking along the bottom border of the nav header with smooth quadruped walking gaits.",
+      "Given each animal independent random speeds, wander intervals, and movement directions along the border.",
+      "Added encounter interactions: when the animals meet, they pause to face each other and release floating, bubbling heart particles that drift up and fade out.",
+      "Added seeking behavior: if the animals have not met for more than 15 seconds, they automatically turn and walk directly towards each other until they meet.",
+      "Replaced static speech quotes with dynamic random sentences from Stage 1 (top and bottom sentences) across the loaded records.",
+      "Flattened multiline Stage 1 sentences into single-line strings with clean whitespace separation and no text wrapping in speech bubbles.",
+      "Added automatic RTL direction and right-alignment support when speech bubbles display Hebrew sentences.",
+      "Added idle auto-speech: if neither animal is clicked for at least 6 seconds, a speech bubble automatically appears on a random animal every 6–10 seconds, resetting seamlessly upon user clicks.",
+      "Pauses animal movement on hover so users can easily click either animal to trigger dialogue and joyful hops.",
+      "Refined the Elephant vector illustration with a natural, less-curled trunk curve."
+    ]
+  },
+  {
     "version": "v1.29.0",
     "date": "17/10/2026 22:20",
     "title": "Reduce Stage 1 Textarea Height in Tech Data Panel",
