@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { hasHebrew, shown1 } from '../domain'
 import { useRecordsStore } from '../stores/records'
 
@@ -22,6 +22,8 @@ const elephantWalking = ref(true)
 const elephantHovered = ref(false)
 const elephantBouncing = ref(false)
 const elephantBubble = ref<string | null>(null)
+const elephantBubbleRef = ref<HTMLElement | null>(null)
+const elephantBubbleWidth = ref(0)
 let elephantBubbleTimer: number | null = null
 
 const giraffeX = ref(240)
@@ -30,6 +32,8 @@ const giraffeWalking = ref(true)
 const giraffeHovered = ref(false)
 const giraffeBouncing = ref(false)
 const giraffeBubble = ref<string | null>(null)
+const giraffeBubbleRef = ref<HTMLElement | null>(null)
+const giraffeBubbleWidth = ref(0)
 let giraffeBubbleTimer: number | null = null
 
 // Speeds (px per second)
@@ -46,11 +50,47 @@ let isInteracting = false
 let animFrameId: number | null = null
 let lastTime = 0
 let resizeObserver: ResizeObserver | null = null
-let trackWidth = 1000
+const trackWidth = ref(1000)
 
 // Autonomous random wandering timers
 let elephantWanderTimeout: number | null = null
 let giraffeWanderTimeout: number | null = null
+
+function getBubbleStyle(speaker: 'elephant' | 'giraffe') {
+  const isElephant = speaker === 'elephant'
+  const animalX = isElephant ? elephantX.value : giraffeX.value
+  const animalWidth = isElephant ? 44 : 40
+  const bubbleText = isElephant ? elephantBubble.value : giraffeBubble.value
+  const measuredWidth = isElephant ? elephantBubbleWidth.value : giraffeBubbleWidth.value
+
+  // Safe estimate if width hasn't been measured yet on initial mount frame
+  const charCount = (bubbleText || '').length
+  const estimatedWidth = Math.min(Math.max(charCount * 7.5 + 24, 120), Math.min(trackWidth.value - 32, 600))
+  const bubbleWidth = measuredWidth || estimatedWidth
+
+  const animalCenter = animalX + animalWidth / 2
+  const halfBubble = bubbleWidth / 2
+  const margin = 16
+
+  const minCenter = margin + halfBubble
+  const maxCenter = Math.max(minCenter, trackWidth.value - margin - halfBubble)
+
+  // Clamped center of the bubble in track coordinates
+  const clampedCenter = Math.max(minCenter, Math.min(animalCenter, maxCenter))
+
+  // How much the bubble body must shift relative to the animal's center
+  const shiftX = clampedCenter - animalCenter
+
+  // Tail anchor relative to the bubble (so tail points down to animal center)
+  const rawTailX = halfBubble - shiftX
+  const tailMargin = 16
+  const tailX = Math.max(tailMargin, Math.min(rawTailX, bubbleWidth - tailMargin))
+
+  return {
+    '--bubble-shift': `${Math.round(shiftX)}px`,
+    '--tail-left': `${Math.round(tailX)}px`,
+  }
+}
 
 /**
  * Removes line breaks from sentences while ensuring words remain properly
@@ -134,22 +174,36 @@ function say(speaker: 'elephant' | 'giraffe', isAuto = false) {
     if (giraffeBubbleTimer) {
       clearTimeout(giraffeBubbleTimer)
       giraffeBubble.value = null
+      giraffeBubbleWidth.value = 0
     }
     if (elephantBubbleTimer) clearTimeout(elephantBubbleTimer)
     elephantBubble.value = getRandomStage1Sentence('elephant')
+    nextTick(() => {
+      if (elephantBubbleRef.value) {
+        elephantBubbleWidth.value = elephantBubbleRef.value.offsetWidth
+      }
+    })
     elephantBubbleTimer = window.setTimeout(() => {
       elephantBubble.value = null
+      elephantBubbleWidth.value = 0
     }, 4500)
   } else {
     // Clear other bubble so only one character speaks at a time
     if (elephantBubbleTimer) {
       clearTimeout(elephantBubbleTimer)
       elephantBubble.value = null
+      elephantBubbleWidth.value = 0
     }
     if (giraffeBubbleTimer) clearTimeout(giraffeBubbleTimer)
     giraffeBubble.value = getRandomStage1Sentence('giraffe')
+    nextTick(() => {
+      if (giraffeBubbleRef.value) {
+        giraffeBubbleWidth.value = giraffeBubbleRef.value.offsetWidth
+      }
+    })
     giraffeBubbleTimer = window.setTimeout(() => {
       giraffeBubble.value = null
+      giraffeBubbleWidth.value = 0
     }, 4500)
   }
 }
@@ -262,8 +316,8 @@ function tick(now: number) {
   lastTime = now
 
   const minX = 14
-  const elephantMaxX = Math.max(minX + 60, trackWidth - 60)
-  const giraffeMaxX = Math.max(minX + 60, trackWidth - 54)
+  const elephantMaxX = Math.max(minX + 60, trackWidth.value - 60)
+  const giraffeMaxX = Math.max(minX + 60, trackWidth.value - 54)
 
   if (!isInteracting) {
     // If they haven't met for more than 15 seconds, make them walk towards each other
@@ -320,11 +374,11 @@ function tick(now: number) {
 
 onMounted(() => {
   if (trackRef.value) {
-    trackWidth = trackRef.value.clientWidth || window.innerWidth
+    trackWidth.value = trackRef.value.clientWidth || window.innerWidth
     resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         if (entry.contentRect.width > 100) {
-          trackWidth = entry.contentRect.width
+          trackWidth.value = entry.contentRect.width
         }
       }
     })
@@ -332,8 +386,8 @@ onMounted(() => {
   }
 
   // Initial random positions
-  elephantX.value = Math.max(20, Math.min(trackWidth * 0.2, trackWidth - 80))
-  giraffeX.value = Math.max(80, Math.min(trackWidth * 0.75, trackWidth - 60))
+  elephantX.value = Math.max(20, Math.min(trackWidth.value * 0.2, trackWidth.value - 80))
+  giraffeX.value = Math.max(80, Math.min(trackWidth.value * 0.75, trackWidth.value - 60))
 
   lastTime = performance.now()
   lastInteractionTime = performance.now()
@@ -383,7 +437,9 @@ onUnmounted(() => {
       <transition name="pop">
         <div
           v-if="elephantBubble"
+          ref="elephantBubbleRef"
           class="speech-bubble"
+          :style="getBubbleStyle('elephant')"
           :dir="hasHebrew(elephantBubble) ? 'rtl' : 'ltr'"
         >
           {{ elephantBubble }}
@@ -506,7 +562,9 @@ onUnmounted(() => {
       <transition name="pop">
         <div
           v-if="giraffeBubble"
+          ref="giraffeBubbleRef"
           class="speech-bubble"
+          :style="getBubbleStyle('giraffe')"
           :dir="hasHebrew(giraffeBubble) ? 'rtl' : 'ltr'"
         >
           {{ giraffeBubble }}
@@ -848,7 +906,7 @@ onUnmounted(() => {
 .speech-bubble {
   position: absolute;
   bottom: calc(100% + 8px);
-  left: 50%;
+  left: calc(50% + var(--bubble-shift, 0px));
   transform: translateX(-50%);
   background: var(--color-surface, #ebddc5);
   color: var(--color-text, #201e1d);
@@ -860,7 +918,7 @@ onUnmounted(() => {
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
-  max-width: min(85vw, 640px);
+  max-width: min(calc(100vw - 32px), 640px);
   min-width: 90px;
   line-height: 1.35;
   text-align: center;
@@ -885,7 +943,7 @@ onUnmounted(() => {
   content: '';
   position: absolute;
   top: 100%;
-  left: 50%;
+  left: var(--tail-left, 50%);
   transform: translateX(-50%);
   border-width: 5px 5px 0 5px;
   border-style: solid;
