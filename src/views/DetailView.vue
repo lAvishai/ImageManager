@@ -18,6 +18,7 @@ import {
   isRemarksDone,
   isoToTzLocal,
   last,
+  latestApprovedVersion,
   shown1,
   short,
   stageData,
@@ -99,7 +100,8 @@ const steps = computed(() =>
       if (n < 5) {
         const st = stageData(x, n)
         const l = last(st)
-        sub = done ? `Approved · v${st.selectedVersionNumber}` : l ? `${ST[l.status].label} · v${l.versionNumber}` : n === 2 ? 'Not written yet' : 'Awaiting upload'
+        const appV = latestApprovedVersion(st)
+        sub = done ? `Approved · v${appV?.versionNumber ?? st.selectedVersionNumber}` : l ? `${ST[l.status].label} · v${l.versionNumber}` : n === 2 ? 'Not written yet' : 'Awaiting upload'
       } else sub = x.stage5.status === 'posted' ? 'Posted ' + fmtPostDate(x.stage5.postedAt, tz.value) : 'Ready to post'
     }
     return {
@@ -272,7 +274,7 @@ function pickChar(k: number, n: string) {
 }
 
 // Posting
-const fin = computed(() => rec.value.stage4.versions.find((x) => x.status === 'approved'))
+const fin = computed(() => latestApprovedVersion(rec.value.stage4))
 const finDriveId = computed(() => (fin.value ? extractGoogleDriveId(fin.value.driveLink || fin.value.imageLink) : null))
 const posted = computed(() => rec.value.stage5.status === 'posted')
 function editDate() {
@@ -569,9 +571,9 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
         <span v-if="fin" class="text-muted" style="display: inline-flex; align-items: center; gap: var(--space-2); font-size: 13px; flex-wrap: wrap">
           Final asset · Stage 4 · v{{ fin.versionNumber }} ·
           <a
-            v-if="finDriveId || extractGoogleDriveId(fin.driveLink)"
+            v-if="finDriveId || extractGoogleDriveId(fin.driveLink || fin.imageLink)"
             class="btn btn-secondary"
-            :href="`https://drive.google.com/uc?export=download&id=${finDriveId || extractGoogleDriveId(fin.driveLink)}`"
+            :href="`https://drive.google.com/uc?export=download&id=${finDriveId || extractGoogleDriveId(fin.driveLink || fin.imageLink)}`"
             target="_blank"
             rel="noreferrer"
             style="padding: 2px 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; border-radius: 999px"
@@ -580,7 +582,7 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
             <Icon name="download" :size="12" />
             Download
           </a>
-          <a :href="fin.driveLink" target="_blank" rel="noreferrer">Open in Drive</a>
+          <a :href="fin.driveLink || fin.imageLink" target="_blank" rel="noreferrer">Open in Drive</a>
         </span>
       </div>
       <div :style="`display:flex; flex-direction:column; gap:var(--space-4); padding:var(--space-6); border-radius:calc(var(--radius-lg) * 1.3); background:${posted ? 'var(--color-accent-2-200)' : 'var(--color-surface)'}`">

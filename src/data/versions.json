@@ -1,5 +1,15 @@
 [
   {
+    "version": "v1.31.0",
+    "date": "20/10/2026 21:35",
+    "title": "Display Latest Approved Stage 4 Image in Stage 5",
+    "changes": [
+      "Updated Stage 5 asset preview and download links to display the latest approved image version from Stage 4 instead of the first approved version.",
+      "Added latestApprovedVersion helper in domain.ts to resolve the latest approved version in a stage.",
+      "Updated stage step indicator subtitles to reflect the latest approved version number."
+    ]
+  },
+  {
     "version": "v1.30.0",
     "date": "20/10/2026 00:00",
     "title": "Animated Elephant and Giraffe Companions in Nav Header",

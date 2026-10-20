@@ -266,6 +266,17 @@ export const stageOf = (r: PilgiRecord) =>
 export const last = (st: Stage) => st.versions[st.versions.length - 1] as Version | undefined
 export const shown1 = (st: Stage) =>
   st.versions.find((v) => v.versionNumber === st.selectedVersionNumber) || (last(st) as Version)
+export const latestApprovedVersion = (st: Stage): Version | undefined => {
+  if (!st || !st.versions) return undefined
+  for (let i = st.versions.length - 1; i >= 0; i--) {
+    if (st.versions[i].status === 'approved') return st.versions[i]
+  }
+  if (st.selectedVersionNumber != null) {
+    const sel = st.versions.find((v) => v.versionNumber === st.selectedVersionNumber)
+    if (sel) return sel
+  }
+  return undefined
+}
 export const stageData = (r: PilgiRecord, n: number) => r[('stage' + n) as 'stage1'] as Stage
 
 export const thumb = (num: number, stage: number, vn: number) => {
@@ -409,7 +420,12 @@ export function build(def: SeedDef, i: number, ME: string, PEOPLE: string[], REJ
         ...rev(st, j + stage),
       }
     })
-  const sel = (vs: Version[]) => vs.find((v) => v.status === 'approved')?.versionNumber ?? null
+  const sel = (vs: Version[]) => {
+    for (let i = vs.length - 1; i >= 0; i--) {
+      if (vs[i].status === 'approved') return vs[i].versionNumber
+    }
+    return null
+  }
   const s3 = img(def.s2, 3, 'imageLink', def.mine2),
     s4 = img(def.s3, 4, 'driveLink')
   let s5: Stage5 = { status: 'pending', postedBy: null, postedAt: null }
