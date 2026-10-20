@@ -283,6 +283,30 @@ export const thumb = (num: number, stage: number, vn: number) => {
   const c = TILE[(num * 3 + stage + vn) % TILE.length]
   return { bg: c[0], fg: c[1], text: stage === 4 }
 }
+export const copyToClipboard = async (text: string): Promise<boolean> => {
+  if (!text) return false
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+  } catch {
+    // Fall back to document.execCommand below
+  }
+  try {
+    const el = document.createElement('textarea')
+    el.value = text
+    el.style.position = 'fixed'
+    el.style.opacity = '0'
+    document.body.appendChild(el)
+    el.select()
+    const ok = document.execCommand('copy')
+    document.body.removeChild(el)
+    return ok
+  } catch {
+    return false
+  }
+}
 export const extractGoogleDriveId = (url: string | null | undefined): string | null => {
   if (!url) return null
   const str = url.trim()

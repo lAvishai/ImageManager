@@ -11,6 +11,7 @@ import {
   SN,
   ST,
   approvedIn,
+  copyToClipboard,
   extractGoogleDriveId,
   fmt,
   fmtPostDate,
@@ -49,6 +50,8 @@ const charOpen = ref<number | null>(null)
 const dialog = ref<{ stage: number; vn: number } | null>(null)
 const deleteConfirmOpen = ref(false)
 const techDataOpen = ref(false)
+const copiedText = ref(false)
+let copyTimer: ReturnType<typeof setTimeout> | null = null
 
 async function onDeleteConfirm() {
   deleteConfirmOpen.value = false
@@ -78,6 +81,7 @@ watch(
     imgUpdate.value = false
     linkDraft.value = linkError.value = ''
     dateDraft.value = null
+    copiedText.value = false
   },
   { immediate: true },
 )
@@ -211,6 +215,7 @@ function goStage(n: number) {
   active.value = n
   editor.value = null
   linkDraft.value = linkError.value = ''
+  copiedText.value = false
 }
 function pickVersion(vn: number) {
   viewVn[a.value] = vn
@@ -253,6 +258,28 @@ async function addImage() {
   linkDraft.value = linkError.value = ''
   viewVn[stage] = undefined
   await store.addImage(rec.value.id, stage, link)
+}
+
+// Stage 1 Copy
+function getStage1Text(): string {
+  if (!vv.value?.v) return ''
+  const top = (vv.value.v.topSentence || '').trim()
+  const bottom = (vv.value.v.bottomSentence || '').trim()
+  if (top && bottom) {
+    return top.includes('\n') || bottom.includes('\n') ? `${top}\n\n${bottom}` : `${top}\n${bottom}`
+  }
+  return top || bottom
+}
+
+async function copyText() {
+  const text = getStage1Text()
+  if (!text) return
+  await copyToClipboard(text)
+  copiedText.value = true
+  if (copyTimer) clearTimeout(copyTimer)
+  copyTimer = setTimeout(() => {
+    copiedText.value = false
+  }, 2000)
 }
 
 // Characters
@@ -369,7 +396,17 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
 
     <div v-if="isReview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--space-6); align-items: start">
       <div style="display: flex; flex-direction: column; gap: var(--space-4)">
-        <div v-if="showCaption && vv" style="width: 75%; max-width: 75%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-6); min-height: 320px; padding: clamp(20px, 4vw, var(--space-8)); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-accent-2-200)">
+        <div v-if="showCaption && vv" style="width: 75%; max-width: 75%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-6); min-height: 320px; padding: clamp(20px, 4vw, var(--space-8)); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-accent-2-200); position: relative">
+          <button
+            type="button"
+            class="btn btn-ghost btn-icon"
+            :title="copiedText ? 'Copied to clipboard!' : 'Copy text to clipboard'"
+            :aria-label="copiedText ? 'Copied to clipboard!' : 'Copy text to clipboard'"
+            :style="`position: absolute; top: var(--space-3); right: var(--space-3); width: 36px; height: 36px; border-radius: 999px; background: var(--color-surface); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2; color: ${copiedText ? 'var(--color-accent-2)' : 'var(--color-neutral-800)'}`"
+            @click="copyText"
+          >
+            <Icon :name="copiedText ? 'check' : 'copy'" :size="16" />
+          </button>
           <div style="font-family: var(--font-heading); font-size: 28px; line-height: 1.15; text-wrap: balance; text-align: center; white-space: pre-line">{{ vv.v.topSentence }}</div>
           <div style="font-family: var(--font-heading); font-size: 28px; line-height: 1.15; text-wrap: balance; text-align: center; white-space: pre-line">{{ vv.v.bottomSentence }}</div>
         </div>
@@ -477,6 +514,15 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
               <Icon name="pencil" />Update line break
             </button>
             <button v-if="vv.canUpdate" class="btn btn-secondary" title="Creates a new version for review; the approved version stays final until the new one is approved" @click="vv.startUpdate">{{ vv.updateLabel }}</button>
+            <button
+              v-if="a === 1"
+              class="btn btn-secondary"
+              title="Copy text to clipboard"
+              @click="copyText"
+            >
+              <Icon :name="copiedText ? 'check' : 'copy'" :size="15" />
+              <span>{{ copiedText ? 'Copied text!' : 'Copy text' }}</span>
+            </button>
           </div>
         </div>
       </div>
