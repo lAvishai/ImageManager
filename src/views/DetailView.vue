@@ -149,7 +149,14 @@ const vv = computed(() => {
     driveId: n > 2 ? extractGoogleDriveId(v.imageLink || v.driveLink) : null,
     thumb: n > 2 ? thumb(rec.value.num, n, v.versionNumber) : null,
     canReview: v.status === 'pending' && open.value,
-    approveLabel: n === 1 ? 'Approve text' : n === 2 ? 'Approve scenario' : 'Approve & select as final',
+    approveLabel:
+      st.value?.versions.find((x) => x.status === 'approved') && st.value.versions.find((x) => x.status === 'approved')!.versionNumber !== v.versionNumber
+        ? `Approve & replace v${st.value.versions.find((x) => x.status === 'approved')!.versionNumber}`
+        : n === 1
+          ? 'Approve text'
+          : n === 2
+            ? 'Approve scenario'
+            : 'Approve & select as final',
     canEdit: n <= 2 && v.status === 'pending' && open.value && !editor.value,
     editLabel: n === 1 ? 'Edit text' : 'Edit scenario',
     canNew: n <= 2 && isCur.value && !stageApproved.value && lastV.status === 'rejected' && !editor.value,
@@ -185,8 +192,12 @@ const emptyMsg = computed(() =>
     ? 'Generate the clean, text-free image and paste its Drive link to create version 1.'
     : 'Apply the caption to the approved clean image and paste the Drive link to create version 1.',
 )
-const lastPending = computed(() => !!(st.value && last(st.value)?.status === 'pending'))
-const canAdd = computed(() => a.value > 2 && a.value < 5 && !lastPending.value && ((isCur.value && !stageApproved.value) || (stageApproved.value && imgUpdate.value)))
+const canAdd = computed(() => {
+  if (a.value <= 2 || a.value >= 5) return false
+  if (!stageApproved.value) return isCur.value
+  return imgUpdate.value
+})
+const draftLinksCount = computed(() => (linkDraft.value.match(/https?:\/\/[^\s,;]+/g) || []).length)
 
 const versions = computed(() => {
   if (!st.value) return []
@@ -209,7 +220,7 @@ const versions = computed(() => {
       ring: x.versionNumber === vnSel.value ? '2px solid var(--color-accent)' : 'none',
     }))
 })
-const listTitle = computed(() => (a.value <= 2 ? 'Version history' : a.value === 3 ? 'Version gallery' : 'Review history'))
+const listTitle = computed(() => (a.value <= 2 ? 'Version history' : 'Version gallery'))
 
 function goStage(n: number) {
   active.value = n
@@ -224,6 +235,13 @@ function pickVersion(vn: number) {
 
 async function approve() {
   const v = V.value!, stage = a.value, wasCur = rec.value.currentStage === stage
+  const curApproved = st.value?.versions.find((x) => x.status === 'approved')
+  if (curApproved && curApproved.versionNumber !== v.versionNumber) {
+    const ok = window.confirm(
+      `Version ${curApproved.versionNumber} is currently approved for Stage ${stage} (${SN[stage]}).\n\nOnly one version can be approved per stage. Do you want to replace Version ${curApproved.versionNumber} with Version ${v.versionNumber}?`
+    )
+    if (!ok) return
+  }
   await store.review(rec.value.id, 'approve', stage, v.versionNumber, '')
   active.value = wasCur ? Math.min(stage + 1, 5) : stage
   Object.keys(viewVn).forEach((k) => delete viewVn[Number(k)])
@@ -248,8 +266,9 @@ const editorInvalid = computed(() => {
 })
 
 async function addImage() {
-  const link = linkDraft.value.trim()
-  if (!/^https?:\/\/\S+$/.test(link)) {
+  const raw = linkDraft.value.trim()
+  const links = raw.match(/https?:\/\/[^\s,;]+/g) || []
+  if (!links.length) {
     linkError.value = 'Paste a full link, e.g. https://drive.google.com/file/d/…'
     return
   }
@@ -257,7 +276,7 @@ async function addImage() {
   imgUpdate.value = false
   linkDraft.value = linkError.value = ''
   viewVn[stage] = undefined
-  await store.addImage(rec.value.id, stage, link)
+  await store.addImages(rec.value.id, stage, links)
 }
 
 // Stage 1 Copy
@@ -532,13 +551,22 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
           <div>
             <h5 style="margin: 0 0 2px">{{ st && st.versions.length ? `Upload version ${st.versions.length + 1}` : 'Upload version 1' }}</h5>
             <p class="text-muted" style="margin: 0; font-size: 13px">
-              {{ stageApproved ? 'The approved image stays final until this new version is approved.' : 'Every link is kept as its own version — nothing is overwritten.' }}
+              {{ stageApproved ? 'The approved image stays final until this new version is approved.' : 'Upload one or more candidate images — each link becomes its own version for review.' }}
             </p>
           </div>
           <div style="display: flex; gap: var(--space-2)">
-            <input v-model="linkDraft" class="input" placeholder="https://drive.google.com/file/d/…" style="background: var(--color-bg)" @input="linkError = ''" @keydown.enter="addImage" />
+            <input
+              v-model="linkDraft"
+              class="input"
+              placeholder="https://drive.google.com/file/d/… (paste one or multiple links)"
+              style="background: var(--color-bg)"
+              @input="linkError = ''"
+              @keydown.enter="addImage"
+            />
             <button v-if="stageApproved && imgUpdate" class="btn btn-ghost" style="flex: none" @click="((imgUpdate = false), (linkDraft = linkError = ''))">Cancel</button>
-            <button class="btn btn-primary" style="flex: none" @click="addImage">Add</button>
+            <button class="btn btn-primary" style="flex: none" @click="addImage">
+              {{ draftLinksCount > 1 ? `Add ${draftLinksCount} images` : 'Add' }}
+            </button>
           </div>
           <span v-if="linkError" style="font-size: 12px; color: var(--color-accent-700)">{{ linkError }}</span>
         </div>
@@ -548,29 +576,13 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
           <span class="text-muted" style="font-size: 13px">{{ st ? `${st.versions.length} total` : '' }}</span>
         </div>
 
-        <div v-if="a === 3 && versions.length" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: var(--space-3)">
-          <button v-for="v in versions" :key="v.vn" :style="`all:unset; cursor:pointer; display:flex; flex-direction:column; gap:6px; padding:6px; border-radius:var(--radius-lg); background:${v.bg}; outline:${v.ring}; outline-offset:-2px`" @click="pickVersion(v.vn)">
-            <div style="position: relative; aspect-ratio: 4 / 3; border-radius: 22px; overflow: hidden; background: var(--color-surface)" class="washed">
-              <iframe
-                v-if="v.driveId"
-                :src="`https://drive.google.com/file/d/${v.driveId}/preview`"
-                width="100%"
-                height="100%"
-                style="border: 0; display: block; width: 100%; height: 100%; pointer-events: none"
-                loading="lazy"
-              ></iframe>
-              <Thumb v-else-if="v.thumb" v-bind="v.thumb" />
-            </div>
-            <div style="display: flex; align-items: center; gap: 6px; padding: 0 6px 4px">
-              <span style="font-family: var(--font-heading); font-size: 14px; margin-right: auto">{{ v.label }}</span>
-              <span class="tag" :class="v.tagCls">{{ v.statusLabel }}</span>
-            </div>
-          </button>
-        </div>
-
-        <div v-if="a !== 3 && versions.length" style="display: flex; flex-direction: column; gap: var(--space-2)">
+        <div v-if="versions.length" style="display: flex; flex-direction: column; gap: var(--space-2)">
           <button v-for="v in versions" :key="v.vn" :style="`all:unset; cursor:pointer; display:flex; gap:var(--space-3); padding:var(--space-3) var(--space-4); border-radius:var(--radius-lg); background:${v.bg}; outline:${v.ring}; outline-offset:-2px`" @click="pickVersion(v.vn)">
-            <div v-if="v.driveId || v.thumb" style="width: 64px; height: 48px; flex: none; border-radius: 12px; overflow: hidden; position: relative; background: var(--color-surface)">
+            <div
+              v-if="v.driveId || v.thumb"
+              :style="`width: ${a >= 3 ? '150px' : '64px'}; aspect-ratio: 4 / 3; flex: none; border-radius: ${a >= 3 ? '18px' : '12px'}; overflow: hidden; position: relative; background: var(--color-surface)`"
+              :class="{ washed: a >= 3 }"
+            >
               <iframe
                 v-if="v.driveId"
                 :src="`https://drive.google.com/file/d/${v.driveId}/preview`"

@@ -117,10 +117,22 @@ export const useRecordsStore = defineStore('records', () => {
       (r) => {
         const st = stageData(r, stage)
         const v = st.versions.find((x) => x.versionNumber === vn)!
-        Object.assign(v, { status: mode === 'approve' ? 'approved' : 'rejected', reviewedBy: auth.email, reviewedAt: now(), reviewComments: comment })
         if (mode === 'approve') {
+          // Strictly only one version can be approved in each stage:
+          // Supersede any previously approved version in this stage
+          st.versions.forEach((other) => {
+            if (other.versionNumber !== vn && other.status === 'approved') {
+              other.status = 'rejected'
+              other.reviewComments = other.reviewComments
+                ? `${other.reviewComments} (superseded by v${vn})`
+                : `Superseded by v${vn}`
+            }
+          })
+          Object.assign(v, { status: 'approved', reviewedBy: auth.email, reviewedAt: now(), reviewComments: comment })
           st.selectedVersionNumber = vn
           if (stage === 4) r.stage5 = { status: 'pending', postedBy: null, postedAt: null }
+        } else {
+          Object.assign(v, { status: 'rejected', reviewedBy: auth.email, reviewedAt: now(), reviewComments: comment })
         }
       },
       `${id}: stage ${stage} v${vn} ${mode === 'approve' ? 'approved' : 'rejected'}`,
@@ -128,22 +140,30 @@ export const useRecordsStore = defineStore('records', () => {
   }
 
   function addImage(id: string, stage: number, link: string) {
+    return addImages(id, stage, [link])
+  }
+
+  function addImages(id: string, stage: number, links: string[]) {
+    const valid = links.map((l) => l.trim()).filter((l) => /^https?:\/\/\S+$/.test(l))
+    if (!valid.length) return
     return mutate(
       id,
       (r) => {
         const st = stageData(r, stage)
-        st.versions.push({
-          versionNumber: st.versions.length + 1,
-          [stage === 3 ? 'imageLink' : 'driveLink']: link,
-          uploadedBy: auth.email,
-          uploadedAt: now(),
-          status: 'pending',
-          reviewedBy: null,
-          reviewedAt: null,
-          reviewComments: '',
+        valid.forEach((link) => {
+          st.versions.push({
+            versionNumber: st.versions.length + 1,
+            [stage === 3 ? 'imageLink' : 'driveLink']: link,
+            uploadedBy: auth.email,
+            uploadedAt: now(),
+            status: 'pending',
+            reviewedBy: null,
+            reviewedAt: null,
+            reviewComments: '',
+          })
         })
       },
-      `${id}: new stage ${stage} version`,
+      valid.length === 1 ? `${id}: new stage ${stage} version` : `${id}: ${valid.length} new stage ${stage} versions`,
     )
   }
 
@@ -248,6 +268,6 @@ export const useRecordsStore = defineStore('records', () => {
     }
   }
 
-  return { records, visible, loaded, loadError, refreshing, refresh, toastMsg, toast, init, reset, byId, mutate, review, addImage, saveText, create, createMany, setCharacter, addRemark, setRemarksDone, setPosted, setPostDate, updateTechData, remove, persistSettings }
+  return { records, visible, loaded, loadError, refreshing, refresh, toastMsg, toast, init, reset, byId, mutate, review, addImage, addImages, saveText, create, createMany, setCharacter, addRemark, setRemarksDone, setPosted, setPostDate, updateTechData, remove, persistSettings }
 })
 

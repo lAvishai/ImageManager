@@ -1,5 +1,42 @@
 [
   {
+    "version": "v1.34.3",
+    "date": "21/10/2026 23:53",
+    "title": "Unify Version Gallery Layout Across Image Stages",
+    "changes": [
+      "Applied Stage 4's version gallery row layout with 150px 4:3 Drive preview and complete metadata (version, status tag, author, and reviewer comments) to Stage 3.",
+      "Unified the Version Gallery design across both image generation stages (Stage 3 and Stage 4)."
+    ]
+  },
+  {
+    "version": "v1.34.2",
+    "date": "21/10/2026 23:50",
+    "title": "Match Stage 4 Version Gallery Preview Size to Stage 3",
+    "changes": [
+      "Enlarged the embedded Google Drive image preview in Stage 4 Version gallery list items to 150px with a 4:3 aspect ratio, matching Stage 3's preview dimensions.",
+      "Preserved the existing list row layout and metadata display (version number, status badge, author info, and review comments) in Stage 4."
+    ]
+  },
+  {
+    "version": "v1.34.1",
+    "date": "21/10/2026 23:43",
+    "title": "Rename Stage 4 Version List to Version Gallery",
+    "changes": [
+      "Renamed the Stage 4 version list header from 'Review history' to 'Version gallery' to maintain consistent terminology across image stages."
+    ]
+  },
+  {
+    "version": "v1.34.0",
+    "date": "21/10/2026 23:35",
+    "title": "Multi-Image Upload and Single Approval per Stage",
+    "changes": [
+      "Allowed uploading multiple candidate images to Stage 3 (Clean image) and Stage 4 (Image with text) before review, without being blocked by pending status.",
+      "Added support for pasting multiple Google Drive links simultaneously in the image upload input to batch-create versions in a single commit.",
+      "Enforced strict single-approval invariant: exactly one version can be approved per stage. Approving a new version supersedes any previously approved version in that stage.",
+      "Added approval replacement confirmation and contextual button labeling ('Approve & replace vX') when an approved version already exists."
+    ]
+  },
+  {
     "version": "v1.33.0",
     "date": "21/10/2026 22:35",
     "title": "Search by Scenario on Dashboard",
