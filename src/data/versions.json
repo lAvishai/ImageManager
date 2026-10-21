@@ -1,5 +1,15 @@
 [
   {
+    "version": "v1.33.0",
+    "date": "21/10/2026 22:35",
+    "title": "Search by Scenario on Dashboard",
+    "changes": [
+      "Updated Dashboard live search to search Stage 2 scenario text in addition to Stage 1 sentences and PilGi ID.",
+      "Supports matching both raw scenario tokens (#A, #B) and substituted character names (e.g. Elephant, Giraffe).",
+      "Updated the search input placeholder to 'Search sentences, scenario, or pilgi id'."
+    ]
+  },
+  {
     "version": "v1.32.0",
     "date": "20/10/2026 22:40",
     "title": "Copy Stage 1 Text to Clipboard",

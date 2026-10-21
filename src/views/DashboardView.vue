@@ -90,7 +90,32 @@ const rows = computed(() => {
     if (ui.stageF !== 'all' && r.currentStage !== ui.stageF) return false
     if (ui.statusF !== 'all' && recStatus(r) !== ui.statusF) return false
     if (q) {
-      const matchQ = (r.id + ' ' + shown1(r.stage1).topSentence + ' ' + shown1(r.stage1).bottomSentence).toLowerCase().includes(q)
+      const v1 = shown1(r.stage1)
+      const v2 = shown1(r.stage2)
+      const sc = v2?.scenario || ''
+      const charA = r.characters?.[0] ? (r.characters[0].toLowerCase().startsWith('the ') ? r.characters[0] : 'The ' + r.characters[0]) : ''
+      const charB = r.characters?.[1] ? (r.characters[1].toLowerCase().startsWith('the ') ? r.characters[1] : 'The ' + r.characters[1]) : ''
+      const scExpanded = sc
+        ? sc
+            .replace(/#A\b/gi, charA)
+            .replace(/#B\b/gi, charB)
+        : ''
+      const chars = (r.characters || []).join(' ')
+      const matchQ = (
+        r.id +
+        ' ' +
+        (v1?.topSentence || '') +
+        ' ' +
+        (v1?.bottomSentence || '') +
+        ' ' +
+        sc +
+        ' ' +
+        scExpanded +
+        ' ' +
+        chars
+      )
+        .toLowerCase()
+        .includes(q)
       if (!matchQ) return false
     }
 
@@ -224,7 +249,7 @@ const summary = computed(() => {
         <input
           v-model="ui.q"
           class="input"
-          placeholder="Search sentences or pilgi id"
+          placeholder="Search sentences, scenario, or pilgi id"
           :style="`padding-left: 36px; padding-right: ${ui.q ? '36px' : '14px'}`"
           @keydown.esc="ui.q = ''"
         />
