@@ -1,5 +1,46 @@
 [
   {
+    "version": "v1.35.5",
+    "date": "23/10/2026 17:07",
+    "title": "Remove Floating Copy Button from Stage 1 Sentences Card",
+    "changes": [
+      "Removed the top-right floating copy button from inside the Stage 1 Sentences card in favor of the dedicated 'Copy sentences' action button in the review row below."
+    ]
+  },
+  {
+    "version": "v1.35.4",
+    "date": "23/10/2026 17:05",
+    "title": "Align Edit Button Styling with Action Bar Buttons",
+    "changes": [
+      "Updated 'Edit sentences' (and 'Edit scenario') button to use secondary button styling (btn btn-secondary) with a pencil icon, matching the other action buttons in the review card."
+    ]
+  },
+  {
+    "version": "v1.35.3",
+    "date": "23/10/2026 16:57",
+    "title": "Set Stage 5 Google Drive Preview Width to 75%",
+    "changes": [
+      "Set Stage 5 Google Drive preview iframe container and action bar width to 75% to match Stages 3 and 4."
+    ]
+  },
+  {
+    "version": "v1.35.2",
+    "date": "23/10/2026 16:56",
+    "title": "Remove Scenario Tag from Scenario Viewer Card",
+    "changes": [
+      "Removed the 'Scenario' tag badge from the Stage 2 viewer box for a cleaner presentation matching the Stage 1 Sentences card."
+    ]
+  },
+  {
+    "version": "v1.35.1",
+    "date": "23/10/2026 16:39",
+    "title": "Unify Stage 5 Drive Link Bar with Stage 4 Layout",
+    "changes": [
+      "Updated Stage 5 Google Drive link bar to use the same rounded pill container, link preview, and action buttons ('Download' and 'Open in Drive') as Stage 4.",
+      "Moved the 'Image with text · Final asset' version descriptor directly underneath the Drive action bar."
+    ]
+  },
+  {
     "version": "v1.35.0",
     "date": "23/10/2026 16:02",
     "title": "Rename Stage 1 to Sentences Across App",

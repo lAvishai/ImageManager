@@ -436,21 +436,10 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
     <div v-if="isReview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--space-6); align-items: start">
       <div style="display: flex; flex-direction: column; gap: var(--space-4)">
         <div v-if="showCaption && vv" style="width: 75%; max-width: 75%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-6); min-height: 320px; padding: clamp(20px, 4vw, var(--space-8)); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-accent-2-200); position: relative">
-          <button
-            type="button"
-            class="btn btn-ghost btn-icon"
-            :title="copiedText ? 'Copied to clipboard!' : 'Copy sentences to clipboard'"
-            :aria-label="copiedText ? 'Copied to clipboard!' : 'Copy sentences to clipboard'"
-            :style="`position: absolute; top: var(--space-3); right: var(--space-3); width: 36px; height: 36px; border-radius: 999px; background: var(--color-surface); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2; color: ${copiedText ? 'var(--color-accent-2)' : 'var(--color-neutral-800)'}`"
-            @click="copyText"
-          >
-            <Icon :name="copiedText ? 'check' : 'copy'" :size="16" />
-          </button>
           <div style="font-family: var(--font-heading); font-size: 28px; line-height: 1.15; text-wrap: balance; text-align: center; white-space: pre-line">{{ vv.v.topSentence }}</div>
           <div style="font-family: var(--font-heading); font-size: 28px; line-height: 1.15; text-wrap: balance; text-align: center; white-space: pre-line">{{ vv.v.bottomSentence }}</div>
         </div>
         <div v-if="showScenario && vv" style="width: 75%; max-width: 75%; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--space-4); min-height: 320px; padding: clamp(20px, 4vw, var(--space-8)); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-accent-100)">
-          <span class="tag tag-neutral" style="align-self: flex-start">Scenario</span>
           <div style="font-size: 22px; line-height: 1.45; color: var(--color-accent-900); text-wrap: pretty; max-width: 620px">{{ vv.v.scenario }}</div>
           <div class="text-muted" style="margin-top: auto; font-size: 13px">For “{{ v1.topSentence }} / {{ v1.bottomSentence }}”</div>
         </div>
@@ -542,7 +531,7 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
               <button class="btn btn-primary" @click="approve"><Icon name="check" />{{ vv.approveLabel }}</button>
               <button class="btn btn-secondary" @click="dialog = { stage: a, vn: vv.v.versionNumber }"><Icon name="x" />Reject</button>
             </template>
-            <button v-if="vv.canEdit" class="btn btn-ghost" @click="vv.startEdit">{{ vv.editLabel }}</button>
+            <button v-if="vv.canEdit" class="btn btn-secondary" @click="vv.startEdit"><Icon name="pencil" />{{ vv.editLabel }}</button>
             <button v-if="vv.canNew" class="btn btn-primary" @click="vv.startNew">Write new version</button>
             <button
               v-if="vv.canUpdateLineBreak"
@@ -657,7 +646,7 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
 
     <div v-if="isPosting" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--space-6); align-items: start">
       <div style="display: flex; flex-direction: column; gap: var(--space-3)">
-        <div style="width: 80%; aspect-ratio: 4 / 3; border-radius: calc(var(--radius-lg) * 1.4); overflow: hidden; background: var(--color-surface); position: relative" class="washed">
+        <div style="width: 75%; aspect-ratio: 4 / 3; border-radius: calc(var(--radius-lg) * 1.4); overflow: hidden; background: var(--color-surface); position: relative" class="washed">
           <iframe
             v-if="finDriveId"
             :src="`https://drive.google.com/file/d/${finDriveId}/preview`"
@@ -669,21 +658,25 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
           ></iframe>
           <Thumb v-else-if="fin" v-bind="thumb(r.num, 4, fin.versionNumber)" />
         </div>
-        <span v-if="fin" class="text-muted" style="display: inline-flex; align-items: center; gap: var(--space-2); font-size: 13px; flex-wrap: wrap">
-          Final asset · Stage 4 · v{{ fin.versionNumber }} ·
+        <div v-if="fin" style="display: flex; gap: var(--space-2); align-items: center; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--color-surface); max-width: 75%">
+          <Icon name="link" :size="15" style="flex: none; opacity: 0.6" />
+          <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px">{{ fin.driveLink || fin.imageLink }}</span>
           <a
             v-if="finDriveId || extractGoogleDriveId(fin.driveLink || fin.imageLink)"
             class="btn btn-secondary"
             :href="`https://drive.google.com/uc?export=download&id=${finDriveId || extractGoogleDriveId(fin.driveLink || fin.imageLink)}`"
             target="_blank"
             rel="noreferrer"
-            style="padding: 2px 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; border-radius: 999px"
+            style="padding-block: 6px; display: inline-flex; align-items: center; gap: 6px"
             download
           >
-            <Icon name="download" :size="12" />
+            <Icon name="download" :size="14" />
             Download
           </a>
-          <a :href="fin.driveLink || fin.imageLink" target="_blank" rel="noreferrer">Open in Drive</a>
+          <a class="btn btn-secondary" :href="fin.driveLink || fin.imageLink" target="_blank" rel="noreferrer" style="padding-block: 6px">Open in Drive</a>
+        </div>
+        <span v-if="fin" class="text-muted" style="font-size: 13px; padding-left: 4px">
+          Image with text · Final asset · v{{ fin.versionNumber }}
         </span>
       </div>
       <div :style="`display:flex; flex-direction:column; gap:var(--space-4); padding:var(--space-6); border-radius:calc(var(--radius-lg) * 1.3); background:${posted ? 'var(--color-accent-2-200)' : 'var(--color-surface)'}`">
