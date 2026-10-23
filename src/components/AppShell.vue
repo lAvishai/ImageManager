@@ -140,7 +140,7 @@ async function create() {
 
   <div v-if="ui.newOpen" class="dialog-backdrop" style="z-index: 50" @click="ui.newOpen = false">
     <div class="dialog" style="width: min(520px, 100%)" @click.stop>
-      <div class="dialog-title">New scenario</div>
+      <div class="dialog-title">New PilGi</div>
       <div class="field">
         <label>Top sentence</label>
         <textarea v-model="top" class="input" rows="2" style="border-radius: var(--radius-md); min-height: 60px; resize: vertical"></textarea>

@@ -181,7 +181,7 @@ export const useRecordsStore = defineStore('records', () => {
         ? e.isLineBreak
           ? `${id}: v${e.vn} line break updated`
           : `${id}: v${e.vn} updated`
-        : `${id}: new ${stage === 1 ? 'text' : 'scenario'} version`,
+        : `${id}: new ${stage === 1 ? 'sentences' : 'scenario'} version`,
     )
   }
 

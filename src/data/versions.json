@@ -1,5 +1,42 @@
 [
   {
+    "version": "v1.35.0",
+    "date": "23/10/2026 16:02",
+    "title": "Rename Stage 1 to Sentences Across App",
+    "changes": [
+      "Renamed Stage 1 from 'Text' to 'Sentences' in stage name definitions (SN), dashboard stage tiles/filters, and record progress steps.",
+      "Updated Stage 1 actions and buttons to refer to sentences ('Approve sentences', 'Edit sentences', 'Update sentences', 'Copy sentences').",
+      "Updated Stage 1 descriptions and subsection titles in Record Detail, Tech Data Drawer, and dialogs."
+    ]
+  },
+  {
+    "version": "v1.34.6",
+    "date": "23/10/2026 15:55",
+    "title": "Relocate Text Update Action Above Version History",
+    "changes": [
+      "Moved the 'Update text' action button in Stage 1 from the version details card to sit directly above Version History.",
+      "Unified Stage 1 and Stage 2 update behavior above Version History for complete consistency across all workflow stages."
+    ]
+  },
+  {
+    "version": "v1.34.5",
+    "date": "23/10/2026 15:54",
+    "title": "Relocate Scenario Update Action Above Version History",
+    "changes": [
+      "Moved the 'Update scenario' action button in Stage 2 from the version details card to sit directly above Version History.",
+      "Clicking 'Update scenario' seamlessly opens the scenario editor prefilled with the latest scenario content."
+    ]
+  },
+  {
+    "version": "v1.34.4",
+    "date": "23/10/2026 15:52",
+    "title": "Relocate Image Stage Update Actions Above Version Gallery",
+    "changes": [
+      "Moved the 'Update clean image' (Stage 3) and 'Update image with text' (Stage 4) action buttons from the version details card to sit directly above the Version Gallery.",
+      "Clicking the update button smoothly opens the image upload input directly above the gallery for an intuitive update workflow."
+    ]
+  },
+  {
     "version": "v1.34.3",
     "date": "21/10/2026 23:53",
     "title": "Unify Version Gallery Layout Across Image Stages",

@@ -153,12 +153,12 @@ const vv = computed(() => {
       st.value?.versions.find((x) => x.status === 'approved') && st.value.versions.find((x) => x.status === 'approved')!.versionNumber !== v.versionNumber
         ? `Approve & replace v${st.value.versions.find((x) => x.status === 'approved')!.versionNumber}`
         : n === 1
-          ? 'Approve text'
+          ? 'Approve sentences'
           : n === 2
             ? 'Approve scenario'
             : 'Approve & select as final',
     canEdit: n <= 2 && v.status === 'pending' && open.value && !editor.value,
-    editLabel: n === 1 ? 'Edit text' : 'Edit scenario',
+    editLabel: n === 1 ? 'Edit sentences' : 'Edit scenario',
     canNew: n <= 2 && isCur.value && !stageApproved.value && lastV.status === 'rejected' && !editor.value,
     canUpdateLineBreak: n === 1 && s.selectedVersionNumber === v.versionNumber && !editor.value,
     startUpdateLineBreak: () =>
@@ -170,16 +170,35 @@ const vv = computed(() => {
         scenario: '',
         isLineBreak: true,
       }),
-    canUpdate: n <= 4 && stageApproved.value && !(n > 2 && imgUpdate.value) && lastV.status !== 'pending' && !editor.value,
-    updateLabel: n === 1 ? 'Update text' : n === 2 ? 'Update scenario' : n === 3 ? 'Update clean image' : 'Update image with text',
     startEdit: () => (editor.value = { mode: 'edit', vn: v.versionNumber, top: v.topSentence || '', bottom: v.bottomSentence || '', scenario: v.scenario || '' }),
     startNew: () => (editor.value = newBase()),
-    startUpdate: () => {
-      if (n > 2) { imgUpdate.value = true; linkDraft.value = linkError.value = '' }
-      else editor.value = newBase()
-    },
   }
 })
+
+const canTextUpdate = computed(() => {
+  if (a.value > 2 || !st.value || !st.value.versions.length) return false
+  const lastV = last(st.value)
+  return stageApproved.value && !editor.value && lastV?.status !== 'pending'
+})
+const textUpdateLabel = computed(() => (a.value === 1 ? 'Update sentences' : 'Update scenario'))
+function startTextUpdate() {
+  if (!st.value) return
+  const lastV = last(st.value)!
+  editor.value = {
+    mode: 'new',
+    top: lastV.topSentence || '',
+    bottom: lastV.bottomSentence || '',
+    scenario: lastV.scenario || '',
+  }
+}
+
+const canImageUpdate = computed(() => (a.value === 3 || a.value === 4) && stageApproved.value && !imgUpdate.value)
+const imageUpdateLabel = computed(() => (a.value === 3 ? 'Update clean image' : 'Update image with text'))
+function startImageUpdate() {
+  imgUpdate.value = true
+  linkDraft.value = ''
+  linkError.value = ''
+}
 
 const showCaption = computed(() => a.value === 1 && !!V.value && !editor.value)
 const showScenario = computed(() => a.value === 2 && !!V.value && !editor.value)
@@ -225,6 +244,7 @@ const listTitle = computed(() => (a.value <= 2 ? 'Version history' : 'Version ga
 function goStage(n: number) {
   active.value = n
   editor.value = null
+  imgUpdate.value = false
   linkDraft.value = linkError.value = ''
   copiedText.value = false
 }
@@ -419,8 +439,8 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
           <button
             type="button"
             class="btn btn-ghost btn-icon"
-            :title="copiedText ? 'Copied to clipboard!' : 'Copy text to clipboard'"
-            :aria-label="copiedText ? 'Copied to clipboard!' : 'Copy text to clipboard'"
+            :title="copiedText ? 'Copied to clipboard!' : 'Copy sentences to clipboard'"
+            :aria-label="copiedText ? 'Copied to clipboard!' : 'Copy sentences to clipboard'"
             :style="`position: absolute; top: var(--space-3); right: var(--space-3); width: 36px; height: 36px; border-radius: 999px; background: var(--color-surface); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2; color: ${copiedText ? 'var(--color-accent-2)' : 'var(--color-neutral-800)'}`"
             @click="copyText"
           >
@@ -436,7 +456,7 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
         </div>
         <div v-if="showScenarioEmpty" style="width: 75%; max-width: 75%; box-sizing: border-box; min-height: 300px; border-radius: calc(var(--radius-lg) * 1.4); border: 2px dashed var(--color-divider); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: var(--space-8); gap: var(--space-3)">
           <h3 style="margin: 0">No scenario yet</h3>
-          <p class="text-muted" style="margin: 0; max-width: 380px">Describe the scene the image should show. It goes to review like the text.</p>
+          <p class="text-muted" style="margin: 0; max-width: 380px">Describe the scene the image should show. It goes to review like the sentences.</p>
           <button class="btn btn-primary" @click="editor = { mode: 'new', top: '', bottom: '', scenario: '' }">Write scenario</button>
         </div>
         <div v-if="showEditor && editor && st" style="width: 75%; max-width: 75%; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-surface)">
@@ -445,7 +465,7 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
             <span v-if="editor.isLineBreak" class="tag tag-accent-2" style="font-size: 11px">Final version</span>
           </div>
           <p v-if="editor.isLineBreak" class="text-muted" style="margin: 0; font-size: 13px">
-            Adjust line breaks or sentence text directly on this final version. It will update in place without creating a new version.
+            Adjust line breaks or sentences directly on this final version. It will update in place without creating a new version.
           </p>
           <template v-if="a === 1">
             <div class="field">
@@ -532,21 +552,44 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
             >
               <Icon name="pencil" />Update line break
             </button>
-            <button v-if="vv.canUpdate" class="btn btn-secondary" title="Creates a new version for review; the approved version stays final until the new one is approved" @click="vv.startUpdate">{{ vv.updateLabel }}</button>
             <button
               v-if="a === 1"
               class="btn btn-secondary"
-              title="Copy text to clipboard"
+              title="Copy sentences to clipboard"
               @click="copyText"
             >
               <Icon :name="copiedText ? 'check' : 'copy'" :size="15" />
-              <span>{{ copiedText ? 'Copied text!' : 'Copy text' }}</span>
+              <span>{{ copiedText ? 'Copied sentences!' : 'Copy sentences' }}</span>
             </button>
           </div>
         </div>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: var(--space-4)">
+        <div v-if="canTextUpdate">
+          <button
+            class="btn btn-secondary"
+            title="Creates a new version for review; the approved version stays final until the new one is approved"
+            style="display: inline-flex; align-items: center; gap: var(--space-2)"
+            @click="startTextUpdate"
+          >
+            <Icon name="pencil" :size="15" />
+            <span>{{ textUpdateLabel }}</span>
+          </button>
+        </div>
+
+        <div v-if="canImageUpdate">
+          <button
+            class="btn btn-secondary"
+            title="Creates a new version for review; the approved version stays final until the new one is approved"
+            style="display: inline-flex; align-items: center; gap: var(--space-2)"
+            @click="startImageUpdate"
+          >
+            <Icon name="upload" :size="15" />
+            <span>{{ imageUpdateLabel }}</span>
+          </button>
+        </div>
+
         <div v-if="canAdd" style="display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6); border-radius: calc(var(--radius-lg) * 1.15); background: var(--color-accent-100)">
           <div>
             <h5 style="margin: 0 0 2px">{{ st && st.versions.length ? `Upload version ${st.versions.length + 1}` : 'Upload version 1' }}</h5>

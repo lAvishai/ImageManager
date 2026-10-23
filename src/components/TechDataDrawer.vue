@@ -506,11 +506,11 @@ function resetToDefaults() {
           <!-- Stage 1 Text Line Breaks Subsection -->
           <div style="display: flex; flex-direction: column; gap: var(--space-3)">
             <div style="display: flex; align-items: center; justify-content: space-between">
-              <span class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em">Stage 1 Text Line Breaks</span>
+              <span class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em">Stage 1 Sentences Line Breaks</span>
               <span v-if="targetV1" class="tag tag-accent-2" style="font-size: 11px">v{{ targetV1.versionNumber }} · Final</span>
             </div>
             <p class="text-muted" style="margin: 0; font-size: 12px; line-height: 1.4">
-              Edit line breaks for Top and Bottom text. Line breaks are converted to <code>|</code> in the prompts below.
+              Edit line breaks for Top and Bottom sentences. Line breaks are converted to <code>|</code> in the prompts below.
             </p>
 
             <!-- Top Sentence -->

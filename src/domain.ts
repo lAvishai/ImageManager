@@ -99,10 +99,10 @@ export interface Seed {
   sampleCsv: string
 }
 
-export const SN = ['', 'Text', 'Scenario', 'Clean image', 'Image with text', 'Posting']
+export const SN = ['', 'Sentences', 'Scenario', 'Clean image', 'Image with text', 'Posting']
 export const SD = [
   '',
-  'Top & bottom sentence',
+  'Top & bottom sentences',
   'Describe the scene for the image',
   'Generated image, no text yet',
   'Final image with the caption applied',
