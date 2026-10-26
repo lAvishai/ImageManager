@@ -95,7 +95,7 @@ async function create() {
         <span class="split-btn-badge" :class="{ 'has-count': mineCount > 0 }">{{ mineCount }}</span>
       </button>
     </div>
-    <button class="btn btn-secondary" @click="router.push('/import')"><Icon name="upload" />Import batch</button>
+    <button class="btn btn-secondary" @click="router.push('/import')"><Icon name="upload" />Batch import</button>
     <span class="text-muted" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; min-width: 0; overflow-wrap: anywhere">
       <Icon name="branch" :size="14" />{{ auth.repo }} · {{ auth.branch }}
     </span>

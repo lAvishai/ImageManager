@@ -500,22 +500,140 @@ function splitCSV(line: string) {
   return out.map((s) => s.trim())
 }
 
+function cleanLinePrefix(line: string): string {
+  return line
+    .replace(/^(?:top(?:\s*sentence)?|bottom(?:\s*sentence)?|משפט עליון|משפט תחתון|[ab12])\s*[:\-–]\s*/i, '')
+    .trim()
+}
+
+function isHeaderLine(line: string): boolean {
+  const lower = line.toLowerCase().replace(/["'\s_\-]/g, '')
+  return (
+    lower.includes('topsentence') ||
+    lower.includes('toptext') ||
+    lower.includes('sentence1') ||
+    lower.startsWith('top,') ||
+    lower.startsWith('top\t') ||
+    lower.startsWith('top|') ||
+    (lower.includes('top') && lower.includes('bottom'))
+  )
+}
+
+/** Parses pasted text (CSV, TSV/Sheets, JSON, pipe-separated, or alternating lines) into sentence rows. */
+export function parseSentencesText(text: string): { top: string; bottom: string }[] {
+  const trimmed = (text || '').trim()
+  if (!trimmed) return []
+
+  // 1. JSON array or JSON object with scenarios/records/sentences
+  if (/^\s*[[{]/.test(trimmed)) {
+    try {
+      let data = JSON.parse(trimmed)
+      if (!Array.isArray(data)) {
+        data = data.scenarios || data.records || data.sentences || data.items || data.data || []
+      }
+      if (Array.isArray(data)) {
+        return data
+          .map((o: Record<string, unknown>) => ({
+            top: String(o.topSentence ?? o.top ?? o.top_sentence ?? o.sentence1 ?? o.s1 ?? '').trim(),
+            bottom: String(o.bottomSentence ?? o.bottom ?? o.bottom_sentence ?? o.sentence2 ?? o.s2 ?? '').trim(),
+          }))
+          .filter((r) => r.top || r.bottom)
+      }
+    } catch {
+      // Fall through to line-based parsing
+    }
+  }
+
+  const rawLines = trimmed.split(/\r?\n/)
+
+  // 2. Tab-separated values (Google Sheets / Excel copy-paste)
+  const tabLines = rawLines.filter((l) => l.trim() && l.includes('\t'))
+  if (tabLines.length > 0 && tabLines.length >= rawLines.filter((l) => l.trim()).length * 0.3) {
+    const lines = rawLines.filter((l) => l.trim())
+    if (lines.length && isHeaderLine(lines[0])) lines.shift()
+    return lines
+      .map((l) => {
+        const parts = l.split('\t').map((s) => s.trim().replace(/^["']|["']$/g, ''))
+        return { top: parts[0] || '', bottom: parts[1] || '' }
+      })
+      .filter((r) => r.top || r.bottom)
+  }
+
+  // 3. Pipe-separated (|)
+  const pipeLines = rawLines.filter((l) => l.trim() && l.includes('|'))
+  if (pipeLines.length > 0 && pipeLines.length >= rawLines.filter((l) => l.trim()).length * 0.3) {
+    const lines = rawLines.filter((l) => l.trim())
+    if (lines.length && isHeaderLine(lines[0])) lines.shift()
+    return lines
+      .map((l) => {
+        const parts = l.split('|').map((s) => s.trim().replace(/^["']|["']$/g, ''))
+        return { top: parts[0] || '', bottom: parts[1] || '' }
+      })
+      .filter((r) => r.top || r.bottom)
+  }
+
+  // 4. CSV or semicolon separated
+  const commaOrSemi = rawLines.filter((l) => l.trim() && (l.includes(',') || l.includes(';')))
+  if (commaOrSemi.length > 0 && commaOrSemi.length >= rawLines.filter((l) => l.trim()).length * 0.3) {
+    const lines = rawLines.filter((l) => l.trim())
+    if (lines.length && isHeaderLine(lines[0])) lines.shift()
+    return lines
+      .map((l) => {
+        const isSemi = !l.includes(',') && l.includes(';')
+        const c = isSemi ? l.split(';').map((s) => s.trim().replace(/^["']|["']$/g, '')) : splitCSV(l)
+        return { top: c[0] || '', bottom: c[1] || '' }
+      })
+      .filter((r) => r.top || r.bottom)
+  }
+
+  // 5. Blocks separated by double/multiple newlines
+  const blocks = trimmed.split(/(?:\r?\n){2,}/).map((b) => b.trim()).filter(Boolean)
+  if (blocks.length > 1) {
+    const res: { top: string; bottom: string }[] = []
+    for (const b of blocks) {
+      const blines = b.split(/\r?\n/).map((s) => s.trim()).filter(Boolean)
+      if (blines.length >= 2) {
+        res.push({
+          top: cleanLinePrefix(blines[0]),
+          bottom: cleanLinePrefix(blines.slice(1).join('\n')),
+        })
+      } else if (blines.length === 1) {
+        res.push({ top: cleanLinePrefix(blines[0]), bottom: '' })
+      }
+    }
+    if (res.length > 0) return res
+  }
+
+  // 6. Alternating lines (Line 1: top, Line 2: bottom, etc.)
+  const lines = rawLines.map((l) => l.trim()).filter(Boolean)
+  if (lines.length && isHeaderLine(lines[0])) lines.shift()
+  const res: { top: string; bottom: string }[] = []
+  for (let i = 0; i < lines.length; i += 2) {
+    res.push({
+      top: cleanLinePrefix(lines[i] || ''),
+      bottom: cleanLinePrefix(lines[i + 1] || ''),
+    })
+  }
+  return res.filter((r) => r.top || r.bottom)
+}
+
 /** Parses a CSV (topSentence,bottomSentence) or JSON array into import rows. */
 export function parseFile(name: string, text: string): { top: string; bottom: string }[] {
-  if (/\.json$/i.test(name) || /^\s*[[{]/.test(text)) {
-    let data = JSON.parse(text)
-    if (!Array.isArray(data)) data = data.scenarios || []
-    return data.map((o: Record<string, unknown>) => ({
-      top: String(o.topSentence || '').trim(),
-      bottom: String(o.bottomSentence || '').trim(),
-    }))
+  if (/\.json$/i.test(name)) {
+    try {
+      let data = JSON.parse(text)
+      if (!Array.isArray(data)) data = data.scenarios || data.records || data.sentences || []
+      return data
+        .map((o: Record<string, unknown>) => ({
+          top: String(o.topSentence ?? o.top ?? '').trim(),
+          bottom: String(o.bottomSentence ?? o.bottom ?? '').trim(),
+        }))
+        .filter((r: { top: string; bottom: string }) => r.top || r.bottom)
+    } catch {
+      // Fall through to parseSentencesText
+    }
   }
-  const lines = text.split(/\r?\n/).filter((l) => l.trim())
-  if (lines.length && /topsentence/i.test(lines[0])) lines.shift()
-  return lines.map((l) => {
-    const c = splitCSV(l)
-    return { top: c[0] || '', bottom: c[1] || '' }
-  })
+  return parseSentencesText(text)
 }
 
 /** Returns true if the string contains Hebrew characters. */
