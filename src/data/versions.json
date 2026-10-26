@@ -1,5 +1,34 @@
 [
   {
+    "version": "v1.37.2",
+    "date": "27/10/2026 01:05",
+    "title": "Favicon Boundary Clipping & Heart Clearance",
+    "changes": [
+      "Added SVG squircle clip-path (<clipPath id=\"squircleClip\">) ensuring all animal artwork stays strictly inside the rounded badge boundary.",
+      "Re-anchored animal positions and placed the love heart high in the open upper-center area with zero overlap onto the giraffe or elephant."
+    ]
+  },
+  {
+    "version": "v1.37.1",
+    "date": "27/10/2026 01:03",
+    "title": "Enhance Favicon Animal Visibility & Contrast",
+    "changes": [
+      "Redesigned public/favicon.svg into bold, closeup portraits of the Elephant (#A) and Giraffe (#B) filling the canvas.",
+      "Added crisp dark perimeter contours and outlines around both characters, ears, horns, trunk, and neck for clarity at 16px/32px tab sizes.",
+      "Repositioned the love heart cleanly above both characters so neither face or horn is obscured."
+    ]
+  },
+  {
+    "version": "v1.37.0",
+    "date": "27/10/2026 00:56",
+    "title": "PilGi Duo Application Favicon",
+    "changes": [
+      "Created official vector SVG application favicon (public/favicon.svg) featuring the iconic Elephant (#A) and Giraffe (#B) companions with floating heart.",
+      "Embedded squircle badge styling with automatic light and dark browser theme adaptability.",
+      "Linked favicon and updated page title to 'PilGi Image Manager' in index.html."
+    ]
+  },
+  {
     "version": "v1.36.2",
     "date": "27/10/2026 00:52",
     "title": "Default to Paste Sentences in Batch Import",
