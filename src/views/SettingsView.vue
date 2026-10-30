@@ -18,6 +18,7 @@ const form = reactive<AppSettings>({
   bottomTextLocation: 2300,
   defaultFontSize: 120,
   centerAlign: 768,
+  imageResizeAndAppend: '',
   elephantDescription: '',
   giraffeDescription: '',
   foxDescription: '',
@@ -64,6 +65,7 @@ const isDirty = computed(() => {
     form.bottomTextLocation !== cur.bottomTextLocation ||
     form.defaultFontSize !== cur.defaultFontSize ||
     form.centerAlign !== cur.centerAlign ||
+    form.imageResizeAndAppend !== cur.imageResizeAndAppend ||
     form.elephantDescription !== cur.elephantDescription ||
     form.giraffeDescription !== cur.giraffeDescription ||
     form.foxDescription !== cur.foxDescription ||
@@ -83,6 +85,7 @@ async function onSave() {
     bottomTextLocation: Number(form.bottomTextLocation) || 0,
     defaultFontSize: Number(form.defaultFontSize) || 24,
     centerAlign: Number(form.centerAlign) || 768,
+    imageResizeAndAppend: form.imageResizeAndAppend.trim(),
     elephantDescription: form.elephantDescription.trim(),
     giraffeDescription: form.giraffeDescription.trim(),
     foxDescription: form.foxDescription.trim(),
@@ -137,7 +140,7 @@ const appVersion = computed(() => {
 </script>
 
 <template>
-  <main data-screen-label="Settings" style="padding: var(--space-1) clamp(16px, 4vw, var(--space-8)) var(--space-8); max-width: 960px">
+  <main data-screen-label="Settings" style="padding: var(--space-1) clamp(16px, 4vw, var(--space-8)) var(--space-8); max-width: 1280px">
     <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-2)">
       <h1 style="margin: 0; font-size: clamp(24px, 3vw, 36px)">Settings</h1>
 
@@ -163,207 +166,225 @@ const appVersion = computed(() => {
     </p>
 
     <form style="display: flex; flex-direction: column; gap: var(--space-6)" @submit.prevent="onSave">
-      <!-- Regional & Time Zone Section -->
-      <section style="display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.2); background: var(--color-surface)">
-        <div>
-          <h3 style="margin: 0; font-size: 18px">Regional Settings</h3>
-          <p class="text-muted" style="margin: 4px 0 0; font-size: 13px">
-            Time zone used across all timestamps, version history, and posting schedule.
-          </p>
-        </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: var(--space-6); align-items: start">
+        <!-- Left Column: Regional Settings & Image With Text Generation -->
+        <div style="display: flex; flex-direction: column; gap: var(--space-6)">
+          <!-- Regional & Time Zone Section -->
+          <section style="display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.2); background: var(--color-surface)">
+            <div>
+              <h3 style="margin: 0; font-size: 18px">Regional Settings</h3>
+              <p class="text-muted" style="margin: 4px 0 0; font-size: 13px">
+                Time zone used across all timestamps, version history, and posting schedule.
+              </p>
+            </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--space-4)">
-          <div class="field">
-            <label for="timeZone">Time Zone</label>
-            <select
-              id="timeZone"
-              v-model="form.timeZone"
-              class="input"
-              style="cursor: pointer; background: var(--color-bg)"
-            >
-              <option v-for="tz in TIME_ZONES" :key="tz.value" :value="tz.value">
-                {{ tz.label }}
-              </option>
-            </select>
-            <span class="text-muted" style="font-size: 12px; margin-top: 6px; display: block">
-              Current time in this zone: <b style="color: var(--color-text)">{{ fmt(now(), form.timeZone) }}</b>
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Image & Text Prompts Section -->
-      <section style="display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.2); background: var(--color-surface)">
-        <div>
-          <h3 style="margin: 0; font-size: 18px">Image &amp; Text Positioning</h3>
-          <p class="text-muted" style="margin: 4px 0 0; font-size: 13px">
-            Default prompts and coordinates for generating top and bottom scene images and overlays.
-          </p>
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: var(--space-4)">
-          <div class="field">
-            <label for="topImagePrompt">Top Image prompt</label>
-            <input
-              id="topImagePrompt"
-              v-model="form.topImagePrompt"
-              type="text"
-              class="input"
-              placeholder="e.g. Clean background with bright lighting"
-            />
-          </div>
-
-          <div class="field">
-            <label for="topTextLocation">Top Text Location</label>
-            <input
-              id="topTextLocation"
-              v-model.number="form.topTextLocation"
-              type="number"
-              class="input"
-              placeholder="700"
-            />
-          </div>
-
-          <div class="field">
-            <label for="bottomImagePrompt">Bottom Image prompt</label>
-            <input
-              id="bottomImagePrompt"
-              v-model="form.bottomImagePrompt"
-              type="text"
-              class="input"
-              placeholder="e.g. Reaction shot complementary art"
-            />
-          </div>
-
-          <div class="field">
-            <label for="bottomTextLocation">Bottom Text Location</label>
-            <input
-              id="bottomTextLocation"
-              v-model.number="form.bottomTextLocation"
-              type="number"
-              class="input"
-              placeholder="2300"
-            />
-          </div>
-
-          <div class="field">
-            <label for="defaultFontSize">Default font size</label>
-            <input
-              id="defaultFontSize"
-              v-model.number="form.defaultFontSize"
-              type="number"
-              class="input"
-              placeholder="24"
-              min="1"
-            />
-          </div>
-
-          <div class="field">
-            <label for="centerAlign">Center Align</label>
-            <input
-              id="centerAlign"
-              v-model.number="form.centerAlign"
-              type="number"
-              class="input"
-              placeholder="768"
-            />
-          </div>
-        </div>
-      </section>
-
-      <!-- Character Descriptions Section -->
-      <section style="display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.2); background: var(--color-surface)">
-        <div>
-          <h3 style="margin: 0; font-size: 18px">Character Descriptions</h3>
-          <p class="text-muted" style="margin: 4px 0 0; font-size: 13px">
-            Visual profiles and persona descriptions for the core characters.
-          </p>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: var(--space-4)">
-          <!-- Elephant -->
-          <div class="field">
-            <label for="elephantDescription" style="display: flex; align-items: center; gap: var(--space-2)">
-              <span
-                :style="`width:22px; height:22px; flex:none; border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:700; color:#fff; background:${CHARACTER_ICONS.Elephant.bg}`"
+            <div class="field">
+              <label for="timeZone">Time Zone</label>
+              <select
+                id="timeZone"
+                v-model="form.timeZone"
+                class="input"
+                style="cursor: pointer; background: var(--color-bg)"
               >
-                {{ CHARACTER_ICONS.Elephant.glyph }}
+                <option v-for="tz in TIME_ZONES" :key="tz.value" :value="tz.value">
+                  {{ tz.label }}
+                </option>
+              </select>
+              <span class="text-muted" style="font-size: 12px; margin-top: 6px; display: block">
+                Current time in this zone: <b style="color: var(--color-text)">{{ fmt(now(), form.timeZone) }}</b>
               </span>
-              The Elephant
-            </label>
-            <textarea
-              id="elephantDescription"
-              v-model="form.elephantDescription"
-              class="input"
-              rows="3"
-              style="border-radius: var(--radius-md); min-height: 80px; resize: vertical"
-              placeholder="Describe the Elephant character traits, visual features, colors..."
-            ></textarea>
-          </div>
+            </div>
+          </section>
 
-          <!-- Giraffe -->
-          <div class="field">
-            <label for="giraffeDescription" style="display: flex; align-items: center; gap: var(--space-2)">
-              <span
-                :style="`width:22px; height:22px; flex:none; border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:700; color:#fff; background:${CHARACTER_ICONS.Giraffe.bg}`"
-              >
-                {{ CHARACTER_ICONS.Giraffe.glyph }}
-              </span>
-              The Giraffe Description
-            </label>
-            <textarea
-              id="giraffeDescription"
-              v-model="form.giraffeDescription"
-              class="input"
-              rows="3"
-              style="border-radius: var(--radius-md); min-height: 80px; resize: vertical"
-              placeholder="Describe the Giraffe character traits, visual features, colors..."
-            ></textarea>
-          </div>
+          <!-- Image With Text Generation Section -->
+          <section style="display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.2); background: var(--color-surface)">
+            <div>
+              <h3 style="margin: 0; font-size: 18px">Image With Text Generation</h3>
+              <p class="text-muted" style="margin: 4px 0 0; font-size: 13px">
+                Default prompts and coordinates for generating top and bottom scene images and overlays.
+              </p>
+            </div>
 
-          <!-- Fox -->
-          <div class="field">
-            <label for="foxDescription" style="display: flex; align-items: center; gap: var(--space-2)">
-              <span
-                :style="`width:22px; height:22px; flex:none; border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:700; color:#fff; background:${CHARACTER_ICONS.Fox.bg}`"
-              >
-                {{ CHARACTER_ICONS.Fox.glyph }}
-              </span>
-              The Fox Description
-            </label>
-            <textarea
-              id="foxDescription"
-              v-model="form.foxDescription"
-              class="input"
-              rows="3"
-              style="border-radius: var(--radius-md); min-height: 80px; resize: vertical"
-              placeholder="Describe the Fox character traits, visual features, colors..."
-            ></textarea>
-          </div>
+            <div class="field">
+              <label for="imageResizeAndAppend">Image resize and append</label>
+              <textarea
+                id="imageResizeAndAppend"
+                v-model="form.imageResizeAndAppend"
+                class="input"
+                rows="2"
+                style="border-radius: var(--radius-md); min-height: 58px; resize: vertical; line-height: 1.4"
+                placeholder="Enter image resize and append prompt..."
+              ></textarea>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: var(--space-4)">
+              <div class="field">
+                <label for="topImagePrompt">Top Image prompt</label>
+                <input
+                  id="topImagePrompt"
+                  v-model="form.topImagePrompt"
+                  type="text"
+                  class="input"
+                  placeholder="e.g. Clean background with bright lighting"
+                />
+              </div>
+
+              <div class="field">
+                <label for="topTextLocation">Top Text Location</label>
+                <input
+                  id="topTextLocation"
+                  v-model.number="form.topTextLocation"
+                  type="number"
+                  class="input"
+                  placeholder="700"
+                />
+              </div>
+
+              <div class="field">
+                <label for="bottomImagePrompt">Bottom Image prompt</label>
+                <input
+                  id="bottomImagePrompt"
+                  v-model="form.bottomImagePrompt"
+                  type="text"
+                  class="input"
+                  placeholder="e.g. Reaction shot complementary art"
+                />
+              </div>
+
+              <div class="field">
+                <label for="bottomTextLocation">Bottom Text Location</label>
+                <input
+                  id="bottomTextLocation"
+                  v-model.number="form.bottomTextLocation"
+                  type="number"
+                  class="input"
+                  placeholder="2300"
+                />
+              </div>
+
+              <div class="field">
+                <label for="defaultFontSize">Default font size</label>
+                <input
+                  id="defaultFontSize"
+                  v-model.number="form.defaultFontSize"
+                  type="number"
+                  class="input"
+                  placeholder="24"
+                  min="1"
+                />
+              </div>
+
+              <div class="field">
+                <label for="centerAlign">Center Align</label>
+                <input
+                  id="centerAlign"
+                  v-model.number="form.centerAlign"
+                  type="number"
+                  class="input"
+                  placeholder="768"
+                />
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
 
-      <!-- Prompt Text Section -->
-      <section style="display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.2); background: var(--color-surface)">
-        <div>
-          <h3 style="margin: 0; font-size: 18px">Prompt Template</h3>
-          <p class="text-muted" style="margin: 4px 0 0; font-size: 13px">
-            General prompt directives applied when assembling creative scenarios and generation prompts.
-          </p>
-        </div>
+        <!-- Right Column: Character Descriptions & Prompt Template -->
+        <div style="display: flex; flex-direction: column; gap: var(--space-6)">
+          <!-- Character Descriptions Section -->
+          <section style="display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.2); background: var(--color-surface)">
+            <div>
+              <h3 style="margin: 0; font-size: 18px">Character Descriptions</h3>
+              <p class="text-muted" style="margin: 4px 0 0; font-size: 13px">
+                Visual profiles and persona descriptions for the core characters.
+              </p>
+            </div>
 
-        <div class="field">
-          <label for="promptText">Prompt Text</label>
-          <textarea
-            id="promptText"
-            v-model="form.promptText"
-            class="input"
-            rows="5"
-            style="border-radius: var(--radius-md); min-height: 120px; resize: vertical"
-            placeholder="Enter general prompt text or template..."
-          ></textarea>
+            <div style="display: flex; flex-direction: column; gap: var(--space-4)">
+              <!-- Elephant -->
+              <div class="field">
+                <label for="elephantDescription" style="display: flex; align-items: center; gap: var(--space-2)">
+                  <span
+                    :style="`width:22px; height:22px; flex:none; border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:700; color:#fff; background:${CHARACTER_ICONS.Elephant.bg}`"
+                  >
+                    {{ CHARACTER_ICONS.Elephant.glyph }}
+                  </span>
+                  The Elephant
+                </label>
+                <textarea
+                  id="elephantDescription"
+                  v-model="form.elephantDescription"
+                  class="input"
+                  rows="3"
+                  style="border-radius: var(--radius-md); min-height: 80px; resize: vertical"
+                  placeholder="Describe the Elephant character traits, visual features, colors..."
+                ></textarea>
+              </div>
+
+              <!-- Giraffe -->
+              <div class="field">
+                <label for="giraffeDescription" style="display: flex; align-items: center; gap: var(--space-2)">
+                  <span
+                    :style="`width:22px; height:22px; flex:none; border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:700; color:#fff; background:${CHARACTER_ICONS.Giraffe.bg}`"
+                  >
+                    {{ CHARACTER_ICONS.Giraffe.glyph }}
+                  </span>
+                  The Giraffe Description
+                </label>
+                <textarea
+                  id="giraffeDescription"
+                  v-model="form.giraffeDescription"
+                  class="input"
+                  rows="3"
+                  style="border-radius: var(--radius-md); min-height: 80px; resize: vertical"
+                  placeholder="Describe the Giraffe character traits, visual features, colors..."
+                ></textarea>
+              </div>
+
+              <!-- Fox -->
+              <div class="field">
+                <label for="foxDescription" style="display: flex; align-items: center; gap: var(--space-2)">
+                  <span
+                    :style="`width:22px; height:22px; flex:none; border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:700; color:#fff; background:${CHARACTER_ICONS.Fox.bg}`"
+                  >
+                    {{ CHARACTER_ICONS.Fox.glyph }}
+                  </span>
+                  The Fox Description
+                </label>
+                <textarea
+                  id="foxDescription"
+                  v-model="form.foxDescription"
+                  class="input"
+                  rows="3"
+                  style="border-radius: var(--radius-md); min-height: 80px; resize: vertical"
+                  placeholder="Describe the Fox character traits, visual features, colors..."
+                ></textarea>
+              </div>
+            </div>
+          </section>
+
+          <!-- Prompt Text Section -->
+          <section style="display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.2); background: var(--color-surface)">
+            <div>
+              <h3 style="margin: 0; font-size: 18px">Prompt Template</h3>
+              <p class="text-muted" style="margin: 4px 0 0; font-size: 13px">
+                General prompt directives applied when assembling creative scenarios and generation prompts.
+              </p>
+            </div>
+
+            <div class="field">
+              <label for="promptText">Prompt Text</label>
+              <textarea
+                id="promptText"
+                v-model="form.promptText"
+                class="input"
+                rows="5"
+                style="border-radius: var(--radius-md); min-height: 120px; resize: vertical"
+                placeholder="Enter general prompt text or template..."
+              ></textarea>
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
 
       <!-- Bottom Actions -->
       <div style="display: flex; gap: var(--space-2); justify-content: flex-end; align-items: center">

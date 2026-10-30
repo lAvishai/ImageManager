@@ -1,5 +1,41 @@
 [
   {
+    "version": "v1.38.6",
+    "date": "31/10/2026 00:23",
+    "title": "Add 'Image resize and append' Prompt to Tech Data Drawer",
+    "changes": [
+      "Added 'Image resize and append' preview textarea to the Image Prompts subsection in the Tech Data drawer.",
+      "Populated from Settings with full dynamic @ token replacements (@Record, @TopText, @BottomText, @FontSize, @TextCenter, @TopLocation, @BottomLocation, @Suffix).",
+      "Added individual copy-to-clipboard button and updated the combined copy button to include all prompts."
+    ]
+  },
+  {
+    "version": "v1.38.5",
+    "date": "31/10/2026 00:19",
+    "title": "Reposition 'Image resize and append' Field",
+    "changes": [
+      "Moved the 'Image resize and append' textarea to the top of the 'Image With Text Generation' card in Settings."
+    ]
+  },
+  {
+    "version": "v1.38.4",
+    "date": "31/10/2026 00:18",
+    "title": "Two-Column Settings Layout",
+    "changes": [
+      "Organized Settings view into two responsive columns: Left ('Regional Settings', 'Image With Text Generation') and Right ('Character Descriptions', 'Prompt Template').",
+      "Expanded settings container max-width to 1280px for a clean, balanced desktop experience that collapses cleanly on smaller viewports."
+    ]
+  },
+  {
+    "version": "v1.38.3",
+    "date": "31/10/2026 00:16",
+    "title": "Add 'Image resize and append' Setting",
+    "changes": [
+      "Added a new two-line textarea for 'Image resize and append' in the Settings > 'Image With Text Generation' section.",
+      "Persisted 'imageResizeAndAppend' to AppSettings and settings.json with an empty default value."
+    ]
+  },
+  {
     "version": "v1.38.2",
     "date": "30/10/2026 23:59",
     "title": "Support @Suffix Token in Tech Data Prompts",

@@ -44,9 +44,9 @@ This document outlines the core architecture, coding standards, business logic, 
 - **Card 1 (Scenario)**:
   - Scenario preview with `#A` / `#B` replacement (preview only, unsaved).
   - Image prompt template preview with `@scenario` replacement (preview only, unsaved).
-- **Card 2 (Text Generation)**:
+- **Card 2 (Image With Text Generation)**:
   - Technical overrides: `Top Text Offset`, `Bottom Text Offset`, and `Font Size` (persisted to record).
-  - Prompts: `Top Image prompt` and `Bottom Image prompt` previews (unsaved).
+  - Prompts: `Image resize and append`, `Top Image prompt`, and `Bottom Image prompt` previews (unsaved).
   - Dynamic token replacements:
     - `@Record`: Record number padded to 3 digits if `< 1000` (e.g., `005`).
     - `@TopText`: Final approved top sentence (`shown1(stage1).topSentence`), with each line trimmed and newlines replaced with `|`.
@@ -56,7 +56,7 @@ This document outlines the core architecture, coding standards, business logic, 
     - `@TopLocation`: Settings `topTextLocation` (default `700`) + record `topTextOffset`.
     - `@BottomLocation`: Settings `bottomTextLocation` + record `bottomTextOffset`.
     - `@Suffix`: Suffix of the final image in the "Image with Text" stage (Stage 4), or empty string if none.
-  - Copy actions: Individual copy-to-clipboard buttons beside each prompt, and a combined button below both prompts.
+  - Copy actions: Individual copy-to-clipboard buttons beside each prompt, and a combined button below all prompts.
 
 ### 3.3 Google Drive Asset Downloads
 - Wherever an **"Open in Drive"** link/button is displayed, a corresponding **"Download"** button must be present.

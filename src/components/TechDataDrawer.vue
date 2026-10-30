@@ -93,7 +93,7 @@ async function copyImagePrompt() {
   setTimeout(() => (copiedPrompt.value = false), 2000)
 }
 
-// Card 2: Text Generation
+// Card 2: Image With Text Generation
 const topTextOffset = ref<number>(0)
 const bottomTextOffset = ref<number>(0)
 const fontSize = ref<number>(0)
@@ -102,8 +102,10 @@ const saved = ref(false)
 
 const topImagePromptDraft = ref('')
 const bottomImagePromptDraft = ref('')
+const imageResizeAndAppendDraft = ref('')
 const copiedTopPrompt = ref(false)
 const copiedBottomPrompt = ref(false)
+const copiedResizePrompt = ref(false)
 const copiedBoth = ref(false)
 
 async function copyToClipboard(text: string): Promise<boolean> {
@@ -122,6 +124,13 @@ async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
+async function copyResizePrompt() {
+  if (!imageResizeAndAppendDraft.value) return
+  await copyToClipboard(imageResizeAndAppendDraft.value.trimEnd() + '\n')
+  copiedResizePrompt.value = true
+  setTimeout(() => (copiedResizePrompt.value = false), 2000)
+}
+
 async function copyTopPrompt() {
   if (!topImagePromptDraft.value) return
   await copyToClipboard(topImagePromptDraft.value.trimEnd() + '\n')
@@ -137,7 +146,11 @@ async function copyBottomPrompt() {
 }
 
 async function copyBothPrompts() {
-  const parts = [topImagePromptDraft.value.trim(), bottomImagePromptDraft.value.trim()].filter(Boolean)
+  const parts = [
+    imageResizeAndAppendDraft.value.trim(),
+    topImagePromptDraft.value.trim(),
+    bottomImagePromptDraft.value.trim(),
+  ].filter(Boolean)
   if (parts.length === 0) return
   await copyToClipboard(parts.join('\n\n') + '\n')
   copiedBoth.value = true
@@ -156,6 +169,7 @@ function syncTextGenPrompts() {
   if (!rec) {
     topImagePromptDraft.value = ''
     bottomImagePromptDraft.value = ''
+    imageResizeAndAppendDraft.value = ''
     return
   }
 
@@ -223,6 +237,7 @@ function syncTextGenPrompts() {
 
   topImagePromptDraft.value = replaceTokens(settings.current.topImagePrompt || '')
   bottomImagePromptDraft.value = replaceTokens(settings.current.bottomImagePrompt || '')
+  imageResizeAndAppendDraft.value = replaceTokens(settings.current.imageResizeAndAppend || '')
 }
 
 watch(
@@ -237,6 +252,7 @@ watch(
       copiedPrompt.value = false
       copiedTopPrompt.value = false
       copiedBottomPrompt.value = false
+      copiedResizePrompt.value = false
       copiedBoth.value = false
       saved.value = false
       savedLineBreak.value = false
@@ -440,10 +456,10 @@ function resetToDefaults() {
 
         </section>
 
-        <!-- Card 2: Text Generation -->
+        <!-- Card 2: Image With Text Generation -->
         <section style="display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5, var(--space-4)); border-radius: calc(var(--radius-lg) * 1.15); background: var(--color-surface); box-shadow: var(--shadow-sm)">
           <div style="display: flex; align-items: center; justify-content: space-between">
-            <h4 style="margin: 0; font-size: 16px">Text Generation</h4>
+            <h4 style="margin: 0; font-size: 16px">Image With Text Generation</h4>
             <span class="tag tag-accent" style="font-size: 11px">Saved in record</span>
           </div>
           <p class="text-muted" style="margin: 0; font-size: 12px; line-height: 1.4">
@@ -584,6 +600,30 @@ function resetToDefaults() {
               <span class="tag tag-neutral" style="font-size: 11px">Preview only</span>
             </div>
 
+            <!-- Image resize and append -->
+            <div class="field" style="margin: 0">
+              <label for="tdImageResizeAndAppend">Image resize and append</label>
+              <div style="display: flex; gap: var(--space-2); align-items: flex-start">
+                <textarea
+                  id="tdImageResizeAndAppend"
+                  v-model="imageResizeAndAppendDraft"
+                  class="input"
+                  rows="2"
+                  style="border-radius: var(--radius-md); flex: 1; min-height: 58px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
+                  placeholder="Settings Image resize and append prompt is empty"
+                ></textarea>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  style="padding: 8px 10px; display: inline-flex; align-items: center; justify-content: center; height: 38px; flex-shrink: 0"
+                  :title="copiedResizePrompt ? 'Copied Image resize and append prompt!' : 'Copy Image resize and append prompt'"
+                  @click="copyResizePrompt"
+                >
+                  <Icon :name="copiedResizePrompt ? 'check' : 'copy'" :size="14" />
+                </button>
+              </div>
+            </div>
+
             <!-- Top Image Prompt -->
             <div class="field" style="margin: 0">
               <label for="tdTopImagePrompt">Top Image prompt</label>
@@ -632,17 +672,17 @@ function resetToDefaults() {
               </div>
             </div>
 
-            <!-- Copy both together button -->
+            <!-- Copy prompts together button -->
             <button
               type="button"
               class="btn btn-secondary"
               style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); padding-block: 8px; margin-top: 2px"
-              :disabled="!topImagePromptDraft.trim() && !bottomImagePromptDraft.trim()"
-              title="Copy both prompts to clipboard"
+              :disabled="!topImagePromptDraft.trim() && !bottomImagePromptDraft.trim() && !imageResizeAndAppendDraft.trim()"
+              title="Copy prompts to clipboard"
               @click="copyBothPrompts"
             >
               <Icon :name="copiedBoth ? 'check' : 'copy'" :size="14" />
-              <span>{{ copiedBoth ? 'Copied both to clipboard!' : 'Copy to clipboard' }}</span>
+              <span>{{ copiedBoth ? 'Copied prompts to clipboard!' : 'Copy to clipboard' }}</span>
             </button>
           </div>
         </section>
