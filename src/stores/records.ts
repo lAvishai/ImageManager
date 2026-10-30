@@ -139,13 +139,14 @@ export const useRecordsStore = defineStore('records', () => {
     )
   }
 
-  function addImage(id: string, stage: number, link: string) {
-    return addImages(id, stage, [link])
+  function addImage(id: string, stage: number, link: string, suffix?: string) {
+    return addImages(id, stage, [link], suffix)
   }
 
-  function addImages(id: string, stage: number, links: string[]) {
+  function addImages(id: string, stage: number, links: string[], suffix?: string) {
     const valid = links.map((l) => l.trim()).filter((l) => /^https?:\/\/\S+$/.test(l))
     if (!valid.length) return
+    const sfx = suffix?.trim() || undefined
     return mutate(
       id,
       (r) => {
@@ -154,6 +155,7 @@ export const useRecordsStore = defineStore('records', () => {
           st.versions.push({
             versionNumber: st.versions.length + 1,
             [stage === 3 ? 'imageLink' : 'driveLink']: link,
+            ...(sfx ? { imageSuffix: sfx } : {}),
             uploadedBy: auth.email,
             uploadedAt: now(),
             status: 'pending',

@@ -43,6 +43,7 @@ const active = ref(1)
 const viewVn = reactive<Record<number, number | undefined>>({})
 const editor = ref<{ mode: 'edit' | 'new'; vn?: number; top: string; bottom: string; scenario: string; isLineBreak?: boolean } | null>(null)
 const imgUpdate = ref(false)
+const suffixDraft = ref('')
 const linkDraft = ref('')
 const linkError = ref('')
 const dateDraft = ref<string | null>(null)
@@ -79,7 +80,7 @@ watch(
     Object.keys(viewVn).forEach((k) => delete viewVn[Number(k)])
     editor.value = null
     imgUpdate.value = false
-    linkDraft.value = linkError.value = ''
+    linkDraft.value = linkError.value = suffixDraft.value = ''
     dateDraft.value = null
     copiedText.value = false
   },
@@ -105,7 +106,9 @@ const steps = computed(() =>
         const st = stageData(x, n)
         const l = last(st)
         const appV = latestApprovedVersion(st)
-        sub = done ? `Approved · v${appV?.versionNumber ?? st.selectedVersionNumber}` : l ? `${ST[l.status].label} · v${l.versionNumber}` : n === 2 ? 'Not written yet' : 'Awaiting upload'
+        const appVLabel = appV ? `v${appV.versionNumber}${appV.imageSuffix ? ` (${appV.imageSuffix})` : ''}` : ''
+        const lLabel = l ? `v${l.versionNumber}${l.imageSuffix ? ` (${l.imageSuffix})` : ''}` : ''
+        sub = done ? `Approved · ${appVLabel || `v${st.selectedVersionNumber}`}` : l ? `${ST[l.status].label} · ${lLabel}` : n === 2 ? 'Not written yet' : 'Awaiting upload'
       } else sub = x.stage5.status === 'posted' ? 'Posted ' + fmtPostDate(x.stage5.postedAt, tz.value) : 'Ready to post'
     }
     return {
@@ -137,7 +140,7 @@ const vv = computed(() => {
   const newBase = () => ({ mode: 'new' as const, top: lastV.topSentence || '', bottom: lastV.bottomSentence || '', scenario: lastV.scenario || '' })
   return {
     v,
-    label: `Version ${v.versionNumber}`,
+    label: v.imageSuffix ? `Version ${v.versionNumber} (${v.imageSuffix})` : `Version ${v.versionNumber}`,
     isFinal: s.selectedVersionNumber === v.versionNumber,
     byLine: `${n <= 2 ? 'Written' : 'Uploaded'} by ${short(owner)} · ${fmt(n <= 2 ? v.createdAt : v.uploadedAt, tz.value)}`,
     hasReview: v.status !== 'pending',
@@ -198,6 +201,7 @@ function startImageUpdate() {
   imgUpdate.value = true
   linkDraft.value = ''
   linkError.value = ''
+  suffixDraft.value = ''
 }
 
 const showCaption = computed(() => a.value === 1 && !!V.value && !editor.value)
@@ -225,7 +229,7 @@ const versions = computed(() => {
     .slice()
     .reverse()
     .map((x) => ({
-      label: `v${x.versionNumber}`,
+      label: x.imageSuffix ? `v${x.versionNumber} (${x.imageSuffix})` : `v${x.versionNumber}`,
       vn: x.versionNumber,
       tagCls: ST[x.status].cls,
       statusLabel: s.selectedVersionNumber === x.versionNumber ? 'Final' : ST[x.status].label,
@@ -245,7 +249,7 @@ function goStage(n: number) {
   active.value = n
   editor.value = null
   imgUpdate.value = false
-  linkDraft.value = linkError.value = ''
+  linkDraft.value = linkError.value = suffixDraft.value = ''
   copiedText.value = false
 }
 function pickVersion(vn: number) {
@@ -285,6 +289,7 @@ const editorInvalid = computed(() => {
   return a.value === 1 ? !(e.top.trim() && e.bottom.trim()) : !e.scenario.trim()
 })
 
+
 async function addImage() {
   const raw = linkDraft.value.trim()
   const links = raw.match(/https?:\/\/[^\s,;]+/g) || []
@@ -293,10 +298,11 @@ async function addImage() {
     return
   }
   const stage = a.value
+  const suffix = suffixDraft.value.trim().slice(0, 20)
   imgUpdate.value = false
-  linkDraft.value = linkError.value = ''
+  linkDraft.value = linkError.value = suffixDraft.value = ''
   viewVn[stage] = undefined
-  await store.addImages(rec.value.id, stage, links)
+  await store.addImages(rec.value.id, stage, links, suffix || undefined)
 }
 
 // Stage 1 Copy
@@ -591,11 +597,20 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
               v-model="linkDraft"
               class="input"
               placeholder="https://drive.google.com/file/d/… (paste one or multiple links)"
-              style="background: var(--color-bg)"
+              style="background: var(--color-bg); flex: 1"
               @input="linkError = ''"
               @keydown.enter="addImage"
             />
-            <button v-if="stageApproved && imgUpdate" class="btn btn-ghost" style="flex: none" @click="((imgUpdate = false), (linkDraft = linkError = ''))">Cancel</button>
+            <input
+              v-model="suffixDraft"
+              class="input"
+              placeholder="Image suffix"
+              title="Image suffix (up to 20 characters, optional)"
+              maxlength="20"
+              style="background: var(--color-bg); width: 100px; flex: none"
+              @keydown.enter="addImage"
+            />
+            <button v-if="stageApproved && imgUpdate" class="btn btn-ghost" style="flex: none" @click="((imgUpdate = false), (linkDraft = linkError = suffixDraft = ''))">Cancel</button>
             <button class="btn btn-primary" style="flex: none" @click="addImage">
               {{ draftLinksCount > 1 ? `Add ${draftLinksCount} images` : 'Add' }}
             </button>
@@ -676,7 +691,7 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
           <a class="btn btn-secondary" :href="fin.driveLink || fin.imageLink" target="_blank" rel="noreferrer" style="padding-block: 6px">Open in Drive</a>
         </div>
         <span v-if="fin" class="text-muted" style="font-size: 13px; padding-left: 4px">
-          Image with text · Final asset · v{{ fin.versionNumber }}
+          Image with text · Final asset · v{{ fin.versionNumber }}{{ fin.imageSuffix ? ` (${fin.imageSuffix})` : '' }}
         </span>
       </div>
       <div :style="`display:flex; flex-direction:column; gap:var(--space-4); padding:var(--space-6); border-radius:calc(var(--radius-lg) * 1.3); background:${posted ? 'var(--color-accent-2-200)' : 'var(--color-surface)'}`">

@@ -17,6 +17,7 @@ export interface Version {
   // stage 3 / 4
   imageLink?: string
   driveLink?: string
+  imageSuffix?: string
   // authorship (written = stage 1-2, uploaded = stage 3-4)
   createdBy?: string
   createdAt?: string

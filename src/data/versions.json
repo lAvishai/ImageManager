@@ -1,5 +1,15 @@
 [
   {
+    "version": "v1.38.0",
+    "date": "30/10/2026 23:06",
+    "title": "Optional Image Suffix for Google Drive Image Uploads",
+    "changes": [
+      "Added an optional 'Image suffix' input box to the right of the Google Drive link input in Stage 3 and Stage 4 image upload cards.",
+      "Allowed up to 20 characters for the image suffix using native maxlength without character restrictions.",
+      "Saved imageSuffix with uploaded versions and displayed it alongside version identifiers across the version gallery, detail view, and stage indicators."
+    ]
+  },
+  {
     "version": "v1.37.2",
     "date": "27/10/2026 01:05",
     "title": "Favicon Boundary Clipping & Heart Clearance",
