@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import Icon from './Icon.vue'
-import { hasHebrew, last, shown1, type PilgiRecord } from '../domain'
+import { hasHebrew, last, latestApprovedVersion, shown1, type PilgiRecord } from '../domain'
 import { useRecordsStore } from '../stores/records'
 import { useSettingsStore } from '../stores/settings'
 
@@ -152,16 +152,17 @@ function syncTextGen() {
 }
 
 function syncTextGenPrompts() {
-  if (!props.record) {
+  const rec = props.record
+  if (!rec) {
     topImagePromptDraft.value = ''
     bottomImagePromptDraft.value = ''
     return
   }
 
   // 1. @Record - The Record Number if less then 999 use 3 digets
-  const recNum = typeof props.record.num === 'number'
-    ? props.record.num
-    : parseInt(props.record.id.replace(/\D/g, '') || '0', 10)
+  const recNum = typeof rec.num === 'number'
+    ? rec.num
+    : parseInt(rec.id.replace(/\D/g, '') || '0', 10)
   const recordStr = recNum < 1000 ? String(recNum).padStart(3, '0') : String(recNum)
 
   const formatSentenceForPrompt = (text: string) =>
@@ -178,8 +179,8 @@ function syncTextGenPrompts() {
   const bottomText = formatSentenceForPrompt(bottomSentenceDraft.value || v1?.bottomSentence || '')
 
   // 4. @FontSize - If record font sise has value us it else font Size from the settings
-  const fontSizeVal = typeof props.record.fontSize === 'number' && !isNaN(props.record.fontSize) && props.record.fontSize > 0
-    ? props.record.fontSize
+  const fontSizeVal = typeof rec.fontSize === 'number' && !isNaN(rec.fontSize) && rec.fontSize > 0
+    ? rec.fontSize
     : (Number(settings.current.defaultFontSize) || 120)
 
   // 5. @TextCenter - "Center Align" fron the settings
@@ -189,17 +190,23 @@ function syncTextGenPrompts() {
 
   // 6. @TopLocation - "Top Text Location" from the settings + the "Top Text Offset" from the record
   const settingsTopLoc = Number(settings.current.topTextLocation) || 700
-  const recordTopOffset = typeof props.record.topTextOffset === 'number' && !isNaN(props.record.topTextOffset)
-    ? props.record.topTextOffset
+  const recordTopOffset = typeof rec.topTextOffset === 'number' && !isNaN(rec.topTextOffset)
+    ? rec.topTextOffset
     : 0
   const topLocationVal = settingsTopLoc + recordTopOffset
 
   // 7. @BottomLocation - "Bottom Text Location" from the settings + the "Bottom Text Offset" from the record
   const settingsBottomLoc = Number(settings.current.bottomTextLocation) || 2300
-  const recordBottomOffset = typeof props.record.bottomTextOffset === 'number' && !isNaN(props.record.bottomTextOffset)
-    ? props.record.bottomTextOffset
+  const recordBottomOffset = typeof rec.bottomTextOffset === 'number' && !isNaN(rec.bottomTextOffset)
+    ? rec.bottomTextOffset
     : 0
   const bottomLocationVal = settingsBottomLoc + recordBottomOffset
+
+  // 8. @Suffix - suffix of the latest approved image in the "image" stage (Stage 3), or empty string if none
+  const finalStage3 = (rec.stage3.selectedVersionNumber != null
+    ? rec.stage3.versions.find((v) => v.versionNumber === rec.stage3.selectedVersionNumber)
+    : undefined) || latestApprovedVersion(rec.stage3) || last(rec.stage3)
+  const suffixVal = finalStage3?.imageSuffix?.trim() || ''
 
   const replaceTokens = (template: string) => {
     if (!template) return ''
@@ -211,6 +218,7 @@ function syncTextGenPrompts() {
       .replace(/@TextCenter\b/gi, String(textCenterVal))
       .replace(/@TopLocation\b/gi, String(topLocationVal))
       .replace(/@BottomLocation\b/gi, String(bottomLocationVal))
+      .replace(/@Suffix\b/gi, suffixVal)
   }
 
   topImagePromptDraft.value = replaceTokens(settings.current.topImagePrompt || '')
@@ -218,7 +226,7 @@ function syncTextGenPrompts() {
 }
 
 watch(
-  () => [props.open, props.record?.id, settings.current],
+  () => [props.open, props.record?.id, props.record?.lastModifiedAt, settings.current],
   () => {
     if (props.open && props.record) {
       syncScenario()
@@ -442,7 +450,7 @@ function resetToDefaults() {
             Custom positioning and typography overrides stored directly with this PilGi record.
           </p>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3)">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-3)">
             <div class="field" style="margin: 0">
               <label for="tdTopTextOffset">Top Text Offset</label>
               <input
@@ -466,19 +474,19 @@ function resetToDefaults() {
                 placeholder="0"
               />
             </div>
-          </div>
 
-          <div class="field" style="margin: 0">
-            <label for="tdFontSize">Font Size</label>
-            <input
-              id="tdFontSize"
-              v-model.number="fontSize"
-              type="number"
-              class="input"
-              style="background: var(--color-bg)"
-              placeholder="0"
-              min="0"
-            />
+            <div class="field" style="margin: 0">
+              <label for="tdFontSize">Font Size</label>
+              <input
+                id="tdFontSize"
+                v-model.number="fontSize"
+                type="number"
+                class="input"
+                style="background: var(--color-bg)"
+                placeholder="0"
+                min="0"
+              />
+            </div>
           </div>
 
           <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: var(--space-1)">
@@ -513,34 +521,36 @@ function resetToDefaults() {
               Edit line breaks for Top and Bottom sentences. Line breaks are converted to <code>|</code> in the prompts below.
             </p>
 
-            <!-- Top Sentence -->
-            <div class="field" style="margin: 0">
-              <label for="tdTopSentence">Top Sentence</label>
-              <textarea
-                id="tdTopSentence"
-                v-model="topSentenceDraft"
-                class="input"
-                rows="2"
-                :dir="hasHebrew(topSentenceDraft) ? 'rtl' : undefined"
-                style="border-radius: var(--radius-md); min-height: 52px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
-                :style="hasHebrew(topSentenceDraft) ? 'direction: rtl; text-align: right;' : ''"
-                placeholder="Top sentence…"
-              ></textarea>
-            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3)">
+              <!-- Top Sentence -->
+              <div class="field" style="margin: 0">
+                <label for="tdTopSentence">Top Sentence</label>
+                <textarea
+                  id="tdTopSentence"
+                  v-model="topSentenceDraft"
+                  class="input"
+                  rows="2"
+                  :dir="hasHebrew(topSentenceDraft) ? 'rtl' : undefined"
+                  style="border-radius: var(--radius-md); min-height: 52px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
+                  :style="hasHebrew(topSentenceDraft) ? 'direction: rtl; text-align: right;' : ''"
+                  placeholder="Top sentence…"
+                ></textarea>
+              </div>
 
-            <!-- Bottom Sentence -->
-            <div class="field" style="margin: 0">
-              <label for="tdBottomSentence">Bottom Sentence</label>
-              <textarea
-                id="tdBottomSentence"
-                v-model="bottomSentenceDraft"
-                class="input"
-                rows="2"
-                :dir="hasHebrew(bottomSentenceDraft) ? 'rtl' : undefined"
-                style="border-radius: var(--radius-md); min-height: 52px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
-                :style="hasHebrew(bottomSentenceDraft) ? 'direction: rtl; text-align: right;' : ''"
-                placeholder="Bottom sentence…"
-              ></textarea>
+              <!-- Bottom Sentence -->
+              <div class="field" style="margin: 0">
+                <label for="tdBottomSentence">Bottom Sentence</label>
+                <textarea
+                  id="tdBottomSentence"
+                  v-model="bottomSentenceDraft"
+                  class="input"
+                  rows="2"
+                  :dir="hasHebrew(bottomSentenceDraft) ? 'rtl' : undefined"
+                  style="border-radius: var(--radius-md); min-height: 52px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
+                  :style="hasHebrew(bottomSentenceDraft) ? 'direction: rtl; text-align: right;' : ''"
+                  placeholder="Bottom sentence…"
+                ></textarea>
+              </div>
             </div>
 
             <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: 2px">

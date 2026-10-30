@@ -169,6 +169,22 @@ export const useRecordsStore = defineStore('records', () => {
     )
   }
 
+  function updateVersionSuffix(id: string, stage: number, vn: number, suffix: string) {
+    const sfx = suffix.trim().slice(0, 20) || undefined
+    return mutate(
+      id,
+      (r) => {
+        const st = stageData(r, stage)
+        const v = st.versions.find((x) => x.versionNumber === vn)
+        if (v) {
+          if (sfx) v.imageSuffix = sfx
+          else delete v.imageSuffix
+        }
+      },
+      `${id}: stage ${stage} v${vn} suffix updated`,
+    )
+  }
+
   function saveText(id: string, stage: 1 | 2, e: { mode: 'edit' | 'new'; vn?: number; top: string; bottom: string; scenario: string; isLineBreak?: boolean }) {
     const body = stage === 1 ? { topSentence: e.top.trim(), bottomSentence: e.bottom.trim() } : { scenario: e.scenario.trim() }
     return mutate(
@@ -270,6 +286,6 @@ export const useRecordsStore = defineStore('records', () => {
     }
   }
 
-  return { records, visible, loaded, loadError, refreshing, refresh, toastMsg, toast, init, reset, byId, mutate, review, addImage, addImages, saveText, create, createMany, setCharacter, addRemark, setRemarksDone, setPosted, setPostDate, updateTechData, remove, persistSettings }
+  return { records, visible, loaded, loadError, refreshing, refresh, toastMsg, toast, init, reset, byId, mutate, review, addImage, addImages, updateVersionSuffix, saveText, create, createMany, setCharacter, addRemark, setRemarksDone, setPosted, setPostDate, updateTechData, remove, persistSettings }
 })
 

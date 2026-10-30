@@ -55,6 +55,7 @@ This document outlines the core architecture, coding standards, business logic, 
     - `@TextCenter`: `centerAlign` from settings (default `768`).
     - `@TopLocation`: Settings `topTextLocation` (default `700`) + record `topTextOffset`.
     - `@BottomLocation`: Settings `bottomTextLocation` + record `bottomTextOffset`.
+    - `@Suffix`: Suffix of the final image in the "Image with Text" stage (Stage 4), or empty string if none.
   - Copy actions: Individual copy-to-clipboard buttons beside each prompt, and a combined button below both prompts.
 
 ### 3.3 Google Drive Asset Downloads

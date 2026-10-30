@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Icon from '../components/Icon.vue'
 import Thumb from '../components/Thumb.vue'
@@ -54,6 +54,25 @@ const techDataOpen = ref(false)
 const copiedText = ref(false)
 let copyTimer: ReturnType<typeof setTimeout> | null = null
 
+const suffixEdit = ref<{ stage: number; vn: number; val: string } | null>(null)
+const suffixInputRef = ref<HTMLInputElement | null>(null)
+
+function startEditSuffix(stage: number, vn: number, currentSuffix = '') {
+  suffixEdit.value = { stage, vn, val: currentSuffix }
+  nextTick(() => suffixInputRef.value?.focus())
+}
+
+function cancelEditSuffix() {
+  suffixEdit.value = null
+}
+
+async function saveEditSuffix() {
+  if (!suffixEdit.value || !r.value) return
+  const { stage, vn, val } = suffixEdit.value
+  suffixEdit.value = null
+  await store.updateVersionSuffix(r.value.id, stage, vn, val)
+}
+
 async function onDeleteConfirm() {
   deleteConfirmOpen.value = false
   if (!r.value) return
@@ -81,6 +100,7 @@ watch(
     editor.value = null
     imgUpdate.value = false
     linkDraft.value = linkError.value = suffixDraft.value = ''
+    suffixEdit.value = null
     dateDraft.value = null
     copiedText.value = false
   },
@@ -106,9 +126,7 @@ const steps = computed(() =>
         const st = stageData(x, n)
         const l = last(st)
         const appV = latestApprovedVersion(st)
-        const appVLabel = appV ? `v${appV.versionNumber}${appV.imageSuffix ? ` (${appV.imageSuffix})` : ''}` : ''
-        const lLabel = l ? `v${l.versionNumber}${l.imageSuffix ? ` (${l.imageSuffix})` : ''}` : ''
-        sub = done ? `Approved · ${appVLabel || `v${st.selectedVersionNumber}`}` : l ? `${ST[l.status].label} · ${lLabel}` : n === 2 ? 'Not written yet' : 'Awaiting upload'
+        sub = done ? `Approved · v${appV?.versionNumber ?? st.selectedVersionNumber}` : l ? `${ST[l.status].label} · v${l.versionNumber}` : n === 2 ? 'Not written yet' : 'Awaiting upload'
       } else sub = x.stage5.status === 'posted' ? 'Posted ' + fmtPostDate(x.stage5.postedAt, tz.value) : 'Ready to post'
     }
     return {
@@ -140,7 +158,7 @@ const vv = computed(() => {
   const newBase = () => ({ mode: 'new' as const, top: lastV.topSentence || '', bottom: lastV.bottomSentence || '', scenario: lastV.scenario || '' })
   return {
     v,
-    label: v.imageSuffix ? `Version ${v.versionNumber} (${v.imageSuffix})` : `Version ${v.versionNumber}`,
+    label: `Version ${v.versionNumber}`,
     isFinal: s.selectedVersionNumber === v.versionNumber,
     byLine: `${n <= 2 ? 'Written' : 'Uploaded'} by ${short(owner)} · ${fmt(n <= 2 ? v.createdAt : v.uploadedAt, tz.value)}`,
     hasReview: v.status !== 'pending',
@@ -229,7 +247,7 @@ const versions = computed(() => {
     .slice()
     .reverse()
     .map((x) => ({
-      label: x.imageSuffix ? `v${x.versionNumber} (${x.imageSuffix})` : `v${x.versionNumber}`,
+      label: `v${x.versionNumber}`,
       vn: x.versionNumber,
       tagCls: ST[x.status].cls,
       statusLabel: s.selectedVersionNumber === x.versionNumber ? 'Final' : ST[x.status].label,
@@ -250,11 +268,13 @@ function goStage(n: number) {
   editor.value = null
   imgUpdate.value = false
   linkDraft.value = linkError.value = suffixDraft.value = ''
+  suffixEdit.value = null
   copiedText.value = false
 }
 function pickVersion(vn: number) {
   viewVn[a.value] = vn
   editor.value = null
+  suffixEdit.value = null
 }
 
 async function approve() {
@@ -497,6 +517,60 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
           <div style="display: flex; gap: var(--space-2); align-items: center; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--color-surface); max-width: 75%">
             <Icon name="link" :size="15" style="flex: none; opacity: 0.6" />
             <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px">{{ vv.link }}</span>
+            <template v-if="suffixEdit && suffixEdit.stage === a && suffixEdit.vn === vv.v.versionNumber">
+              <div style="display: inline-flex; align-items: center; gap: 4px; flex: none">
+                <input
+                  ref="suffixInputRef"
+                  v-model="suffixEdit.val"
+                  class="input"
+                  placeholder="Suffix (up to 20)"
+                  maxlength="20"
+                  style="padding: 2px 8px; font-size: 12px; height: 26px; min-height: 26px; width: 110px; border-radius: 999px; background: var(--color-bg)"
+                  @keydown.enter="saveEditSuffix"
+                  @keydown.esc="cancelEditSuffix"
+                />
+                <button
+                  class="btn btn-primary"
+                  type="button"
+                  style="padding: 4px 6px; font-size: 11px; height: 26px; min-height: 26px; border-radius: 999px; display: inline-flex; align-items: center"
+                  title="Save suffix (Enter)"
+                  @click="saveEditSuffix"
+                >
+                  <Icon name="check" :size="12" />
+                </button>
+                <button
+                  class="btn btn-ghost"
+                  type="button"
+                  style="padding: 4px 6px; font-size: 11px; height: 26px; min-height: 26px; border-radius: 999px; display: inline-flex; align-items: center"
+                  title="Cancel (Esc)"
+                  @click="cancelEditSuffix"
+                >
+                  <Icon name="x" :size="12" />
+                </button>
+              </div>
+            </template>
+            <template v-else>
+              <button
+                v-if="vv.v.imageSuffix"
+                type="button"
+                title="Click to edit suffix"
+                style="all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: var(--color-text); padding: 2px 8px; border-radius: 999px; border: 1px dashed var(--color-divider); background: var(--color-bg); flex: none"
+                @click="startEditSuffix(a, vv.v.versionNumber, vv.v.imageSuffix)"
+              >
+                <span>({{ vv.v.imageSuffix }})</span>
+                <Icon name="pencil" :size="11" style="opacity: 0.6" />
+              </button>
+              <button
+                v-else
+                type="button"
+                title="Add suffix"
+                style="all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--color-neutral-600); padding: 2px 8px; border-radius: 999px; border: 1px dashed var(--color-divider); background: var(--color-bg); flex: none"
+                @click="startEditSuffix(a, vv.v.versionNumber, '')"
+              >
+                <Icon name="plus" :size="11" />
+                <span>Suffix</span>
+              </button>
+            </template>
             <a
               v-if="vv.driveId || extractGoogleDriveId(vv.link)"
               class="btn btn-secondary"
@@ -676,6 +750,60 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
         <div v-if="fin" style="display: flex; gap: var(--space-2); align-items: center; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--color-surface); max-width: 75%">
           <Icon name="link" :size="15" style="flex: none; opacity: 0.6" />
           <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px">{{ fin.driveLink || fin.imageLink }}</span>
+          <template v-if="suffixEdit && suffixEdit.stage === 4 && suffixEdit.vn === fin.versionNumber">
+            <div style="display: inline-flex; align-items: center; gap: 4px; flex: none">
+              <input
+                ref="suffixInputRef"
+                v-model="suffixEdit.val"
+                class="input"
+                placeholder="Suffix (up to 20)"
+                maxlength="20"
+                style="padding: 2px 8px; font-size: 12px; height: 26px; min-height: 26px; width: 110px; border-radius: 999px; background: var(--color-bg)"
+                @keydown.enter="saveEditSuffix"
+                @keydown.esc="cancelEditSuffix"
+              />
+              <button
+                class="btn btn-primary"
+                type="button"
+                style="padding: 4px 6px; font-size: 11px; height: 26px; min-height: 26px; border-radius: 999px; display: inline-flex; align-items: center"
+                title="Save suffix (Enter)"
+                @click="saveEditSuffix"
+              >
+                <Icon name="check" :size="12" />
+              </button>
+              <button
+                class="btn btn-ghost"
+                type="button"
+                style="padding: 4px 6px; font-size: 11px; height: 26px; min-height: 26px; border-radius: 999px; display: inline-flex; align-items: center"
+                title="Cancel (Esc)"
+                @click="cancelEditSuffix"
+              >
+                <Icon name="x" :size="12" />
+              </button>
+            </div>
+          </template>
+          <template v-else>
+            <button
+              v-if="fin.imageSuffix"
+              type="button"
+              title="Click to edit suffix"
+              style="all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: var(--color-text); padding: 2px 8px; border-radius: 999px; border: 1px dashed var(--color-divider); background: var(--color-bg); flex: none"
+              @click="startEditSuffix(4, fin.versionNumber, fin.imageSuffix)"
+            >
+              <span>({{ fin.imageSuffix }})</span>
+              <Icon name="pencil" :size="11" style="opacity: 0.6" />
+            </button>
+            <button
+              v-else
+              type="button"
+              title="Add suffix"
+              style="all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--color-neutral-600); padding: 2px 8px; border-radius: 999px; border: 1px dashed var(--color-divider); background: var(--color-bg); flex: none"
+              @click="startEditSuffix(4, fin.versionNumber, '')"
+            >
+              <Icon name="plus" :size="11" />
+              <span>Suffix</span>
+            </button>
+          </template>
           <a
             v-if="finDriveId || extractGoogleDriveId(fin.driveLink || fin.imageLink)"
             class="btn btn-secondary"

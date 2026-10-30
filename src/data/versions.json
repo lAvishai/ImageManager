@@ -1,12 +1,30 @@
 [
   {
+    "version": "v1.38.2",
+    "date": "30/10/2026 23:59",
+    "title": "Support @Suffix Token in Tech Data Prompts",
+    "changes": [
+      "Added dynamic token replacement for @Suffix in Top Image prompt and Bottom Image prompt templates in the Tech Data drawer.",
+      "Resolves the suffix of the final image in the 'Image with Text' stage (Stage 4), or replaces with an empty string if no suffix is set."
+    ]
+  },
+  {
+    "version": "v1.38.1",
+    "date": "30/10/2026 23:54",
+    "title": "Same-Row Layout for Text Generation in Tech Data Drawer",
+    "changes": [
+      "Arranged Top Sentence and Bottom Sentence text inputs side-by-side into the same row in the Tech Data drawer.",
+      "Consolidated Top Text Offset, Bottom Text Offset, and Font Size into a unified 3-column row for a compact, clean layout."
+    ]
+  },
+  {
     "version": "v1.38.0",
     "date": "30/10/2026 23:06",
     "title": "Optional Image Suffix for Google Drive Image Uploads",
     "changes": [
       "Added an optional 'Image suffix' input box to the right of the Google Drive link input in Stage 3 and Stage 4 image upload cards.",
       "Allowed up to 20 characters for the image suffix using native maxlength without character restrictions.",
-      "Saved imageSuffix with uploaded versions and displayed it alongside version identifiers across the version gallery, detail view, and stage indicators."
+      "Added inline click-to-edit and '+ Suffix' button directly inside the Google Drive link pill to the left of the Download button."
     ]
   },
   {
