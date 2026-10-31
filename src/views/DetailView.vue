@@ -417,18 +417,7 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
       <div style="flex: 1 1 0px; min-width: min(100%, 320px); max-width: 1000px; margin-right: auto; align-self: flex-start">
         <h2 style="margin: 0; font-size: clamp(14px, 1.8vw, 30px); line-height: 1.25">{{ headerTopSentence }}</h2>
         <h2 style="margin: 6px 0 0; font-size: clamp(14px, 1.8vw, 30px); line-height: 1.25">{{ headerBottomSentence }}</h2>
-        <span class="tag tag-neutral" style="display: inline-flex; align-items: center; gap: 6px">
-          <span>{{ r.id }}</span>
-          <button
-            type="button"
-            style="all: unset; cursor: pointer; display: inline-flex; align-items: center; color: var(--color-accent); opacity: 0.9"
-            title="Copy share link for this record"
-            aria-label="Copy share link"
-            @click="shareRecord"
-          >
-            <Icon :name="copiedShare ? 'check' : 'share'" :size="12" />
-          </button>
-        </span>
+        <span class="tag tag-neutral">{{ r.id }}</span>
         <span class="text-muted" style="font-size: 12px"> Created by {{ short(r.createdBy) }} · {{ fmt(r.createdAt, tz) }}</span>
       </div>
       <div style="display: flex; flex-direction: column; gap: var(--space-2); align-self: flex-start">

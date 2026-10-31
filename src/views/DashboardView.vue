@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Icon from '../components/Icon.vue'
-import { SN, ST, type RecStatus, copyToClipboard, fmt, fmtPostDate, isRemarksDone, lastOpenRemarkOf, openRemarksOf, recStatus, recThumb, shown1, short } from '../domain'
+import { SN, ST, type RecStatus, fmt, fmtPostDate, isRemarksDone, lastOpenRemarkOf, openRemarksOf, recStatus, recThumb, shown1, short } from '../domain'
 import { useAuthStore } from '../stores/auth'
 import { useRecordsStore } from '../stores/records'
 import { useUiStore } from '../stores/ui'
@@ -13,27 +13,6 @@ const store = useRecordsStore()
 const ui = useUiStore()
 const settings = useSettingsStore()
 const router = useRouter()
-
-const copiedId = ref<string | null>(null)
-let copiedTimer: ReturnType<typeof setTimeout> | null = null
-
-async function shareRecord(id: string) {
-  const resolved = router.resolve({ name: 'detail', params: { id } })
-  const url = new URL(resolved.href, window.location.href).href
-  const r = store.byId(id)
-  const userName = short(auth.email) || 'Someone'
-  const recordNum = r?.num ?? (parseInt(id.replace(/\D/g, '') || '0', 10) || id)
-  const shareText = `🦒🐘 ${userName} Shared Pilgi ${recordNum} with you ${url}`
-  const ok = await copyToClipboard(shareText)
-  if (ok) {
-    copiedId.value = id
-    store.toast(`Record link copied: ${id}`)
-    if (copiedTimer) clearTimeout(copiedTimer)
-    copiedTimer = setTimeout(() => {
-      if (copiedId.value === id) copiedId.value = null
-    }, 2000)
-  }
-}
 
 const recs = computed(() => store.visible)
 const pend = (n: number) => `${recs.value.filter((r) => r.currentStage === n && recStatus(r) === 'pending').length} need review`
@@ -351,22 +330,7 @@ const summary = computed(() => {
                 <div style="min-width: 0">
                   <div style="font-weight: 600; line-height: 1.3">{{ row.top }}</div>
                   <div style="font-weight: 600; line-height: 1.3">{{ row.bottom }}</div>
-                  <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px">
-                    <span style="font-size: 11px; color: var(--color-neutral-600)">{{ row.id }}</span>
-                    <button
-                      type="button"
-                      style="all: unset; cursor: pointer; display: inline-flex; align-items: center; color: var(--color-accent); padding: 1px 3px; border-radius: var(--radius-sm)"
-                      :title="`Copy share link for ${row.id}`"
-                      :aria-label="`Copy share link for ${row.id}`"
-                      @click.stop="shareRecord(row.id)"
-                    >
-                      <Icon
-                        :name="copiedId === row.id ? 'check' : 'share'"
-                        :size="12"
-                        :style="{ color: copiedId === row.id ? 'var(--color-accent-2-800)' : 'var(--color-accent)' }"
-                      />
-                    </button>
-                  </div>
+                  <div style="font-size: 11px; color: var(--color-neutral-600); margin-top: 2px">{{ row.id }}</div>
                 </div>
               </div>
             </td>

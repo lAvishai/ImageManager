@@ -1,5 +1,14 @@
 [
   {
+    "version": "v1.38.8",
+    "date": "31/10/2026 09:40",
+    "title": "Remove Inline Share Icons from Record List and Record ID Pill",
+    "changes": [
+      "Removed the quick-share icon button next to record IDs in the Dashboard records table.",
+      "Removed the inline share icon button from the rec# pill in Record Detail view, keeping the dedicated 'Share' button next to 'Tech'."
+    ]
+  },
+  {
     "version": "v1.38.7",
     "date": "31/10/2026 09:06",
     "title": "Share Record Links and Deep Linking Post-Login",
