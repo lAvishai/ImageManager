@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Icon from '../components/Icon.vue'
 import { SD, SN } from '../domain'
 import { useAuthStore } from '../stores/auth'
@@ -9,13 +9,18 @@ import { useRecordsStore } from '../stores/records'
 const auth = useAuthStore()
 const records = useRecordsStore()
 const router = useRouter()
+const route = useRoute()
 const stages = [1, 2, 3, 4, 5].map((n) => ({ n, name: SN[n], desc: SD[n] }))
 const isSetup = computed(() => auth.mode === 'setup')
 
 async function enter(ok: boolean) {
   if (!ok) return
   void records.init()
-  router.replace('/')
+  const redirect =
+    typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/') && !route.query.redirect.startsWith('//')
+      ? route.query.redirect
+      : '/'
+  router.replace(redirect)
 }
 const submit = async () => enter(await auth.submit())
 const useCookie = async () => enter(await auth.useCookie())

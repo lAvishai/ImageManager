@@ -29,12 +29,14 @@ import {
 import { useRecordsStore } from '../stores/records'
 import { useUiStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
+import { useAuthStore } from '../stores/auth'
 
 const route = useRoute()
 const router = useRouter()
 const store = useRecordsStore()
 const ui = useUiStore()
 const settings = useSettingsStore()
+const auth = useAuthStore()
 const tz = computed(() => settings.current.timeZone || 'Asia/Jerusalem')
 
 const r = computed(() => store.byId(String(route.params.id)))
@@ -53,6 +55,31 @@ const deleteConfirmOpen = ref(false)
 const techDataOpen = ref(false)
 const copiedText = ref(false)
 let copyTimer: ReturnType<typeof setTimeout> | null = null
+
+const copiedShare = ref(false)
+let copyShareTimer: ReturnType<typeof setTimeout> | null = null
+
+function getRecordShareUrl(id: string): string {
+  const resolved = router.resolve({ name: 'detail', params: { id } })
+  return new URL(resolved.href, window.location.href).href
+}
+
+async function shareRecord() {
+  if (!r.value) return
+  const url = getRecordShareUrl(r.value.id)
+  const userName = short(auth.email) || 'Someone'
+  const recordNum = r.value.num ?? (parseInt(r.value.id.replace(/\D/g, '') || '0', 10) || r.value.id)
+  const shareText = `🦒🐘 ${userName} Shared Pilgi ${recordNum} with you ${url}`
+  const ok = await copyToClipboard(shareText)
+  if (ok) {
+    copiedShare.value = true
+    store.toast(`Record link copied: ${r.value.id}`)
+    if (copyShareTimer) clearTimeout(copyShareTimer)
+    copyShareTimer = setTimeout(() => {
+      copiedShare.value = false
+    }, 2000)
+  }
+}
 
 const suffixEdit = ref<{ stage: number; vn: number; val: string } | null>(null)
 const suffixInputRef = ref<HTMLInputElement | null>(null)
@@ -82,9 +109,11 @@ async function onDeleteConfirm() {
 
 watch(
   r,
-  (rec) => {
+  (rec, prevRec) => {
     if (rec?.deleted) {
       router.replace('/')
+    } else if (rec && (!prevRec || prevRec.id !== rec.id)) {
+      active.value = rec.currentStage
     }
   },
   { immediate: true },
@@ -388,7 +417,18 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
       <div style="flex: 1 1 0px; min-width: min(100%, 320px); max-width: 1000px; margin-right: auto; align-self: flex-start">
         <h2 style="margin: 0; font-size: clamp(14px, 1.8vw, 30px); line-height: 1.25">{{ headerTopSentence }}</h2>
         <h2 style="margin: 6px 0 0; font-size: clamp(14px, 1.8vw, 30px); line-height: 1.25">{{ headerBottomSentence }}</h2>
-        <span class="tag tag-neutral">{{ r.id }}</span>
+        <span class="tag tag-neutral" style="display: inline-flex; align-items: center; gap: 6px">
+          <span>{{ r.id }}</span>
+          <button
+            type="button"
+            style="all: unset; cursor: pointer; display: inline-flex; align-items: center; color: var(--color-accent); opacity: 0.9"
+            title="Copy share link for this record"
+            aria-label="Copy share link"
+            @click="shareRecord"
+          >
+            <Icon :name="copiedShare ? 'check' : 'share'" :size="12" />
+          </button>
+        </span>
         <span class="text-muted" style="font-size: 12px"> Created by {{ short(r.createdBy) }} · {{ fmt(r.createdAt, tz) }}</span>
       </div>
       <div style="display: flex; flex-direction: column; gap: var(--space-2); align-self: flex-start">
@@ -428,15 +468,33 @@ const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${di
           <span class="text-muted" style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase">Last modified</span>
           <span><b>{{ r.lastModifiedBy }}</b> · {{ fmt(r.lastModifiedAt, tz) }}</span>
         </div>
-        <button
-          class="btn btn-secondary"
-          style="display: flex; align-items: center; justify-content: center; gap: var(--space-2); width: 100%"
-          title="Open technical parameters & scenario prompt"
-          @click="techDataOpen = true"
-        >
-          <Icon name="gear" :size="15" />
-          <span>Tech Data</span>
-        </button>
+        <div style="display: flex; gap: var(--space-2); width: 100%">
+          <button
+            class="btn btn-secondary"
+            style="display: flex; align-items: center; justify-content: center; gap: var(--space-2); flex: 1"
+            :style="copiedShare ? 'background: var(--color-accent-2-100); border-color: var(--color-accent-2-300)' : ''"
+            title="Copy share link for this record"
+            @click="shareRecord"
+          >
+            <Icon
+              :name="copiedShare ? 'check' : 'share'"
+              :size="15"
+              :style="{ color: copiedShare ? 'var(--color-accent-2-800)' : 'var(--color-accent)' }"
+            />
+            <span :style="{ color: copiedShare ? 'var(--color-accent-2-800)' : 'inherit' }">
+              {{ copiedShare ? 'Copied' : 'Share' }}
+            </span>
+          </button>
+          <button
+            class="btn btn-secondary"
+            style="display: flex; align-items: center; justify-content: center; gap: var(--space-2); flex: 1"
+            title="Open technical parameters & scenario prompt"
+            @click="techDataOpen = true"
+          >
+            <Icon name="gear" :size="15" />
+            <span>Tech</span>
+          </button>
+        </div>
       </div>
     </div>
 

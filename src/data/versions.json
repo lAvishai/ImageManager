@@ -1,5 +1,17 @@
 [
   {
+    "version": "v1.38.7",
+    "date": "31/10/2026 09:06",
+    "title": "Share Record Links and Deep Linking Post-Login",
+    "changes": [
+      "Added 'Share' button directly to the left of 'Tech' (and quick-share on record ID) in Record Detail view to copy direct deep links to clipboard with toast feedback.",
+      "Added quick share action button next to record IDs in the Dashboard table rows.",
+      "Enhanced route authentication guards and LoginView to preserve deep link redirect targets and automatically navigate to the shared record upon login or unlock.",
+      "Added 3-node connected network share icon in Icon.vue with solid nodes, styled with app accent and success colors.",
+      "Prepended \"🦒🐘 {User Name} Shared Pilgi {Record Number} with you \" before the deep link URL when copying."
+    ]
+  },
+  {
     "version": "v1.38.6",
     "date": "31/10/2026 00:23",
     "title": "Add 'Image resize and append' Prompt to Tech Data Drawer",

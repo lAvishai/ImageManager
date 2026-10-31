@@ -43,6 +43,13 @@ const PATHS: Record<string, string[]> = {
     'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2',
     'M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z',
   ],
+  share: [
+    'M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+    'M6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+    'M18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+    'M8.59 13.51l6.83 3.98',
+    'M15.41 6.51l-6.82 3.98',
+  ],
 }
 </script>
 
@@ -58,6 +65,11 @@ const PATHS: Record<string, string[]> = {
     stroke-linejoin="round"
     aria-hidden="true"
   >
-    <path v-for="d in PATHS[props.name]" :key="d" :d="d" />
+    <path
+      v-for="d in PATHS[props.name]"
+      :key="d"
+      :d="d"
+      :fill="props.name === 'share' && d.includes('a3 3') ? 'currentColor' : 'none'"
+    />
   </svg>
 </template>

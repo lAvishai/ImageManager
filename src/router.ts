@@ -24,8 +24,17 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   const auth = useAuthStore()
-  if (to.meta.auth && !auth.unlocked) return '/login'
-  if (to.name === 'login' && auth.unlocked) return '/'
+  if (to.meta.auth && !auth.unlocked) {
+    const redirect = to.fullPath && to.fullPath !== '/' ? to.fullPath : undefined
+    return { path: '/login', query: redirect ? { redirect } : undefined }
+  }
+  if (to.name === 'login' && auth.unlocked) {
+    const redirect =
+      typeof to.query.redirect === 'string' && to.query.redirect.startsWith('/') && !to.query.redirect.startsWith('//')
+        ? to.query.redirect
+        : '/'
+    return redirect
+  }
 })
 
 export default router
