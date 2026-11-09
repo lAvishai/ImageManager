@@ -1,0 +1,582 @@
+[
+  {
+    "version": "v1.38.8",
+    "date": "31/10/2026 09:40",
+    "title": "Remove Inline Share Icons from Record List and Record ID Pill",
+    "changes": [
+      "Removed the quick-share icon button next to record IDs in the Dashboard records table.",
+      "Removed the inline share icon button from the rec# pill in Record Detail view, keeping the dedicated 'Share' button next to 'Tech'."
+    ]
+  },
+  {
+    "version": "v1.38.7",
+    "date": "31/10/2026 09:06",
+    "title": "Share Record Links and Deep Linking Post-Login",
+    "changes": [
+      "Added 'Share' button directly to the left of 'Tech' (and quick-share on record ID) in Record Detail view to copy direct deep links to clipboard with toast feedback.",
+      "Added quick share action button next to record IDs in the Dashboard table rows.",
+      "Enhanced route authentication guards and LoginView to preserve deep link redirect targets and automatically navigate to the shared record upon login or unlock.",
+      "Added 3-node connected network share icon in Icon.vue with solid nodes, styled with app accent and success colors.",
+      "Prepended \"🦒🐘 {User Name} Shared Pilgi {Record Number} with you \" before the deep link URL when copying."
+    ]
+  },
+  {
+    "version": "v1.38.6",
+    "date": "31/10/2026 00:23",
+    "title": "Add 'Image resize and append' Prompt to Tech Data Drawer",
+    "changes": [
+      "Added 'Image resize and append' preview textarea to the Image Prompts subsection in the Tech Data drawer.",
+      "Populated from Settings with full dynamic @ token replacements (@Record, @TopText, @BottomText, @FontSize, @TextCenter, @TopLocation, @BottomLocation, @Suffix).",
+      "Added individual copy-to-clipboard button and updated the combined copy button to include all prompts."
+    ]
+  },
+  {
+    "version": "v1.38.5",
+    "date": "31/10/2026 00:19",
+    "title": "Reposition 'Image resize and append' Field",
+    "changes": [
+      "Moved the 'Image resize and append' textarea to the top of the 'Image With Text Generation' card in Settings."
+    ]
+  },
+  {
+    "version": "v1.38.4",
+    "date": "31/10/2026 00:18",
+    "title": "Two-Column Settings Layout",
+    "changes": [
+      "Organized Settings view into two responsive columns: Left ('Regional Settings', 'Image With Text Generation') and Right ('Character Descriptions', 'Prompt Template').",
+      "Expanded settings container max-width to 1280px for a clean, balanced desktop experience that collapses cleanly on smaller viewports."
+    ]
+  },
+  {
+    "version": "v1.38.3",
+    "date": "31/10/2026 00:16",
+    "title": "Add 'Image resize and append' Setting",
+    "changes": [
+      "Added a new two-line textarea for 'Image resize and append' in the Settings > 'Image With Text Generation' section.",
+      "Persisted 'imageResizeAndAppend' to AppSettings and settings.json with an empty default value."
+    ]
+  },
+  {
+    "version": "v1.38.2",
+    "date": "30/10/2026 23:59",
+    "title": "Support @Suffix Token in Tech Data Prompts",
+    "changes": [
+      "Added dynamic token replacement for @Suffix in Top Image prompt and Bottom Image prompt templates in the Tech Data drawer.",
+      "Resolves the suffix of the final image in the 'Image with Text' stage (Stage 4), or replaces with an empty string if no suffix is set."
+    ]
+  },
+  {
+    "version": "v1.38.1",
+    "date": "30/10/2026 23:54",
+    "title": "Same-Row Layout for Text Generation in Tech Data Drawer",
+    "changes": [
+      "Arranged Top Sentence and Bottom Sentence text inputs side-by-side into the same row in the Tech Data drawer.",
+      "Consolidated Top Text Offset, Bottom Text Offset, and Font Size into a unified 3-column row for a compact, clean layout."
+    ]
+  },
+  {
+    "version": "v1.38.0",
+    "date": "30/10/2026 23:06",
+    "title": "Optional Image Suffix for Google Drive Image Uploads",
+    "changes": [
+      "Added an optional 'Image suffix' input box to the right of the Google Drive link input in Stage 3 and Stage 4 image upload cards.",
+      "Allowed up to 20 characters for the image suffix using native maxlength without character restrictions.",
+      "Added inline click-to-edit and '+ Suffix' button directly inside the Google Drive link pill to the left of the Download button."
+    ]
+  },
+  {
+    "version": "v1.37.2",
+    "date": "27/10/2026 01:05",
+    "title": "Favicon Boundary Clipping & Heart Clearance",
+    "changes": [
+      "Added SVG squircle clip-path (<clipPath id=\"squircleClip\">) ensuring all animal artwork stays strictly inside the rounded badge boundary.",
+      "Re-anchored animal positions and placed the love heart high in the open upper-center area with zero overlap onto the giraffe or elephant."
+    ]
+  },
+  {
+    "version": "v1.37.1",
+    "date": "27/10/2026 01:03",
+    "title": "Enhance Favicon Animal Visibility & Contrast",
+    "changes": [
+      "Redesigned public/favicon.svg into bold, closeup portraits of the Elephant (#A) and Giraffe (#B) filling the canvas.",
+      "Added crisp dark perimeter contours and outlines around both characters, ears, horns, trunk, and neck for clarity at 16px/32px tab sizes.",
+      "Repositioned the love heart cleanly above both characters so neither face or horn is obscured."
+    ]
+  },
+  {
+    "version": "v1.37.0",
+    "date": "27/10/2026 00:56",
+    "title": "PilGi Duo Application Favicon",
+    "changes": [
+      "Created official vector SVG application favicon (public/favicon.svg) featuring the iconic Elephant (#A) and Giraffe (#B) companions with floating heart.",
+      "Embedded squircle badge styling with automatic light and dark browser theme adaptability.",
+      "Linked favicon and updated page title to 'PilGi Image Manager' in index.html."
+    ]
+  },
+  {
+    "version": "v1.36.2",
+    "date": "27/10/2026 00:52",
+    "title": "Default to Paste Sentences in Batch Import",
+    "changes": [
+      "Made 'Paste sentences' the default active mode and the first option in the segmented toggle in Batch Import."
+    ]
+  },
+  {
+    "version": "v1.36.1",
+    "date": "27/10/2026 00:51",
+    "title": "Add Margin Beneath Batch Import Toggle",
+    "changes": [
+      "Added spacing (var(--space-6)) underneath the 'Upload file / Paste sentences' segmented toggle in Batch Import for proper visual breathing room and separation from content cards."
+    ]
+  },
+  {
+    "version": "v1.36.0",
+    "date": "27/10/2026 00:42",
+    "title": "Paste Sentences Support in Batch Import",
+    "changes": [
+      "Added a 'Paste sentences' tab in Batch Import alongside 'Upload file' allowing direct text entry.",
+      "Supported multiple pasted text formats: Google Sheets / Excel tab-separated columns, CSV, semicolon-separated, pipe-separated (Top | Bottom), alternating paired lines, and JSON arrays.",
+      "Added 'Paste from clipboard' quick action with browser clipboard access.",
+      "Added automatic Hebrew RTL support in both the paste textarea and the sentence preview editors.",
+      "Made top and bottom sentences directly editable in the import preview table so users can fix missing sentences or polish text before creation.",
+      "Added select-all / deselect-all master checkbox in preview table header for effortless row selection."
+    ]
+  },
+  {
+    "version": "v1.35.5",
+    "date": "23/10/2026 17:07",
+    "title": "Remove Floating Copy Button from Stage 1 Sentences Card",
+    "changes": [
+      "Removed the top-right floating copy button from inside the Stage 1 Sentences card in favor of the dedicated 'Copy sentences' action button in the review row below."
+    ]
+  },
+  {
+    "version": "v1.35.4",
+    "date": "23/10/2026 17:05",
+    "title": "Align Edit Button Styling with Action Bar Buttons",
+    "changes": [
+      "Updated 'Edit sentences' (and 'Edit scenario') button to use secondary button styling (btn btn-secondary) with a pencil icon, matching the other action buttons in the review card."
+    ]
+  },
+  {
+    "version": "v1.35.3",
+    "date": "23/10/2026 16:57",
+    "title": "Set Stage 5 Google Drive Preview Width to 75%",
+    "changes": [
+      "Set Stage 5 Google Drive preview iframe container and action bar width to 75% to match Stages 3 and 4."
+    ]
+  },
+  {
+    "version": "v1.35.2",
+    "date": "23/10/2026 16:56",
+    "title": "Remove Scenario Tag from Scenario Viewer Card",
+    "changes": [
+      "Removed the 'Scenario' tag badge from the Stage 2 viewer box for a cleaner presentation matching the Stage 1 Sentences card."
+    ]
+  },
+  {
+    "version": "v1.35.1",
+    "date": "23/10/2026 16:39",
+    "title": "Unify Stage 5 Drive Link Bar with Stage 4 Layout",
+    "changes": [
+      "Updated Stage 5 Google Drive link bar to use the same rounded pill container, link preview, and action buttons ('Download' and 'Open in Drive') as Stage 4.",
+      "Moved the 'Image with text · Final asset' version descriptor directly underneath the Drive action bar."
+    ]
+  },
+  {
+    "version": "v1.35.0",
+    "date": "23/10/2026 16:02",
+    "title": "Rename Stage 1 to Sentences Across App",
+    "changes": [
+      "Renamed Stage 1 from 'Text' to 'Sentences' in stage name definitions (SN), dashboard stage tiles/filters, and record progress steps.",
+      "Updated Stage 1 actions and buttons to refer to sentences ('Approve sentences', 'Edit sentences', 'Update sentences', 'Copy sentences').",
+      "Updated Stage 1 descriptions and subsection titles in Record Detail, Tech Data Drawer, and dialogs."
+    ]
+  },
+  {
+    "version": "v1.34.6",
+    "date": "23/10/2026 15:55",
+    "title": "Relocate Text Update Action Above Version History",
+    "changes": [
+      "Moved the 'Update text' action button in Stage 1 from the version details card to sit directly above Version History.",
+      "Unified Stage 1 and Stage 2 update behavior above Version History for complete consistency across all workflow stages."
+    ]
+  },
+  {
+    "version": "v1.34.5",
+    "date": "23/10/2026 15:54",
+    "title": "Relocate Scenario Update Action Above Version History",
+    "changes": [
+      "Moved the 'Update scenario' action button in Stage 2 from the version details card to sit directly above Version History.",
+      "Clicking 'Update scenario' seamlessly opens the scenario editor prefilled with the latest scenario content."
+    ]
+  },
+  {
+    "version": "v1.34.4",
+    "date": "23/10/2026 15:52",
+    "title": "Relocate Image Stage Update Actions Above Version Gallery",
+    "changes": [
+      "Moved the 'Update clean image' (Stage 3) and 'Update image with text' (Stage 4) action buttons from the version details card to sit directly above the Version Gallery.",
+      "Clicking the update button smoothly opens the image upload input directly above the gallery for an intuitive update workflow."
+    ]
+  },
+  {
+    "version": "v1.34.3",
+    "date": "21/10/2026 23:53",
+    "title": "Unify Version Gallery Layout Across Image Stages",
+    "changes": [
+      "Applied Stage 4's version gallery row layout with 150px 4:3 Drive preview and complete metadata (version, status tag, author, and reviewer comments) to Stage 3.",
+      "Unified the Version Gallery design across both image generation stages (Stage 3 and Stage 4)."
+    ]
+  },
+  {
+    "version": "v1.34.2",
+    "date": "21/10/2026 23:50",
+    "title": "Match Stage 4 Version Gallery Preview Size to Stage 3",
+    "changes": [
+      "Enlarged the embedded Google Drive image preview in Stage 4 Version gallery list items to 150px with a 4:3 aspect ratio, matching Stage 3's preview dimensions.",
+      "Preserved the existing list row layout and metadata display (version number, status badge, author info, and review comments) in Stage 4."
+    ]
+  },
+  {
+    "version": "v1.34.1",
+    "date": "21/10/2026 23:43",
+    "title": "Rename Stage 4 Version List to Version Gallery",
+    "changes": [
+      "Renamed the Stage 4 version list header from 'Review history' to 'Version gallery' to maintain consistent terminology across image stages."
+    ]
+  },
+  {
+    "version": "v1.34.0",
+    "date": "21/10/2026 23:35",
+    "title": "Multi-Image Upload and Single Approval per Stage",
+    "changes": [
+      "Allowed uploading multiple candidate images to Stage 3 (Clean image) and Stage 4 (Image with text) before review, without being blocked by pending status.",
+      "Added support for pasting multiple Google Drive links simultaneously in the image upload input to batch-create versions in a single commit.",
+      "Enforced strict single-approval invariant: exactly one version can be approved per stage. Approving a new version supersedes any previously approved version in that stage.",
+      "Added approval replacement confirmation and contextual button labeling ('Approve & replace vX') when an approved version already exists."
+    ]
+  },
+  {
+    "version": "v1.33.0",
+    "date": "21/10/2026 22:35",
+    "title": "Search by Scenario on Dashboard",
+    "changes": [
+      "Updated Dashboard live search to search Stage 2 scenario text in addition to Stage 1 sentences and PilGi ID.",
+      "Supports matching both raw scenario tokens (#A, #B) and substituted character names (e.g. Elephant, Giraffe).",
+      "Updated the search input placeholder to 'Search sentences, scenario, or pilgi id'."
+    ]
+  },
+  {
+    "version": "v1.32.0",
+    "date": "20/10/2026 22:40",
+    "title": "Copy Stage 1 Text to Clipboard",
+    "changes": [
+      "Added a quick copy-to-clipboard icon button in the top-right corner of the Stage 1 caption card.",
+      "Added a 'Copy text' action button with copy icon in the Stage 1 review action bar.",
+      "Copies top and bottom sentences cleanly to the clipboard with visual checkmark feedback upon copying."
+    ]
+  },
+  {
+    "version": "v1.31.0",
+    "date": "20/10/2026 21:35",
+    "title": "Display Latest Approved Stage 4 Image in Stage 5",
+    "changes": [
+      "Updated Stage 5 asset preview and download links to display the latest approved image version from Stage 4 instead of the first approved version.",
+      "Added latestApprovedVersion helper in domain.ts to resolve the latest approved version in a stage.",
+      "Updated stage step indicator subtitles to reflect the latest approved version number."
+    ]
+  },
+  {
+    "version": "v1.30.0",
+    "date": "20/10/2026 00:00",
+    "title": "Animated Elephant and Giraffe Companions in Nav Header",
+    "changes": [
+      "Added cute animated vector illustrations of the Elephant (#A) and Giraffe (#B) walking along the bottom border of the nav header with smooth quadruped walking gaits.",
+      "Given each animal independent random speeds, wander intervals, and movement directions along the border.",
+      "Added encounter interactions: when the animals meet, they pause to face each other and release floating, bubbling heart particles that drift up and fade out.",
+      "Added seeking behavior: if the animals have not met for more than 15 seconds, they automatically turn and walk directly towards each other until they meet.",
+      "Replaced static speech quotes with dynamic random sentences from Stage 1 (top and bottom sentences) across the loaded records.",
+      "Flattened multiline Stage 1 sentences into single-line strings with clean whitespace separation and no text wrapping in speech bubbles.",
+      "Added automatic RTL direction and right-alignment support when speech bubbles display Hebrew sentences.",
+      "Added idle auto-speech: if neither animal is clicked for at least 6 seconds, a speech bubble automatically appears on a random animal every 6–10 seconds, resetting seamlessly upon user clicks.",
+      "Pauses animal movement on hover so users can easily click either animal to trigger dialogue and joyful hops.",
+      "Refined the Elephant vector illustration with a natural, less-curled trunk curve.",
+      "Preserved animal facing orientation during jump hops by isolating horizontal scaling from vertical bounce keyframes so animals never flip sides when hopping.",
+      "Prevented horizontal and vertical viewport scrollbars when speech bubbles appear near screen edges by clamping bubble boundaries dynamically and adapting tail alignment."
+    ]
+  },
+  {
+    "version": "v1.29.0",
+    "date": "17/10/2026 22:20",
+    "title": "Reduce Stage 1 Textarea Height in Tech Data Panel",
+    "changes": [
+      "Reduced the default height of the Top Sentence and Bottom Sentence text inputs in the Stage 1 Text Line Breaks section to a compact 52px."
+    ]
+  },
+  {
+    "version": "v1.28.0",
+    "date": "17/10/2026 22:18",
+    "title": "Match Image Prompts Textarea Border Radius",
+    "changes": [
+      "Applied var(--radius-md) border radius to the Top Image prompt and Bottom Image prompt textareas in the Tech Data panel."
+    ]
+  },
+  {
+    "version": "v1.27.0",
+    "date": "17/10/2026 22:16",
+    "title": "Match Input Border Radius in Tech Data Panel",
+    "changes": [
+      "Applied var(--radius-md) border radius to the Stage 1 Top and Bottom sentence text inputs in the Tech Data drawer to match the Scenario Prompt textarea styling."
+    ]
+  },
+  {
+    "version": "v1.26.0",
+    "date": "17/10/2026 22:10",
+    "title": "Extend Tech Data Panel Width",
+    "changes": [
+      "Extended width of the Tech Data drawer by 200px (from 480px to 680px) for a more spacious editing and prompt review layout."
+    ]
+  },
+  {
+    "version": "v1.25.0",
+    "date": "17/10/2026 22:08",
+    "title": "Edit Stage 1 Text Line Breaks in Tech Data Panel",
+    "changes": [
+      "Added Stage 1 Top and Bottom sentence line break editing directly in the Tech Data drawer under Text Generation.",
+      "Enabled real-time prompt updating with | delimiters as line breaks are adjusted in the editor.",
+      "Added 'Update line break' and 'Reset text' controls to persist line break adjustments in place on the record's version.",
+      "Added automatic RTL support for Hebrew text in the sentence textareas."
+    ]
+  },
+  {
+    "version": "v1.24.0",
+    "date": "17/10/2026 21:56",
+    "title": "RTL Support for Approve and Reject Comments",
+    "changes": [
+      "Added automatic RTL direction and alignment to review comments on active version cards and version history items when Hebrew characters are present.",
+      "Added dynamic RTL direction styling and attribute to the rejection comment dialog textarea when typing Hebrew text."
+    ]
+  },
+  {
+    "version": "v1.23.0",
+    "date": "17/10/2026 21:50",
+    "title": "RTL Support for Hebrew Remarks",
+    "changes": [
+      "Added automatic RTL direction and alignment to the remark bubble div when Hebrew characters are present.",
+      "Added RTL direction styling and attribute to the remark draft input when typing Hebrew text.",
+      "Added hasHebrew helper in domain logic to detect Hebrew character ranges."
+    ]
+  },
+  {
+    "version": "v1.22.0",
+    "date": "13/10/2026 19:46",
+    "title": "Evaluate Last Remark for Open and Mine Filters",
+    "changes": [
+      "Updated 'Open' remarks filter and split button counter to match records where the last open remark was not written by the current user and remarks are not set as done.",
+      "Updated 'Mine' remarks filter and split button counter to match records where the last open remark was written by the current user and remarks are not set as done.",
+      "Added lastOpenRemarkOf helper to domain logic for centralized open-state evaluation."
+    ]
+  },
+  {
+    "version": "v1.21.0",
+    "date": "13/10/2026 07:50",
+    "title": "Quick Remarks Split Button in Navigation",
+    "changes": [
+      "Added a segmented split button in the top navigation bar to the right of '+ New PilGi' showing live counts for Open and Mine remarks.",
+      "Open counter displays records with open remarks not written by the current user.",
+      "Mine counter displays records with open remarks written by the current user.",
+      "Clicking either button navigates to the records dashboard and activates the corresponding remarks filter."
+    ]
+  },
+  {
+    "version": "v1.20.0",
+    "date": "12/10/2026 20:05",
+    "title": "Remarks Dashboard Filter",
+    "changes": [
+      "Added a new remarks filter on Dashboard with options: All (ignore filter), ∗ Remarks (all records with remarks, ignoring done status), Open Remarks (records with open remarks not by current user), and My Remarks (records with open remarks by current user).",
+      "Persisted remarks filter state in UI store across navigation."
+    ]
+  },
+  {
+    "version": "v1.19.0",
+    "date": "12/10/2026 19:55",
+    "title": "Preserve Previous Remarks History on Reopen",
+    "changes": [
+      "Updated 'Reopen' in Remarks panel to only reopen the latest remarks cycle rather than reopening all previous conversations.",
+      "Preserved previous done markers and separating divider lines in the remarks timeline across cycles.",
+      "Maintained open status only for newly added remarks after a separating line."
+    ]
+  },
+  {
+    "version": "v1.18.0",
+    "date": "12/10/2026 19:40",
+    "title": "Trailing Newline on Tech Data Prompts Copy",
+    "changes": [
+      "Appended a trailing newline to the end of the text when copying Image Prompts to clipboard in the Tech Data panel (Top Image prompt, Bottom Image prompt, both prompts, and scenario prompt template)."
+    ]
+  },
+  {
+    "version": "v1.17.0",
+    "date": "12/10/2026 19:25",
+    "title": "Remarks Done Status & Separating Line",
+    "changes": [
+      "Added option in Remarks side panel to set remarks status to Done or Reopen.",
+      "Rendered a distinguished separating divider line in the remarks timeline indicating when remarks were marked done and by whom.",
+      "Preserved ability to continuously add new remarks after setting done status, displaying them below the separating line.",
+      "Reflected remarks done status across Dashboard and Record Detail badges."
+    ]
+  },
+  {
+    "version": "v1.16.0",
+    "date": "10/10/2026 23:20",
+    "title": "Extended Header Text in Record Detail",
+    "changes": [
+      "Removed max-width constraint and text-wrap balance on DetailView header sentences to allow text to extend with fewer line breaks."
+    ]
+  },
+  {
+    "version": "v1.15.0",
+    "date": "10/10/2026 23:15",
+    "title": "Inline Sentences in Record Detail Header",
+    "changes": [
+      "Removed line breaks from top and bottom sentences in the Record Detail view header."
+    ]
+  },
+  {
+    "version": "v1.14.0",
+    "date": "10/10/2026 23:10",
+    "title": "Inline Sentences in Records View",
+    "changes": [
+      "Removed line breaks from top and bottom sentences in the Dashboard records table for compact, single-line display."
+    ]
+  },
+  {
+    "version": "v1.13.0",
+    "date": "10/10/2026 23:00",
+    "title": "Text Generation Defaults to 0",
+    "changes": [
+      "Set defaults for 'Top Text Offset', 'Bottom Text Offset', and 'Font Size' in Text Generation to 0.",
+      "Updated placeholders, fallback values, and reset actions in Tech Data drawer."
+    ]
+  },
+  {
+    "version": "v1.12.0",
+    "date": "10/10/2026 22:55",
+    "title": "Tech Data Text Embedding Formatting",
+    "changes": [
+      "In Tech Data Top and Bottom Image prompt previews, trimmed lines of @TopText and @BottomText.",
+      "Replaced newlines with pipe (|) separator for text generation embedding."
+    ]
+  },
+  {
+    "version": "v1.11.0",
+    "date": "10/10/2026 22:50",
+    "title": "Project Rules & Guidelines (GEMINI.md)",
+    "changes": [
+      "Created GEMINI.md documenting architectural conventions, workflow stages, and coding rules.",
+      "Codified rules for Tech Data panel, Drive direct downloads, table sorting, and versioning."
+    ]
+  },
+  {
+    "version": "v1.10.0",
+    "date": "10/10/2026 22:45",
+    "title": "Google Drive Direct Download Links",
+    "changes": [
+      "Added 'Download' button alongside 'Open in Drive' buttons in Record Detail view.",
+      "Uses Google Drive direct download URL structure: https://drive.google.com/uc?export=download&id=[ID]."
+    ]
+  },
+  {
+    "version": "v1.9.0",
+    "date": "10/10/2026 22:35",
+    "title": "Version History Changelog Modal",
+    "changes": [
+      "Added interactive Version History dialog in Settings view, opened by clicking the version badge.",
+      "Created versions.json data file to record and track changes across all application releases."
+    ]
+  },
+  {
+    "version": "v1.8.0",
+    "date": "10/10/2026 22:20",
+    "title": "Interactive Records Table Column Sorting",
+    "changes": [
+      "Added column header sorting for all columns in the Dashboard Records table.",
+      "Clicking the PilGi header sorts records by record number (with ascending/descending toggle).",
+      "Added visual chevron direction indicators and hover states for sortable headers."
+    ]
+  },
+  {
+    "version": "v1.7.0",
+    "date": "10/10/2026 20:00",
+    "title": "Tech Data Prompt Generation & Copy Tools",
+    "changes": [
+      "Added Top Image prompt and Bottom Image prompt preview text areas in Text Generation card.",
+      "Implemented automated @ token replacements (@Record, @TopText, @BottomText, @FontSize, @TextCenter, @TopLocation, @BottomLocation).",
+      "Added copy-to-clipboard icons for individual prompts and a combined copy button for both prompts."
+    ]
+  },
+  {
+    "version": "v1.6.0",
+    "date": "10/10/2026 19:45",
+    "title": "Top Text Location Configuration",
+    "changes": [
+      "Set default 'Top Text Location' coordinate to 700 across configuration and Tech Data fallbacks."
+    ]
+  },
+  {
+    "version": "v1.5.0",
+    "date": "10/10/2026 19:35",
+    "title": "Application Version Badge & Settings Header Redesign",
+    "changes": [
+      "Added build date version indicator badge in Settings with user avatar pill styling.",
+      "Restructured Settings header layout placing descriptive subtitle beneath action controls.",
+      "Added 'Center Align' setting with default value 768."
+    ]
+  },
+  {
+    "version": "v1.4.0",
+    "date": "10/10/2026 19:10",
+    "title": "Tech Data Side Drawer",
+    "changes": [
+      "Added 'Tech Data' slide-over drawer accessible from Record Detail under 'Last modified'.",
+      "Card 1: Scenario preview with dynamic #A and #B character replacements and Image Prompt template.",
+      "Card 2: Text Generation technical overrides (Top Text Offset, Bottom Text Offset, Font Size) saved to record."
+    ]
+  },
+  {
+    "version": "v1.3.0",
+    "date": "10/10/2026 18:40",
+    "title": "Line Break Editing for Approved Records",
+    "changes": [
+      "Allowed updating line breaks directly on the final approved text version without creating a new version."
+    ]
+  },
+  {
+    "version": "v1.2.0",
+    "date": "10/10/2026 18:15",
+    "title": "Text Area Inputs for Top and Bottom Sentences",
+    "changes": [
+      "Converted single-line text inputs for top and bottom sentences to multi-line text areas across New PilGi creation and Stage 1 editing."
+    ]
+  },
+  {
+    "version": "v1.1.0",
+    "date": "10/10/2026 15:00",
+    "title": "GitHub Sync & Time Zone Settings",
+    "changes": [
+      "Added direct GitHub repository persistence for records and settings.",
+      "Implemented time zone preferences with support for Israel, UTC, US, European, and Asian time zones."
+    ]
+  },
+  {
+    "version": "v1.0.0",
+    "date": "10/10/2026 10:00",
+    "title": "Initial Release",
+    "changes": [
+      "Full 5-stage PilGi pipeline (Text, Scenario, Clean Image, Image with Text, Posting).",
+      "Dashboard with review metrics, filtering, and live search.",
+      "CSV and JSON batch import support."
+    ]
+  }
+]

@@ -1,0 +1,931 @@
+<script setup lang="ts">
+import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import Icon from '../components/Icon.vue'
+import Thumb from '../components/Thumb.vue'
+import ReviewDialog from '../components/ReviewDialog.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
+import TechDataDrawer from '../components/TechDataDrawer.vue'
+import {
+  CHARACTER_ICONS,
+  SN,
+  ST,
+  approvedIn,
+  copyToClipboard,
+  extractGoogleDriveId,
+  fmt,
+  fmtPostDate,
+  hasHebrew,
+  isRemarksDone,
+  isoToTzLocal,
+  last,
+  latestApprovedVersion,
+  shown1,
+  short,
+  stageData,
+  thumb,
+  tzLocalToIso,
+} from '../domain'
+import { useRecordsStore } from '../stores/records'
+import { useUiStore } from '../stores/ui'
+import { useSettingsStore } from '../stores/settings'
+import { useAuthStore } from '../stores/auth'
+
+const route = useRoute()
+const router = useRouter()
+const store = useRecordsStore()
+const ui = useUiStore()
+const settings = useSettingsStore()
+const auth = useAuthStore()
+const tz = computed(() => settings.current.timeZone || 'Asia/Jerusalem')
+
+const r = computed(() => store.byId(String(route.params.id)))
+
+const active = ref(1)
+const viewVn = reactive<Record<number, number | undefined>>({})
+const editor = ref<{ mode: 'edit' | 'new'; vn?: number; top: string; bottom: string; scenario: string; isLineBreak?: boolean } | null>(null)
+const imgUpdate = ref(false)
+const suffixDraft = ref('')
+const linkDraft = ref('')
+const linkError = ref('')
+const dateDraft = ref<string | null>(null)
+const charOpen = ref<number | null>(null)
+const dialog = ref<{ stage: number; vn: number } | null>(null)
+const deleteConfirmOpen = ref(false)
+const techDataOpen = ref(false)
+const copiedText = ref(false)
+let copyTimer: ReturnType<typeof setTimeout> | null = null
+
+const copiedShare = ref(false)
+let copyShareTimer: ReturnType<typeof setTimeout> | null = null
+
+function getRecordShareUrl(id: string): string {
+  const resolved = router.resolve({ name: 'detail', params: { id } })
+  return new URL(resolved.href, window.location.href).href
+}
+
+async function shareRecord() {
+  if (!r.value) return
+  const url = getRecordShareUrl(r.value.id)
+  const userName = short(auth.email) || 'Someone'
+  const recordNum = r.value.num ?? (parseInt(r.value.id.replace(/\D/g, '') || '0', 10) || r.value.id)
+  const shareText = `🦒🐘 ${userName} Shared Pilgi ${recordNum} with you ${url}`
+  const ok = await copyToClipboard(shareText)
+  if (ok) {
+    copiedShare.value = true
+    store.toast(`Record link copied: ${r.value.id}`)
+    if (copyShareTimer) clearTimeout(copyShareTimer)
+    copyShareTimer = setTimeout(() => {
+      copiedShare.value = false
+    }, 2000)
+  }
+}
+
+const suffixEdit = ref<{ stage: number; vn: number; val: string } | null>(null)
+const suffixInputRef = ref<HTMLInputElement | null>(null)
+
+function startEditSuffix(stage: number, vn: number, currentSuffix = '') {
+  suffixEdit.value = { stage, vn, val: currentSuffix }
+  nextTick(() => suffixInputRef.value?.focus())
+}
+
+function cancelEditSuffix() {
+  suffixEdit.value = null
+}
+
+async function saveEditSuffix() {
+  if (!suffixEdit.value || !r.value) return
+  const { stage, vn, val } = suffixEdit.value
+  suffixEdit.value = null
+  await store.updateVersionSuffix(r.value.id, stage, vn, val)
+}
+
+async function onDeleteConfirm() {
+  deleteConfirmOpen.value = false
+  if (!r.value) return
+  await store.remove(r.value.id)
+  router.push('/')
+}
+
+watch(
+  r,
+  (rec, prevRec) => {
+    if (rec?.deleted) {
+      router.replace('/')
+    } else if (rec && (!prevRec || prevRec.id !== rec.id)) {
+      active.value = rec.currentStage
+    }
+  },
+  { immediate: true },
+)
+
+// Reset local state whenever a different record is opened
+watch(
+  () => route.params.id,
+  () => {
+    const rec = r.value
+    active.value = rec ? rec.currentStage : 1
+    Object.keys(viewVn).forEach((k) => delete viewVn[Number(k)])
+    editor.value = null
+    imgUpdate.value = false
+    linkDraft.value = linkError.value = suffixDraft.value = ''
+    suffixEdit.value = null
+    dateDraft.value = null
+    copiedText.value = false
+  },
+  { immediate: true },
+)
+
+const a = active
+const rec = computed(() => r.value!)
+const v1 = computed(() => shown1(rec.value.stage1))
+const inlineText = (s?: string) => (s ? s.replace(/\r?\n+/g, ' ').replace(/\s+/g, ' ').trim() : '')
+const headerTopSentence = computed(() => inlineText(v1.value?.topSentence))
+const headerBottomSentence = computed(() => inlineText(v1.value?.bottomSentence))
+
+const steps = computed(() =>
+  [1, 2, 3, 4, 5].map((n) => {
+    const x = rec.value
+    const locked = n > x.currentStage
+    const done = n < x.currentStage || (n === 5 && x.stage5.status === 'posted')
+    const isActive = n === a.value
+    let sub = 'Locked'
+    if (!locked) {
+      if (n < 5) {
+        const st = stageData(x, n)
+        const l = last(st)
+        const appV = latestApprovedVersion(st)
+        sub = done ? `Approved · v${appV?.versionNumber ?? st.selectedVersionNumber}` : l ? `${ST[l.status].label} · v${l.versionNumber}` : n === 2 ? 'Not written yet' : 'Awaiting upload'
+      } else sub = x.stage5.status === 'posted' ? 'Posted ' + fmtPostDate(x.stage5.postedAt, tz.value) : 'Ready to post'
+    }
+    return {
+      n, name: SN[n], sub, locked, done,
+      bg: isActive ? 'var(--color-bg)' : 'transparent',
+      shadow: isActive ? 'var(--shadow-md)' : 'none',
+      circle: done ? 'var(--color-accent-2)' : locked ? 'var(--color-neutral-400)' : 'var(--color-accent)',
+    }
+  }),
+)
+
+const isLocked = computed(() => a.value > rec.value.currentStage)
+const isReview = computed(() => !isLocked.value && a.value < 5)
+const isPosting = computed(() => a.value === 5 && !isLocked.value)
+const st = computed(() => (a.value < 5 ? stageData(rec.value, a.value) : null))
+const vnSel = computed(() => (st.value ? (viewVn[a.value] ?? last(st.value)?.versionNumber ?? null) : null))
+const V = computed(() => st.value?.versions.find((x) => x.versionNumber === vnSel.value))
+const isCur = computed(() => a.value === rec.value.currentStage)
+const stageApproved = computed(() => (st.value ? approvedIn(st.value) : false))
+const open = computed(() => isCur.value || (a.value <= 4 && stageApproved.value))
+const textStage = computed(() => a.value <= 2)
+
+const vv = computed(() => {
+  const v = V.value
+  if (!v || !st.value) return null
+  const s = st.value, n = a.value
+  const owner = n <= 2 ? v.createdBy : v.uploadedBy
+  const lastV = last(s)!
+  const newBase = () => ({ mode: 'new' as const, top: lastV.topSentence || '', bottom: lastV.bottomSentence || '', scenario: lastV.scenario || '' })
+  return {
+    v,
+    label: `Version ${v.versionNumber}`,
+    isFinal: s.selectedVersionNumber === v.versionNumber,
+    byLine: `${n <= 2 ? 'Written' : 'Uploaded'} by ${short(owner)} · ${fmt(n <= 2 ? v.createdAt : v.uploadedAt, tz.value)}`,
+    hasReview: v.status !== 'pending',
+    reviewLine: `${v.status === 'approved' ? 'Approved' : 'Rejected'} by ${short(v.reviewedBy)} · ${fmt(v.reviewedAt, tz.value)}`,
+    comment: v.reviewComments || 'No comment.',
+    commentRtl: hasHebrew(v.reviewComments),
+    commentBg: v.status === 'rejected' ? 'var(--color-accent-100)' : 'var(--color-accent-2-100)',
+    link: v.imageLink || v.driveLink || '',
+    driveId: n > 2 ? extractGoogleDriveId(v.imageLink || v.driveLink) : null,
+    thumb: n > 2 ? thumb(rec.value.num, n, v.versionNumber) : null,
+    canReview: v.status === 'pending' && open.value,
+    approveLabel:
+      st.value?.versions.find((x) => x.status === 'approved') && st.value.versions.find((x) => x.status === 'approved')!.versionNumber !== v.versionNumber
+        ? `Approve & replace v${st.value.versions.find((x) => x.status === 'approved')!.versionNumber}`
+        : n === 1
+          ? 'Approve sentences'
+          : n === 2
+            ? 'Approve scenario'
+            : 'Approve & select as final',
+    canEdit: n <= 2 && v.status === 'pending' && open.value && !editor.value,
+    editLabel: n === 1 ? 'Edit sentences' : 'Edit scenario',
+    canNew: n <= 2 && isCur.value && !stageApproved.value && lastV.status === 'rejected' && !editor.value,
+    canUpdateLineBreak: n === 1 && s.selectedVersionNumber === v.versionNumber && !editor.value,
+    startUpdateLineBreak: () =>
+      (editor.value = {
+        mode: 'edit',
+        vn: v.versionNumber,
+        top: v.topSentence || '',
+        bottom: v.bottomSentence || '',
+        scenario: '',
+        isLineBreak: true,
+      }),
+    startEdit: () => (editor.value = { mode: 'edit', vn: v.versionNumber, top: v.topSentence || '', bottom: v.bottomSentence || '', scenario: v.scenario || '' }),
+    startNew: () => (editor.value = newBase()),
+  }
+})
+
+const canTextUpdate = computed(() => {
+  if (a.value > 2 || !st.value || !st.value.versions.length) return false
+  const lastV = last(st.value)
+  return stageApproved.value && !editor.value && lastV?.status !== 'pending'
+})
+const textUpdateLabel = computed(() => (a.value === 1 ? 'Update sentences' : 'Update scenario'))
+function startTextUpdate() {
+  if (!st.value) return
+  const lastV = last(st.value)!
+  editor.value = {
+    mode: 'new',
+    top: lastV.topSentence || '',
+    bottom: lastV.bottomSentence || '',
+    scenario: lastV.scenario || '',
+  }
+}
+
+const canImageUpdate = computed(() => (a.value === 3 || a.value === 4) && stageApproved.value && !imgUpdate.value)
+const imageUpdateLabel = computed(() => (a.value === 3 ? 'Update clean image' : 'Update image with text'))
+function startImageUpdate() {
+  imgUpdate.value = true
+  linkDraft.value = ''
+  linkError.value = ''
+  suffixDraft.value = ''
+}
+
+const showCaption = computed(() => a.value === 1 && !!V.value && !editor.value)
+const showScenario = computed(() => a.value === 2 && !!V.value && !editor.value)
+const showScenarioEmpty = computed(() => a.value === 2 && !V.value && !editor.value && !isLocked.value)
+const showEditor = computed(() => a.value <= 2 && !!editor.value)
+const showImage = computed(() => a.value > 2 && !!V.value)
+const showEmpty = computed(() => a.value > 2 && !V.value)
+const emptyMsg = computed(() =>
+  a.value === 3
+    ? 'Generate the clean, text-free image and paste its Drive link to create version 1.'
+    : 'Apply the caption to the approved clean image and paste the Drive link to create version 1.',
+)
+const canAdd = computed(() => {
+  if (a.value <= 2 || a.value >= 5) return false
+  if (!stageApproved.value) return isCur.value
+  return imgUpdate.value
+})
+const draftLinksCount = computed(() => (linkDraft.value.match(/https?:\/\/[^\s,;]+/g) || []).length)
+
+const versions = computed(() => {
+  if (!st.value) return []
+  const s = st.value
+  return s.versions
+    .slice()
+    .reverse()
+    .map((x) => ({
+      label: `v${x.versionNumber}`,
+      vn: x.versionNumber,
+      tagCls: ST[x.status].cls,
+      statusLabel: s.selectedVersionNumber === x.versionNumber ? 'Final' : ST[x.status].label,
+      byLine: `${short(a.value <= 2 ? x.createdBy : x.uploadedBy)} · ${fmt(a.value <= 2 ? x.createdAt : x.uploadedAt, tz.value)}`,
+      comment: x.reviewComments,
+      commentRtl: hasHebrew(x.reviewComments),
+      reviewer: short(x.reviewedBy),
+      driveId: a.value > 2 ? extractGoogleDriveId(x.imageLink || x.driveLink) : null,
+      thumb: a.value > 2 ? thumb(rec.value.num, a.value, x.versionNumber) : null,
+      bg: x.versionNumber === vnSel.value ? 'var(--color-surface)' : 'var(--color-neutral-100)',
+      ring: x.versionNumber === vnSel.value ? '2px solid var(--color-accent)' : 'none',
+    }))
+})
+const listTitle = computed(() => (a.value <= 2 ? 'Version history' : 'Version gallery'))
+
+function goStage(n: number) {
+  active.value = n
+  editor.value = null
+  imgUpdate.value = false
+  linkDraft.value = linkError.value = suffixDraft.value = ''
+  suffixEdit.value = null
+  copiedText.value = false
+}
+function pickVersion(vn: number) {
+  viewVn[a.value] = vn
+  editor.value = null
+  suffixEdit.value = null
+}
+
+async function approve() {
+  const v = V.value!, stage = a.value, wasCur = rec.value.currentStage === stage
+  const curApproved = st.value?.versions.find((x) => x.status === 'approved')
+  if (curApproved && curApproved.versionNumber !== v.versionNumber) {
+    const ok = window.confirm(
+      `Version ${curApproved.versionNumber} is currently approved for Stage ${stage} (${SN[stage]}).\n\nOnly one version can be approved per stage. Do you want to replace Version ${curApproved.versionNumber} with Version ${v.versionNumber}?`
+    )
+    if (!ok) return
+  }
+  await store.review(rec.value.id, 'approve', stage, v.versionNumber, '')
+  active.value = wasCur ? Math.min(stage + 1, 5) : stage
+  Object.keys(viewVn).forEach((k) => delete viewVn[Number(k)])
+  editor.value = null
+}
+async function onReject(comment: string) {
+  const d = dialog.value!
+  dialog.value = null
+  await store.review(rec.value.id, 'reject', d.stage, d.vn, comment)
+}
+async function saveEditor() {
+  const e = editor.value!
+  const stage = a.value as 1 | 2
+  editor.value = null
+  Object.keys(viewVn).forEach((k) => delete viewVn[Number(k)])
+  await store.saveText(rec.value.id, stage, e)
+}
+const editorInvalid = computed(() => {
+  const e = editor.value
+  if (!e) return true
+  return a.value === 1 ? !(e.top.trim() && e.bottom.trim()) : !e.scenario.trim()
+})
+
+
+async function addImage() {
+  const raw = linkDraft.value.trim()
+  const links = raw.match(/https?:\/\/[^\s,;]+/g) || []
+  if (!links.length) {
+    linkError.value = 'Paste a full link, e.g. https://drive.google.com/file/d/…'
+    return
+  }
+  const stage = a.value
+  const suffix = suffixDraft.value.trim().slice(0, 20)
+  imgUpdate.value = false
+  linkDraft.value = linkError.value = suffixDraft.value = ''
+  viewVn[stage] = undefined
+  await store.addImages(rec.value.id, stage, links, suffix || undefined)
+}
+
+// Stage 1 Copy
+function getStage1Text(): string {
+  if (!vv.value?.v) return ''
+  const top = (vv.value.v.topSentence || '').trim()
+  const bottom = (vv.value.v.bottomSentence || '').trim()
+  if (top && bottom) {
+    return top.includes('\n') || bottom.includes('\n') ? `${top}\n\n${bottom}` : `${top}\n${bottom}`
+  }
+  return top || bottom
+}
+
+async function copyText() {
+  const text = getStage1Text()
+  if (!text) return
+  await copyToClipboard(text)
+  copiedText.value = true
+  if (copyTimer) clearTimeout(copyTimer)
+  copyTimer = setTimeout(() => {
+    copiedText.value = false
+  }, 2000)
+}
+
+// Characters
+const pickers = computed(() =>
+  [0, 1].map((k) => {
+    const val = (rec.value.characters || [])[k] || ''
+    const mk = (n: string) => ({ name: n, ...CHARACTER_ICONS[n] })
+    return {
+      k,
+      label: k ? 'Character B:' : 'Character A:',
+      cur: val ? mk(val) : { name: 'Choose…', glyph: '?', bg: '#aaa' },
+      opts: Object.keys(CHARACTER_ICONS).map((n) => ({ ...mk(n), sel: n === val })),
+    }
+  }),
+)
+function pickChar(k: number, n: string) {
+  charOpen.value = null
+  store.setCharacter(rec.value.id, k, n)
+}
+
+// Posting
+const fin = computed(() => latestApprovedVersion(rec.value.stage4))
+const finDriveId = computed(() => (fin.value ? extractGoogleDriveId(fin.value.driveLink || fin.value.imageLink) : null))
+const posted = computed(() => rec.value.stage5.status === 'posted')
+function editDate() {
+  dateDraft.value = rec.value.stage5.postedAt ? isoToTzLocal(rec.value.stage5.postedAt, tz.value) : ''
+}
+async function saveDate() {
+  const v = dateDraft.value
+  if (!v) return
+  dateDraft.value = null
+  await store.setPostDate(rec.value.id, tzLocalToIso(v, tz.value))
+}
+
+const dialogProps = computed(() => (dialog.value ? { title: `Reject version ${dialog.value.vn}` } : null))
+</script>
+
+<template>
+  <main v-if="r" data-screen-label="Record Detail" style="padding: var(--space-1) clamp(16px, 4vw, var(--space-8)) var(--space-8)">
+    <div style="display: flex; gap: var(--space-6); align-items: flex-end; flex-wrap: wrap; margin-bottom: var(--space-6)">
+      <div style="flex: 1 1 0px; min-width: min(100%, 320px); max-width: 1000px; margin-right: auto; align-self: flex-start">
+        <h2 style="margin: 0; font-size: clamp(14px, 1.8vw, 30px); line-height: 1.25">{{ headerTopSentence }}</h2>
+        <h2 style="margin: 6px 0 0; font-size: clamp(14px, 1.8vw, 30px); line-height: 1.25">{{ headerBottomSentence }}</h2>
+        <span class="tag tag-neutral">{{ r.id }}</span>
+        <span class="text-muted" style="font-size: 12px"> Created by {{ short(r.createdBy) }} · {{ fmt(r.createdAt, tz) }}</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: var(--space-2); align-self: flex-start">
+        <button class="btn btn-secondary" style="display: flex; align-items: center; gap: var(--space-2); width: 100%" @click="ui.openRemarks(r.id, a)">
+          <Icon :name="isRemarksDone(r) ? 'check' : 'chat'" />
+          Remarks
+          <span :style="`min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; display: inline-grid; place-items: center; background: ${isRemarksDone(r) ? 'var(--color-accent-2)' : 'var(--color-accent)'}; color: var(--color-bg); font-size: 12px; font-weight: 700`">{{ r.remarks.length }}</span>
+        </button>
+        <button
+          class="btn btn-secondary"
+          style="display: flex; align-items: center; justify-content: center; gap: var(--space-2); width: 100%; color: #b23b3b; border-color: color-mix(in srgb, #b23b3b 35%, transparent)"
+          title="Delete this record"
+          @click="deleteConfirmOpen = true"
+        >
+          <Icon name="trash" />
+          Delete
+        </button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: var(--space-2); align-self: flex-start; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); font-size: 13px">
+        <div v-for="pk in pickers" :key="pk.k" style="display: flex; align-items: center; gap: var(--space-2); position: relative">
+          <span style="width: 92px; flex: none">{{ pk.label }}</span>
+          <button class="input" style="display: flex; align-items: center; gap: var(--space-2); padding: 5px 10px 5px 6px; min-width: 150px; background: var(--color-bg); cursor: pointer; text-align: left" @click="charOpen = charOpen === pk.k ? null : pk.k">
+            <span :style="`width:24px; height:24px; flex:none; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:700; color:#fff; background:${pk.cur.bg}`">{{ pk.cur.glyph }}</span>
+            <span style="flex: 1">{{ pk.cur.name }}</span>
+            <Icon name="chevron" :size="14" :stroke="2" />
+          </button>
+          <div v-if="charOpen === pk.k" style="position: absolute; top: calc(100% + 4px); left: 100px; right: 0; z-index: 30; display: flex; flex-direction: column; padding: 4px; border-radius: var(--radius-md); background: var(--color-bg); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14); border: 1px solid var(--color-divider)">
+            <button v-for="o in pk.opts" :key="o.name" :style="`display:flex; align-items:center; gap:var(--space-2); padding:6px 8px; border:0; border-radius:var(--radius-sm); background:${o.sel ? 'var(--color-surface)' : 'transparent'}; font:inherit; color:inherit; cursor:pointer; text-align:left`" @click="pickChar(pk.k, o.name)">
+              <span :style="`width:24px; height:24px; flex:none; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:700; color:#fff; background:${o.bg}`">{{ o.glyph }}</span>
+              <span>{{ o.name }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: var(--space-2); align-self: flex-start">
+        <div style="display: flex; flex-direction: column; gap: 2px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); font-size: 13px">
+          <span class="text-muted" style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase">Last modified</span>
+          <span><b>{{ r.lastModifiedBy }}</b> · {{ fmt(r.lastModifiedAt, tz) }}</span>
+        </div>
+        <div style="display: flex; gap: var(--space-2); width: 100%">
+          <button
+            class="btn btn-secondary"
+            style="display: flex; align-items: center; justify-content: center; gap: var(--space-2); flex: 1"
+            :style="copiedShare ? 'background: var(--color-accent-2-100); border-color: var(--color-accent-2-300)' : ''"
+            title="Copy share link for this record"
+            @click="shareRecord"
+          >
+            <Icon
+              :name="copiedShare ? 'check' : 'share'"
+              :size="15"
+              :style="{ color: copiedShare ? 'var(--color-accent-2-800)' : 'var(--color-accent)' }"
+            />
+            <span :style="{ color: copiedShare ? 'var(--color-accent-2-800)' : 'inherit' }">
+              {{ copiedShare ? 'Copied' : 'Share' }}
+            </span>
+          </button>
+          <button
+            class="btn btn-secondary"
+            style="display: flex; align-items: center; justify-content: center; gap: var(--space-2); flex: 1"
+            title="Open technical parameters & scenario prompt"
+            @click="techDataOpen = true"
+          >
+            <Icon name="gear" :size="15" />
+            <span>Tech</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: var(--space-2); padding: var(--space-2); border-radius: 999px; overflow-x: auto; scrollbar-width: none; background: var(--color-neutral-200); margin-bottom: var(--space-6)">
+      <button v-for="s in steps" :key="s.n" :disabled="s.locked" :style="`all:unset; cursor:${s.locked ? 'not-allowed' : 'pointer'}; display:flex; align-items:center; gap:var(--space-3); padding:var(--space-2) var(--space-3); border-radius:999px; background:${s.bg}; box-shadow:${s.shadow}; opacity:${s.locked ? 0.55 : 1}`" @click="!s.locked && goStage(s.n)">
+        <span :style="`width:34px; height:34px; flex:none; border-radius:50%; display:grid; place-items:center; background:${s.circle}; color:var(--color-bg); font-family:var(--font-heading); font-size:15px`">
+          <Icon v-if="s.done" name="check" :stroke="3" />
+          <template v-else>{{ s.n }}</template>
+        </span>
+        <span style="min-width: 0">
+          <span style="display: block; font-family: var(--font-heading); font-size: 15px; line-height: 1.2">{{ s.name }}</span>
+          <span style="display: block; font-size: 12px; color: var(--color-neutral-700)">{{ s.sub }}</span>
+        </span>
+      </button>
+    </div>
+
+    <div v-if="isLocked" style="padding: var(--space-8); border-radius: calc(var(--radius-lg) * 1.3); background: var(--color-neutral-100); max-width: 560px">
+      <h3 style="margin: 0 0 var(--space-2)">Locked for now</h3>
+      <p class="text-muted" style="margin: 0 0 var(--space-4)">{{ SN[a] }} opens once Stage {{ r.currentStage }} · {{ SN[r.currentStage] }} is approved.</p>
+      <button class="btn btn-secondary" @click="goStage(r.currentStage)">Go to current stage</button>
+    </div>
+
+    <div v-if="isReview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--space-6); align-items: start">
+      <div style="display: flex; flex-direction: column; gap: var(--space-4)">
+        <div v-if="showCaption && vv" style="width: 75%; max-width: 75%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-6); min-height: 320px; padding: clamp(20px, 4vw, var(--space-8)); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-accent-2-200); position: relative">
+          <div style="font-family: var(--font-heading); font-size: 28px; line-height: 1.15; text-wrap: balance; text-align: center; white-space: pre-line">{{ vv.v.topSentence }}</div>
+          <div style="font-family: var(--font-heading); font-size: 28px; line-height: 1.15; text-wrap: balance; text-align: center; white-space: pre-line">{{ vv.v.bottomSentence }}</div>
+        </div>
+        <div v-if="showScenario && vv" style="width: 75%; max-width: 75%; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--space-4); min-height: 320px; padding: clamp(20px, 4vw, var(--space-8)); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-accent-100)">
+          <div style="font-size: 22px; line-height: 1.45; color: var(--color-accent-900); text-wrap: pretty; max-width: 620px">{{ vv.v.scenario }}</div>
+          <div class="text-muted" style="margin-top: auto; font-size: 13px">For “{{ v1.topSentence }} / {{ v1.bottomSentence }}”</div>
+        </div>
+        <div v-if="showScenarioEmpty" style="width: 75%; max-width: 75%; box-sizing: border-box; min-height: 300px; border-radius: calc(var(--radius-lg) * 1.4); border: 2px dashed var(--color-divider); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: var(--space-8); gap: var(--space-3)">
+          <h3 style="margin: 0">No scenario yet</h3>
+          <p class="text-muted" style="margin: 0; max-width: 380px">Describe the scene the image should show. It goes to review like the sentences.</p>
+          <button class="btn btn-primary" @click="editor = { mode: 'new', top: '', bottom: '', scenario: '' }">Write scenario</button>
+        </div>
+        <div v-if="showEditor && editor && st" style="width: 75%; max-width: 75%; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.4); background: var(--color-surface)">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-2)">
+            <h4 style="margin: 0">{{ editor.isLineBreak ? `Update line break · v${editor.vn}` : editor.mode === 'edit' ? `Edit version ${editor.vn}` : `Version ${st.versions.length + 1}` }}</h4>
+            <span v-if="editor.isLineBreak" class="tag tag-accent-2" style="font-size: 11px">Final version</span>
+          </div>
+          <p v-if="editor.isLineBreak" class="text-muted" style="margin: 0; font-size: 13px">
+            Adjust line breaks or sentences directly on this final version. It will update in place without creating a new version.
+          </p>
+          <template v-if="a === 1">
+            <div class="field">
+              <label>Top sentence</label>
+              <textarea v-model="editor.top" class="input" rows="2" style="border-radius: var(--radius-md); min-height: 60px; resize: vertical"></textarea>
+            </div>
+            <div class="field">
+              <label>Bottom sentence</label>
+              <textarea v-model="editor.bottom" class="input" rows="2" style="border-radius: var(--radius-md); min-height: 60px; resize: vertical"></textarea>
+            </div>
+          </template>
+          <div v-else class="field">
+            <label>Scenario description</label>
+            <textarea v-model="editor.scenario" class="input" style="border-radius: var(--radius-md); min-height: 140px"></textarea>
+          </div>
+          <div style="display: flex; gap: var(--space-2); justify-content: flex-end">
+            <button class="btn btn-ghost" @click="editor = null">Cancel</button>
+            <button class="btn btn-primary" :disabled="editorInvalid" @click="saveEditor">{{ editor.isLineBreak ? 'Update line break' : editor.mode === 'edit' ? 'Update' : 'Submit for review' }}</button>
+          </div>
+        </div>
+        <template v-if="showImage && vv && (vv.driveId || vv.thumb)">
+          <div style="width: 75%; aspect-ratio: 4 / 3; border-radius: calc(var(--radius-lg) * 1.4); overflow: hidden; background: var(--color-surface); position: relative" class="washed">
+            <iframe
+              v-if="vv.driveId"
+              :src="`https://drive.google.com/file/d/${vv.driveId}/preview`"
+              width="100%"
+              height="100%"
+              style="border: 0; display: block; width: 100%; height: 100%"
+              allow="autoplay"
+              loading="lazy"
+            ></iframe>
+            <Thumb v-else-if="vv.thumb" v-bind="vv.thumb" />
+          </div>
+          <div style="display: flex; gap: var(--space-2); align-items: center; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--color-surface); max-width: 75%">
+            <Icon name="link" :size="15" style="flex: none; opacity: 0.6" />
+            <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px">{{ vv.link }}</span>
+            <template v-if="suffixEdit && suffixEdit.stage === a && suffixEdit.vn === vv.v.versionNumber">
+              <div style="display: inline-flex; align-items: center; gap: 4px; flex: none">
+                <input
+                  ref="suffixInputRef"
+                  v-model="suffixEdit.val"
+                  class="input"
+                  placeholder="Suffix (up to 20)"
+                  maxlength="20"
+                  style="padding: 2px 8px; font-size: 12px; height: 26px; min-height: 26px; width: 110px; border-radius: 999px; background: var(--color-bg)"
+                  @keydown.enter="saveEditSuffix"
+                  @keydown.esc="cancelEditSuffix"
+                />
+                <button
+                  class="btn btn-primary"
+                  type="button"
+                  style="padding: 4px 6px; font-size: 11px; height: 26px; min-height: 26px; border-radius: 999px; display: inline-flex; align-items: center"
+                  title="Save suffix (Enter)"
+                  @click="saveEditSuffix"
+                >
+                  <Icon name="check" :size="12" />
+                </button>
+                <button
+                  class="btn btn-ghost"
+                  type="button"
+                  style="padding: 4px 6px; font-size: 11px; height: 26px; min-height: 26px; border-radius: 999px; display: inline-flex; align-items: center"
+                  title="Cancel (Esc)"
+                  @click="cancelEditSuffix"
+                >
+                  <Icon name="x" :size="12" />
+                </button>
+              </div>
+            </template>
+            <template v-else>
+              <button
+                v-if="vv.v.imageSuffix"
+                type="button"
+                title="Click to edit suffix"
+                style="all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: var(--color-text); padding: 2px 8px; border-radius: 999px; border: 1px dashed var(--color-divider); background: var(--color-bg); flex: none"
+                @click="startEditSuffix(a, vv.v.versionNumber, vv.v.imageSuffix)"
+              >
+                <span>({{ vv.v.imageSuffix }})</span>
+                <Icon name="pencil" :size="11" style="opacity: 0.6" />
+              </button>
+              <button
+                v-else
+                type="button"
+                title="Add suffix"
+                style="all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--color-neutral-600); padding: 2px 8px; border-radius: 999px; border: 1px dashed var(--color-divider); background: var(--color-bg); flex: none"
+                @click="startEditSuffix(a, vv.v.versionNumber, '')"
+              >
+                <Icon name="plus" :size="11" />
+                <span>Suffix</span>
+              </button>
+            </template>
+            <a
+              v-if="vv.driveId || extractGoogleDriveId(vv.link)"
+              class="btn btn-secondary"
+              :href="`https://drive.google.com/uc?export=download&id=${vv.driveId || extractGoogleDriveId(vv.link)}`"
+              target="_blank"
+              rel="noreferrer"
+              style="padding-block: 6px; display: inline-flex; align-items: center; gap: 6px"
+              download
+            >
+              <Icon name="download" :size="14" />
+              Download
+            </a>
+            <a class="btn btn-secondary" :href="vv.link" target="_blank" rel="noreferrer" style="padding-block: 6px">Open in Drive</a>
+          </div>
+        </template>
+        <div v-if="showEmpty" style="min-height: 300px; border-radius: calc(var(--radius-lg) * 1.4); border: 2px dashed var(--color-divider); display: flex; flex-direction: column; justify-content: center; padding: var(--space-8); gap: var(--space-2); max-width: 75%">
+          <h3 style="margin: 0">No image yet</h3>
+          <p class="text-muted" style="margin: 0; max-width: 380px">{{ emptyMsg }}</p>
+        </div>
+
+        <div v-if="vv && !editor" style="display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6); border-radius: calc(var(--radius-lg) * 1.15); background: var(--color-neutral-100); max-width: 75%">
+          <div style="display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap">
+            <span style="font-family: var(--font-heading); font-size: 18px">{{ vv.label }}</span>
+            <span class="tag" :class="ST[vv.v.status].cls">{{ ST[vv.v.status].label }}</span>
+            <span v-if="vv.isFinal" class="tag tag-accent-2">Selected as final</span>
+            <span class="text-muted" style="font-size: 12px; margin-left: auto">{{ vv.byLine }}</span>
+          </div>
+          <div v-if="vv.hasReview" :style="`display:flex; flex-direction:column; gap:2px; padding:var(--space-3) var(--space-4); border-radius:var(--radius-md); background:${vv.commentBg}`">
+            <span style="font-size: 12px; color: var(--color-neutral-700)">{{ vv.reviewLine }}</span>
+            <div
+              :dir="vv.commentRtl ? 'rtl' : undefined"
+              :class="{ rtl: vv.commentRtl }"
+              :style="`font-size: 14px; white-space: pre-wrap; ${vv.commentRtl ? 'direction:rtl; text-align:right;' : ''}`"
+            >{{ vv.comment }}</div>
+          </div>
+          <div style="display: flex; gap: var(--space-2); flex-wrap: wrap">
+            <template v-if="vv.canReview">
+              <button class="btn btn-primary" @click="approve"><Icon name="check" />{{ vv.approveLabel }}</button>
+              <button class="btn btn-secondary" @click="dialog = { stage: a, vn: vv.v.versionNumber }"><Icon name="x" />Reject</button>
+            </template>
+            <button v-if="vv.canEdit" class="btn btn-secondary" @click="vv.startEdit"><Icon name="pencil" />{{ vv.editLabel }}</button>
+            <button v-if="vv.canNew" class="btn btn-primary" @click="vv.startNew">Write new version</button>
+            <button
+              v-if="vv.canUpdateLineBreak"
+              class="btn btn-secondary"
+              title="Update line breaks on this final version without creating a new version"
+              @click="vv.startUpdateLineBreak"
+            >
+              <Icon name="pencil" />Update line break
+            </button>
+            <button
+              v-if="a === 1"
+              class="btn btn-secondary"
+              title="Copy sentences to clipboard"
+              @click="copyText"
+            >
+              <Icon :name="copiedText ? 'check' : 'copy'" :size="15" />
+              <span>{{ copiedText ? 'Copied sentences!' : 'Copy sentences' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: var(--space-4)">
+        <div v-if="canTextUpdate">
+          <button
+            class="btn btn-secondary"
+            title="Creates a new version for review; the approved version stays final until the new one is approved"
+            style="display: inline-flex; align-items: center; gap: var(--space-2)"
+            @click="startTextUpdate"
+          >
+            <Icon name="pencil" :size="15" />
+            <span>{{ textUpdateLabel }}</span>
+          </button>
+        </div>
+
+        <div v-if="canImageUpdate">
+          <button
+            class="btn btn-secondary"
+            title="Creates a new version for review; the approved version stays final until the new one is approved"
+            style="display: inline-flex; align-items: center; gap: var(--space-2)"
+            @click="startImageUpdate"
+          >
+            <Icon name="upload" :size="15" />
+            <span>{{ imageUpdateLabel }}</span>
+          </button>
+        </div>
+
+        <div v-if="canAdd" style="display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6); border-radius: calc(var(--radius-lg) * 1.15); background: var(--color-accent-100)">
+          <div>
+            <h5 style="margin: 0 0 2px">{{ st && st.versions.length ? `Upload version ${st.versions.length + 1}` : 'Upload version 1' }}</h5>
+            <p class="text-muted" style="margin: 0; font-size: 13px">
+              {{ stageApproved ? 'The approved image stays final until this new version is approved.' : 'Upload one or more candidate images — each link becomes its own version for review.' }}
+            </p>
+          </div>
+          <div style="display: flex; gap: var(--space-2)">
+            <input
+              v-model="linkDraft"
+              class="input"
+              placeholder="https://drive.google.com/file/d/… (paste one or multiple links)"
+              style="background: var(--color-bg); flex: 1"
+              @input="linkError = ''"
+              @keydown.enter="addImage"
+            />
+            <input
+              v-model="suffixDraft"
+              class="input"
+              placeholder="Image suffix"
+              title="Image suffix (up to 20 characters, optional)"
+              maxlength="20"
+              style="background: var(--color-bg); width: 100px; flex: none"
+              @keydown.enter="addImage"
+            />
+            <button v-if="stageApproved && imgUpdate" class="btn btn-ghost" style="flex: none" @click="((imgUpdate = false), (linkDraft = linkError = suffixDraft = ''))">Cancel</button>
+            <button class="btn btn-primary" style="flex: none" @click="addImage">
+              {{ draftLinksCount > 1 ? `Add ${draftLinksCount} images` : 'Add' }}
+            </button>
+          </div>
+          <span v-if="linkError" style="font-size: 12px; color: var(--color-accent-700)">{{ linkError }}</span>
+        </div>
+
+        <div style="display: flex; align-items: baseline; justify-content: space-between">
+          <h4 style="margin: 0">{{ listTitle }}</h4>
+          <span class="text-muted" style="font-size: 13px">{{ st ? `${st.versions.length} total` : '' }}</span>
+        </div>
+
+        <div v-if="versions.length" style="display: flex; flex-direction: column; gap: var(--space-2)">
+          <button v-for="v in versions" :key="v.vn" :style="`all:unset; cursor:pointer; display:flex; gap:var(--space-3); padding:var(--space-3) var(--space-4); border-radius:var(--radius-lg); background:${v.bg}; outline:${v.ring}; outline-offset:-2px`" @click="pickVersion(v.vn)">
+            <div
+              v-if="v.driveId || v.thumb"
+              :style="`width: ${a >= 3 ? '150px' : '64px'}; aspect-ratio: 4 / 3; flex: none; border-radius: ${a >= 3 ? '18px' : '12px'}; overflow: hidden; position: relative; background: var(--color-surface)`"
+              :class="{ washed: a >= 3 }"
+            >
+              <iframe
+                v-if="v.driveId"
+                :src="`https://drive.google.com/file/d/${v.driveId}/preview`"
+                width="100%"
+                height="100%"
+                style="border: 0; display: block; width: 100%; height: 100%; pointer-events: none"
+                loading="lazy"
+              ></iframe>
+              <Thumb v-else-if="v.thumb" v-bind="v.thumb" />
+            </div>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+              <div style="display: flex; align-items: center; gap: 6px">
+                <span style="font-family: var(--font-heading); font-size: 14px; margin-right: auto">{{ v.label }}</span>
+                <span class="tag" :class="v.tagCls">{{ v.statusLabel }}</span>
+              </div>
+              <span class="text-muted" style="font-size: 12px">{{ v.byLine }}</span>
+              <div
+                v-if="v.comment"
+                :dir="v.commentRtl ? 'rtl' : undefined"
+                :class="{ rtl: v.commentRtl }"
+                :style="`font-size: 13px; line-height: 1.4; white-space: pre-wrap; ${v.commentRtl ? 'direction:rtl; text-align:right;' : ''}`"
+              >“{{ v.comment }}” <span class="text-muted">— {{ v.reviewer }}</span></div>
+            </div>
+          </button>
+        </div>
+        <p v-if="st && !versions.length" class="text-muted" style="margin: 0; font-size: 14px">No versions uploaded yet.</p>
+      </div>
+    </div>
+
+    <div v-if="isPosting" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--space-6); align-items: start">
+      <div style="display: flex; flex-direction: column; gap: var(--space-3)">
+        <div style="width: 75%; aspect-ratio: 4 / 3; border-radius: calc(var(--radius-lg) * 1.4); overflow: hidden; background: var(--color-surface); position: relative" class="washed">
+          <iframe
+            v-if="finDriveId"
+            :src="`https://drive.google.com/file/d/${finDriveId}/preview`"
+            width="100%"
+            height="100%"
+            style="border: 0; display: block; width: 100%; height: 100%"
+            allow="autoplay"
+            loading="lazy"
+          ></iframe>
+          <Thumb v-else-if="fin" v-bind="thumb(r.num, 4, fin.versionNumber)" />
+        </div>
+        <div v-if="fin" style="display: flex; gap: var(--space-2); align-items: center; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--color-surface); max-width: 75%">
+          <Icon name="link" :size="15" style="flex: none; opacity: 0.6" />
+          <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px">{{ fin.driveLink || fin.imageLink }}</span>
+          <template v-if="suffixEdit && suffixEdit.stage === 4 && suffixEdit.vn === fin.versionNumber">
+            <div style="display: inline-flex; align-items: center; gap: 4px; flex: none">
+              <input
+                ref="suffixInputRef"
+                v-model="suffixEdit.val"
+                class="input"
+                placeholder="Suffix (up to 20)"
+                maxlength="20"
+                style="padding: 2px 8px; font-size: 12px; height: 26px; min-height: 26px; width: 110px; border-radius: 999px; background: var(--color-bg)"
+                @keydown.enter="saveEditSuffix"
+                @keydown.esc="cancelEditSuffix"
+              />
+              <button
+                class="btn btn-primary"
+                type="button"
+                style="padding: 4px 6px; font-size: 11px; height: 26px; min-height: 26px; border-radius: 999px; display: inline-flex; align-items: center"
+                title="Save suffix (Enter)"
+                @click="saveEditSuffix"
+              >
+                <Icon name="check" :size="12" />
+              </button>
+              <button
+                class="btn btn-ghost"
+                type="button"
+                style="padding: 4px 6px; font-size: 11px; height: 26px; min-height: 26px; border-radius: 999px; display: inline-flex; align-items: center"
+                title="Cancel (Esc)"
+                @click="cancelEditSuffix"
+              >
+                <Icon name="x" :size="12" />
+              </button>
+            </div>
+          </template>
+          <template v-else>
+            <button
+              v-if="fin.imageSuffix"
+              type="button"
+              title="Click to edit suffix"
+              style="all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: var(--color-text); padding: 2px 8px; border-radius: 999px; border: 1px dashed var(--color-divider); background: var(--color-bg); flex: none"
+              @click="startEditSuffix(4, fin.versionNumber, fin.imageSuffix)"
+            >
+              <span>({{ fin.imageSuffix }})</span>
+              <Icon name="pencil" :size="11" style="opacity: 0.6" />
+            </button>
+            <button
+              v-else
+              type="button"
+              title="Add suffix"
+              style="all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--color-neutral-600); padding: 2px 8px; border-radius: 999px; border: 1px dashed var(--color-divider); background: var(--color-bg); flex: none"
+              @click="startEditSuffix(4, fin.versionNumber, '')"
+            >
+              <Icon name="plus" :size="11" />
+              <span>Suffix</span>
+            </button>
+          </template>
+          <a
+            v-if="finDriveId || extractGoogleDriveId(fin.driveLink || fin.imageLink)"
+            class="btn btn-secondary"
+            :href="`https://drive.google.com/uc?export=download&id=${finDriveId || extractGoogleDriveId(fin.driveLink || fin.imageLink)}`"
+            target="_blank"
+            rel="noreferrer"
+            style="padding-block: 6px; display: inline-flex; align-items: center; gap: 6px"
+            download
+          >
+            <Icon name="download" :size="14" />
+            Download
+          </a>
+          <a class="btn btn-secondary" :href="fin.driveLink || fin.imageLink" target="_blank" rel="noreferrer" style="padding-block: 6px">Open in Drive</a>
+        </div>
+        <span v-if="fin" class="text-muted" style="font-size: 13px; padding-left: 4px">
+          Image with text · Final asset · v{{ fin.versionNumber }}{{ fin.imageSuffix ? ` (${fin.imageSuffix})` : '' }}
+        </span>
+      </div>
+      <div :style="`display:flex; flex-direction:column; gap:var(--space-4); padding:var(--space-6); border-radius:calc(var(--radius-lg) * 1.3); background:${posted ? 'var(--color-accent-2-200)' : 'var(--color-surface)'}`">
+        <h6 style="margin: 0" class="text-muted">Posting status</h6>
+        <h2 style="margin: 0">{{ posted ? 'Posted' : 'Ready to post' }}</h2>
+        <div class="seg" style="align-self: flex-start; background: var(--color-bg)">
+          <label class="seg-opt"><input type="radio" name="post" :checked="!posted" @change="store.setPosted(r.id, false)" />Pending</label>
+          <label class="seg-opt"><input type="radio" name="post" :checked="posted" @change="store.setPosted(r.id, true)" />Posted</label>
+        </div>
+        <div v-if="posted" style="display: grid; grid-template-columns: auto 1fr; gap: 4px var(--space-4); font-size: 14px">
+          <span class="text-muted" style="align-self: center">Posted</span>
+          <span v-if="dateDraft == null" style="display: flex; align-items: center; gap: var(--space-2)">
+            <span :title="fmt(r.stage5.postedAt, tz)">{{ fmtPostDate(r.stage5.postedAt, tz) }}</span>
+            <button class="btn btn-ghost btn-icon" title="Edit post date" aria-label="Edit post date" style="width: 30px; height: 30px; padding: 0" @click="editDate"><Icon name="pencil" :size="15" /></button>
+          </span>
+          <span v-else style="display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap">
+            <input v-model="dateDraft" class="input" type="datetime-local" style="background: var(--color-bg); max-width: 230px; padding-block: 6px" />
+            <button class="btn btn-primary" style="padding-block: 6px" @click="saveDate">OK</button>
+            <button class="btn btn-ghost" style="padding-block: 6px" @click="dateDraft = null">Cancel</button>
+          </span>
+          <span class="text-muted">By</span><span>{{ r.stage5.postedBy }}</span>
+        </div>
+        <p class="text-muted" style="margin: 0; font-size: 13px; text-wrap: pretty">Not a one-way switch — revert to pending any time. The posted date is stamped when you mark it posted.</p>
+      </div>
+    </div>
+
+    <ReviewDialog
+      v-if="dialog && dialogProps"
+      :title="dialogProps.title"
+      body="The pilgi stays at this stage. The creator can then submit a new version."
+      comment-label="What needs to change? (required)"
+      placeholder="e.g. Caption covers the face — move it up"
+      confirm-label="Reject version"
+      required
+      @cancel="dialog = null"
+      @confirm="onReject"
+    />
+
+    <ConfirmDialog
+      v-if="deleteConfirmOpen"
+      title="Delete record"
+      :body="`Are you sure you want to delete ${r.id}? It will be marked as deleted in the record data and hidden from the records list.`"
+      confirm-label="Approve"
+      cancel-label="Cancel"
+      :danger="true"
+      @cancel="deleteConfirmOpen = false"
+      @confirm="onDeleteConfirm"
+    />
+
+    <TechDataDrawer
+      :open="techDataOpen"
+      :record="r"
+      @close="techDataOpen = false"
+    />
+  </main>
+  <div v-else class="text-muted" style="padding: var(--space-8)">
+    Record not found or has been deleted.
+    <div style="margin-top: var(--space-4)">
+      <button class="btn btn-secondary" @click="router.push('/')">Back to records</button>
+    </div>
+  </div>
+</template>

@@ -1,0 +1,693 @@
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import Icon from './Icon.vue'
+import { hasHebrew, last, latestApprovedVersion, shown1, type PilgiRecord } from '../domain'
+import { useRecordsStore } from '../stores/records'
+import { useSettingsStore } from '../stores/settings'
+
+const props = defineProps<{
+  open: boolean
+  record?: PilgiRecord
+}>()
+
+const emit = defineEmits<{
+  (e: 'close'): void
+}>()
+
+const store = useRecordsStore()
+const settings = useSettingsStore()
+
+// Card 1: Scenario & Image Prompt
+const scenarioDraft = ref('')
+const imagePromptDraft = ref('')
+const copied = ref(false)
+const copiedPrompt = ref(false)
+
+function getCharacterName(rawName?: string, fallback = ''): string {
+  if (!rawName?.trim()) return fallback
+  const t = rawName.trim()
+  return t.toLowerCase().startsWith('the ') ? t : 'The ' + t
+}
+
+function getRawScenario(rec?: PilgiRecord): string {
+  if (!rec) return ''
+  const st2 = rec.stage2
+  const v = (st2.selectedVersionNumber ? st2.versions.find((x) => x.versionNumber === st2.selectedVersionNumber) : null) || last(st2)
+  return v?.scenario || ''
+}
+
+function processScenario(raw: string, rec?: PilgiRecord): string {
+  if (!raw) return ''
+  const charA = getCharacterName(rec?.characters?.[0], 'Character A')
+  const charB = getCharacterName(rec?.characters?.[1], 'Character B')
+  return raw
+    .replace(/#A\b/gi, charA)
+    .replace(/#B\b/gi, charB)
+}
+
+function buildImagePrompt(scenario: string): string {
+  const template = settings.current.promptText || ''
+  if (!template) return scenario
+  if (/@scenario\b/i.test(template)) {
+    return template.replace(/@scenario\b/gi, scenario)
+  }
+  return `${template}\n\n${scenario}`
+}
+
+function syncImagePrompt() {
+  imagePromptDraft.value = buildImagePrompt(scenarioDraft.value)
+}
+
+function syncScenario() {
+  const raw = getRawScenario(props.record)
+  scenarioDraft.value = processScenario(raw, props.record)
+  syncImagePrompt()
+}
+
+watch(scenarioDraft, (newScenario) => {
+  imagePromptDraft.value = buildImagePrompt(newScenario)
+})
+
+async function copyScenario() {
+  if (!scenarioDraft.value) return
+  try {
+    await navigator.clipboard.writeText(scenarioDraft.value)
+    copied.value = true
+    setTimeout(() => (copied.value = false), 2000)
+  } catch {
+    const ta = document.createElement('textarea')
+    ta.value = scenarioDraft.value
+    document.body.appendChild(ta)
+    ta.select()
+    document.execCommand('copy')
+    document.body.removeChild(ta)
+    copied.value = true
+    setTimeout(() => (copied.value = false), 2000)
+  }
+}
+
+async function copyImagePrompt() {
+  if (!imagePromptDraft.value) return
+  await copyToClipboard(imagePromptDraft.value.trimEnd() + '\n')
+  copiedPrompt.value = true
+  setTimeout(() => (copiedPrompt.value = false), 2000)
+}
+
+// Card 2: Image With Text Generation
+const topTextOffset = ref<number>(0)
+const bottomTextOffset = ref<number>(0)
+const fontSize = ref<number>(0)
+const saving = ref(false)
+const saved = ref(false)
+
+const topImagePromptDraft = ref('')
+const bottomImagePromptDraft = ref('')
+const imageResizeAndAppendDraft = ref('')
+const copiedTopPrompt = ref(false)
+const copiedBottomPrompt = ref(false)
+const copiedResizePrompt = ref(false)
+const copiedBoth = ref(false)
+
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (!text) return false
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    document.body.appendChild(ta)
+    ta.select()
+    document.execCommand('copy')
+    document.body.removeChild(ta)
+    return true
+  }
+}
+
+async function copyResizePrompt() {
+  if (!imageResizeAndAppendDraft.value) return
+  await copyToClipboard(imageResizeAndAppendDraft.value.trimEnd() + '\n')
+  copiedResizePrompt.value = true
+  setTimeout(() => (copiedResizePrompt.value = false), 2000)
+}
+
+async function copyTopPrompt() {
+  if (!topImagePromptDraft.value) return
+  await copyToClipboard(topImagePromptDraft.value.trimEnd() + '\n')
+  copiedTopPrompt.value = true
+  setTimeout(() => (copiedTopPrompt.value = false), 2000)
+}
+
+async function copyBottomPrompt() {
+  if (!bottomImagePromptDraft.value) return
+  await copyToClipboard(bottomImagePromptDraft.value.trimEnd() + '\n')
+  copiedBottomPrompt.value = true
+  setTimeout(() => (copiedBottomPrompt.value = false), 2000)
+}
+
+async function copyBothPrompts() {
+  const parts = [
+    imageResizeAndAppendDraft.value.trim(),
+    topImagePromptDraft.value.trim(),
+    bottomImagePromptDraft.value.trim(),
+  ].filter(Boolean)
+  if (parts.length === 0) return
+  await copyToClipboard(parts.join('\n\n') + '\n')
+  copiedBoth.value = true
+  setTimeout(() => (copiedBoth.value = false), 2000)
+}
+
+function syncTextGen() {
+  if (!props.record) return
+  topTextOffset.value = typeof props.record.topTextOffset === 'number' ? props.record.topTextOffset : 0
+  bottomTextOffset.value = typeof props.record.bottomTextOffset === 'number' ? props.record.bottomTextOffset : 0
+  fontSize.value = typeof props.record.fontSize === 'number' ? props.record.fontSize : 0
+}
+
+function syncTextGenPrompts() {
+  const rec = props.record
+  if (!rec) {
+    topImagePromptDraft.value = ''
+    bottomImagePromptDraft.value = ''
+    imageResizeAndAppendDraft.value = ''
+    return
+  }
+
+  // 1. @Record - The Record Number if less then 999 use 3 digets
+  const recNum = typeof rec.num === 'number'
+    ? rec.num
+    : parseInt(rec.id.replace(/\D/g, '') || '0', 10)
+  const recordStr = recNum < 1000 ? String(recNum).padStart(3, '0') : String(recNum)
+
+  const formatSentenceForPrompt = (text: string) =>
+    (text || '')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .join('|')
+
+  // 2. @TopText - The Final Top Text of the record (trimmed lines, newlines replaced with |)
+  // 3. @BottomText - The Final Bottom Text of the record (trimmed lines, newlines replaced with |)
+  const v1 = targetV1.value
+  const topText = formatSentenceForPrompt(topSentenceDraft.value || v1?.topSentence || '')
+  const bottomText = formatSentenceForPrompt(bottomSentenceDraft.value || v1?.bottomSentence || '')
+
+  // 4. @FontSize - If record font sise has value us it else font Size from the settings
+  const fontSizeVal = typeof rec.fontSize === 'number' && !isNaN(rec.fontSize) && rec.fontSize > 0
+    ? rec.fontSize
+    : (Number(settings.current.defaultFontSize) || 120)
+
+  // 5. @TextCenter - "Center Align" fron the settings
+  const textCenterVal = typeof settings.current.centerAlign === 'number' && !isNaN(settings.current.centerAlign)
+    ? settings.current.centerAlign
+    : 768
+
+  // 6. @TopLocation - "Top Text Location" from the settings + the "Top Text Offset" from the record
+  const settingsTopLoc = Number(settings.current.topTextLocation) || 700
+  const recordTopOffset = typeof rec.topTextOffset === 'number' && !isNaN(rec.topTextOffset)
+    ? rec.topTextOffset
+    : 0
+  const topLocationVal = settingsTopLoc + recordTopOffset
+
+  // 7. @BottomLocation - "Bottom Text Location" from the settings + the "Bottom Text Offset" from the record
+  const settingsBottomLoc = Number(settings.current.bottomTextLocation) || 2300
+  const recordBottomOffset = typeof rec.bottomTextOffset === 'number' && !isNaN(rec.bottomTextOffset)
+    ? rec.bottomTextOffset
+    : 0
+  const bottomLocationVal = settingsBottomLoc + recordBottomOffset
+
+  // 8. @Suffix - suffix of the latest approved image in the "image" stage (Stage 3), or empty string if none
+  const finalStage3 = (rec.stage3.selectedVersionNumber != null
+    ? rec.stage3.versions.find((v) => v.versionNumber === rec.stage3.selectedVersionNumber)
+    : undefined) || latestApprovedVersion(rec.stage3) || last(rec.stage3)
+  const suffixVal = finalStage3?.imageSuffix?.trim() || ''
+
+  const replaceTokens = (template: string) => {
+    if (!template) return ''
+    return template
+      .replace(/@Record\b/gi, recordStr)
+      .replace(/@TopText\b/gi, topText)
+      .replace(/@BottomText\b/gi, bottomText)
+      .replace(/@FontSize\b/gi, String(fontSizeVal))
+      .replace(/@TextCenter\b/gi, String(textCenterVal))
+      .replace(/@TopLocation\b/gi, String(topLocationVal))
+      .replace(/@BottomLocation\b/gi, String(bottomLocationVal))
+      .replace(/@Suffix\b/gi, suffixVal)
+  }
+
+  topImagePromptDraft.value = replaceTokens(settings.current.topImagePrompt || '')
+  bottomImagePromptDraft.value = replaceTokens(settings.current.bottomImagePrompt || '')
+  imageResizeAndAppendDraft.value = replaceTokens(settings.current.imageResizeAndAppend || '')
+}
+
+watch(
+  () => [props.open, props.record?.id, props.record?.lastModifiedAt, settings.current],
+  () => {
+    if (props.open && props.record) {
+      syncScenario()
+      syncTextGen()
+      syncStage1Text()
+      syncTextGenPrompts()
+      copied.value = false
+      copiedPrompt.value = false
+      copiedTopPrompt.value = false
+      copiedBottomPrompt.value = false
+      copiedResizePrompt.value = false
+      copiedBoth.value = false
+      saved.value = false
+      savedLineBreak.value = false
+    }
+  },
+  { immediate: true },
+)
+
+// Stage 1 Text Line Breaks
+const targetV1 = computed(() => (props.record ? shown1(props.record.stage1) : undefined))
+const topSentenceDraft = ref('')
+const bottomSentenceDraft = ref('')
+const savingLineBreak = ref(false)
+const savedLineBreak = ref(false)
+
+function syncStage1Text() {
+  if (!targetV1.value) {
+    topSentenceDraft.value = ''
+    bottomSentenceDraft.value = ''
+    return
+  }
+  topSentenceDraft.value = targetV1.value.topSentence || ''
+  bottomSentenceDraft.value = targetV1.value.bottomSentence || ''
+}
+
+const hasLineBreakChanges = computed(() => {
+  if (!targetV1.value) return false
+  const curTop = targetV1.value.topSentence || ''
+  const curBottom = targetV1.value.bottomSentence || ''
+  return topSentenceDraft.value !== curTop || bottomSentenceDraft.value !== curBottom
+})
+
+async function saveLineBreak() {
+  if (!props.record || !targetV1.value) return
+  savingLineBreak.value = true
+  await store.saveText(props.record.id, 1, {
+    mode: 'edit',
+    vn: targetV1.value.versionNumber,
+    top: topSentenceDraft.value,
+    bottom: bottomSentenceDraft.value,
+    scenario: '',
+    isLineBreak: true,
+  })
+  syncTextGenPrompts()
+  savingLineBreak.value = false
+  savedLineBreak.value = true
+  setTimeout(() => (savedLineBreak.value = false), 2200)
+}
+
+watch([topSentenceDraft, bottomSentenceDraft], () => {
+  syncTextGenPrompts()
+})
+
+const hasChanges = computed(() => {
+  if (!props.record) return false
+  const curTop = typeof props.record.topTextOffset === 'number' ? props.record.topTextOffset : 0
+  const curBottom = typeof props.record.bottomTextOffset === 'number' ? props.record.bottomTextOffset : 0
+  const curFont = typeof props.record.fontSize === 'number' ? props.record.fontSize : 0
+
+  return (
+    topTextOffset.value !== curTop ||
+    bottomTextOffset.value !== curBottom ||
+    fontSize.value !== curFont
+  )
+})
+
+async function saveTextGen() {
+  if (!props.record) return
+  saving.value = true
+  await store.updateTechData(props.record.id, {
+    topTextOffset: Number(topTextOffset.value) || 0,
+    bottomTextOffset: Number(bottomTextOffset.value) || 0,
+    fontSize: Number(fontSize.value) || 0,
+  })
+  syncTextGenPrompts()
+  saving.value = false
+  saved.value = true
+  setTimeout(() => (saved.value = false), 2200)
+}
+
+function resetToDefaults() {
+  topTextOffset.value = 0
+  bottomTextOffset.value = 0
+  fontSize.value = 0
+}
+</script>
+
+<template>
+  <template v-if="props.open && props.record">
+    <div
+      style="position: fixed; inset: 0; z-index: 40; background: rgba(32, 30, 29, 0.22); backdrop-filter: blur(1px); transition: opacity 0.2s"
+      @click="emit('close')"
+    ></div>
+
+    <aside
+      data-screen-label="Tech Data"
+      style="position: fixed; top: 0; right: 0; bottom: 0; z-index: 41; width: min(680px, 100%); display: flex; flex-direction: column; background: var(--color-bg); box-shadow: var(--shadow-lg); border-radius: calc(var(--radius-lg) * 1.4) 0 0 calc(var(--radius-lg) * 1.4); overflow: hidden"
+    >
+      <!-- Header -->
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); padding: var(--space-6) var(--space-6) var(--space-4); border-bottom: 1px solid var(--color-divider)">
+        <div>
+          <h3 style="margin: 0; font-size: 20px">Tech Data</h3>
+          <span class="text-muted" style="font-size: 13px">{{ props.record.id }} · Technical parameters &amp; prompt data</span>
+        </div>
+        <button
+          class="btn btn-ghost btn-icon"
+          aria-label="Close tech data"
+          title="Close"
+          style="width: 36px; height: 36px; padding: 0"
+          @click="emit('close')"
+        >
+          <Icon name="x" :size="18" />
+        </button>
+      </div>
+
+      <!-- Scrollable Drawer Body -->
+      <div style="flex: 1; overflow-y: auto; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-6)">
+        
+        <!-- Card 1: Scenario & Image Prompt -->
+        <section style="display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5, var(--space-4)); border-radius: calc(var(--radius-lg) * 1.15); background: var(--color-surface); box-shadow: var(--shadow-sm)">
+          
+          <!-- Scenario Subsection -->
+          <div style="display: flex; flex-direction: column; gap: var(--space-2)">
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <h4 style="margin: 0; font-size: 16px">Scenario</h4>
+              <span class="tag tag-neutral" style="font-size: 11px">Preview only</span>
+            </div>
+            <p class="text-muted" style="margin: 0; font-size: 12px; line-height: 1.4">
+              Replaces <code>#A</code> with Character A ({{ props.record.characters?.[0] ? 'The ' + props.record.characters[0] : 'not set' }}) and <code>#B</code> with Character B ({{ props.record.characters?.[1] ? 'The ' + props.record.characters[1] : 'not set' }}). Edits here are not saved in the record.
+            </p>
+
+            <textarea
+              v-model="scenarioDraft"
+              class="input"
+              rows="4"
+              style="border-radius: var(--radius-md); min-height: 95px; resize: vertical; line-height: 1.45; font-size: 13px; background: var(--color-bg)"
+              placeholder="No scenario text available for this record yet."
+            ></textarea>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: 2px">
+              <button
+                class="btn btn-ghost"
+                style="font-size: 12px; padding-inline: var(--space-2)"
+                title="Re-compute scenario from record"
+                @click="syncScenario"
+              >
+                Reset scenario
+              </button>
+              <button
+                class="btn btn-secondary"
+                :disabled="!scenarioDraft.trim()"
+                style="display: inline-flex; align-items: center; gap: var(--space-2); padding-block: 6px"
+                @click="copyScenario"
+              >
+                <Icon :name="copied ? 'check' : 'file'" :size="14" />
+                <span>{{ copied ? 'Copied scenario!' : 'Copy scenario' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid var(--color-divider); margin: 0" />
+
+          <!-- Image Prompt Subsection -->
+          <div style="display: flex; flex-direction: column; gap: var(--space-2)">
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <h4 style="margin: 0; font-size: 16px">Scenario Prompt</h4>
+              <span class="tag tag-neutral" style="font-size: 11px">Preview only</span>
+            </div>
+            <p class="text-muted" style="margin: 0; font-size: 12px; line-height: 1.4">
+              Contains Settings <strong>Prompt Template</strong> with <code>@scenario</code> replaced by the Scenario above. Edits are not saved in the record.
+            </p>
+
+            <textarea
+              v-model="imagePromptDraft"
+              class="input"
+              rows="5"
+              style="border-radius: var(--radius-md); min-height: 110px; resize: vertical; line-height: 1.45; font-size: 13px; background: var(--color-bg)"
+              placeholder="Settings Prompt Template is empty or no scenario available."
+            ></textarea>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: 2px">
+              <button
+                class="btn btn-ghost"
+                style="font-size: 12px; padding-inline: var(--space-2)"
+                title="Re-compute image prompt from settings template"
+                @click="syncImagePrompt"
+              >
+                Reset prompt
+              </button>
+              <button
+                class="btn btn-primary"
+                :disabled="!imagePromptDraft.trim()"
+                style="display: inline-flex; align-items: center; gap: var(--space-2); padding-block: 6px"
+                @click="copyImagePrompt"
+              >
+                <Icon :name="copiedPrompt ? 'check' : 'file'" :size="14" />
+                <span>{{ copiedPrompt ? 'Copied prompt!' : 'Copy to clipboard' }}</span>
+              </button>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- Card 2: Image With Text Generation -->
+        <section style="display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5, var(--space-4)); border-radius: calc(var(--radius-lg) * 1.15); background: var(--color-surface); box-shadow: var(--shadow-sm)">
+          <div style="display: flex; align-items: center; justify-content: space-between">
+            <h4 style="margin: 0; font-size: 16px">Image With Text Generation</h4>
+            <span class="tag tag-accent" style="font-size: 11px">Saved in record</span>
+          </div>
+          <p class="text-muted" style="margin: 0; font-size: 12px; line-height: 1.4">
+            Custom positioning and typography overrides stored directly with this PilGi record.
+          </p>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-3)">
+            <div class="field" style="margin: 0">
+              <label for="tdTopTextOffset">Top Text Offset</label>
+              <input
+                id="tdTopTextOffset"
+                v-model.number="topTextOffset"
+                type="number"
+                class="input"
+                style="background: var(--color-bg)"
+                placeholder="0"
+              />
+            </div>
+
+            <div class="field" style="margin: 0">
+              <label for="tdBottomTextOffset">Bottom Text Offset</label>
+              <input
+                id="tdBottomTextOffset"
+                v-model.number="bottomTextOffset"
+                type="number"
+                class="input"
+                style="background: var(--color-bg)"
+                placeholder="0"
+              />
+            </div>
+
+            <div class="field" style="margin: 0">
+              <label for="tdFontSize">Font Size</label>
+              <input
+                id="tdFontSize"
+                v-model.number="fontSize"
+                type="number"
+                class="input"
+                style="background: var(--color-bg)"
+                placeholder="0"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: var(--space-1)">
+            <button
+              class="btn btn-ghost"
+              style="font-size: 12px; padding-inline: var(--space-2)"
+              title="Reset values to app defaults"
+              @click="resetToDefaults"
+            >
+              Reset to app defaults
+            </button>
+            <button
+              class="btn btn-primary"
+              :disabled="saving || !hasChanges"
+              style="display: inline-flex; align-items: center; gap: var(--space-2)"
+              @click="saveTextGen"
+            >
+              <Icon v-if="saved" name="check" :size="15" />
+              <span>{{ saved ? 'Saved!' : saving ? 'Saving…' : 'Save offsets' }}</span>
+            </button>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid var(--color-divider); margin: 0" />
+
+          <!-- Stage 1 Text Line Breaks Subsection -->
+          <div style="display: flex; flex-direction: column; gap: var(--space-3)">
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <span class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em">Stage 1 Sentences Line Breaks</span>
+              <span v-if="targetV1" class="tag tag-accent-2" style="font-size: 11px">v{{ targetV1.versionNumber }} · Final</span>
+            </div>
+            <p class="text-muted" style="margin: 0; font-size: 12px; line-height: 1.4">
+              Edit line breaks for Top and Bottom sentences. Line breaks are converted to <code>|</code> in the prompts below.
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3)">
+              <!-- Top Sentence -->
+              <div class="field" style="margin: 0">
+                <label for="tdTopSentence">Top Sentence</label>
+                <textarea
+                  id="tdTopSentence"
+                  v-model="topSentenceDraft"
+                  class="input"
+                  rows="2"
+                  :dir="hasHebrew(topSentenceDraft) ? 'rtl' : undefined"
+                  style="border-radius: var(--radius-md); min-height: 52px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
+                  :style="hasHebrew(topSentenceDraft) ? 'direction: rtl; text-align: right;' : ''"
+                  placeholder="Top sentence…"
+                ></textarea>
+              </div>
+
+              <!-- Bottom Sentence -->
+              <div class="field" style="margin: 0">
+                <label for="tdBottomSentence">Bottom Sentence</label>
+                <textarea
+                  id="tdBottomSentence"
+                  v-model="bottomSentenceDraft"
+                  class="input"
+                  rows="2"
+                  :dir="hasHebrew(bottomSentenceDraft) ? 'rtl' : undefined"
+                  style="border-radius: var(--radius-md); min-height: 52px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
+                  :style="hasHebrew(bottomSentenceDraft) ? 'direction: rtl; text-align: right;' : ''"
+                  placeholder="Bottom sentence…"
+                ></textarea>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: 2px">
+              <button
+                class="btn btn-ghost"
+                style="font-size: 12px; padding-inline: var(--space-2)"
+                title="Reset to current saved text"
+                :disabled="!hasLineBreakChanges"
+                @click="syncStage1Text"
+              >
+                Reset text
+              </button>
+              <button
+                class="btn btn-secondary"
+                :disabled="savingLineBreak || !hasLineBreakChanges || !topSentenceDraft.trim() || !bottomSentenceDraft.trim()"
+                style="display: inline-flex; align-items: center; gap: var(--space-2); padding-block: 6px"
+                @click="saveLineBreak"
+              >
+                <Icon v-if="savedLineBreak" name="check" :size="15" />
+                <span>{{ savedLineBreak ? 'Updated!' : savingLineBreak ? 'Updating…' : 'Update line break' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid var(--color-divider); margin: 0" />
+
+          <!-- Generated Prompts Subsection -->
+          <div style="display: flex; flex-direction: column; gap: var(--space-3)">
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <span class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em">Image Prompts</span>
+              <span class="tag tag-neutral" style="font-size: 11px">Preview only</span>
+            </div>
+
+            <!-- Image resize and append -->
+            <div class="field" style="margin: 0">
+              <label for="tdImageResizeAndAppend">Image resize and append</label>
+              <div style="display: flex; gap: var(--space-2); align-items: flex-start">
+                <textarea
+                  id="tdImageResizeAndAppend"
+                  v-model="imageResizeAndAppendDraft"
+                  class="input"
+                  rows="2"
+                  style="border-radius: var(--radius-md); flex: 1; min-height: 58px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
+                  placeholder="Settings Image resize and append prompt is empty"
+                ></textarea>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  style="padding: 8px 10px; display: inline-flex; align-items: center; justify-content: center; height: 38px; flex-shrink: 0"
+                  :title="copiedResizePrompt ? 'Copied Image resize and append prompt!' : 'Copy Image resize and append prompt'"
+                  @click="copyResizePrompt"
+                >
+                  <Icon :name="copiedResizePrompt ? 'check' : 'copy'" :size="14" />
+                </button>
+              </div>
+            </div>
+
+            <!-- Top Image Prompt -->
+            <div class="field" style="margin: 0">
+              <label for="tdTopImagePrompt">Top Image prompt</label>
+              <div style="display: flex; gap: var(--space-2); align-items: flex-start">
+                <textarea
+                  id="tdTopImagePrompt"
+                  v-model="topImagePromptDraft"
+                  class="input"
+                  rows="2"
+                  style="border-radius: var(--radius-md); flex: 1; min-height: 58px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
+                  placeholder="Settings Top Image prompt is empty"
+                ></textarea>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  style="padding: 8px 10px; display: inline-flex; align-items: center; justify-content: center; height: 38px; flex-shrink: 0"
+                  :title="copiedTopPrompt ? 'Copied Top Image prompt!' : 'Copy Top Image prompt'"
+                  @click="copyTopPrompt"
+                >
+                  <Icon :name="copiedTopPrompt ? 'check' : 'copy'" :size="14" />
+                </button>
+              </div>
+            </div>
+
+            <!-- Bottom Image Prompt -->
+            <div class="field" style="margin: 0">
+              <label for="tdBottomImagePrompt">Bottom Image prompt</label>
+              <div style="display: flex; gap: var(--space-2); align-items: flex-start">
+                <textarea
+                  id="tdBottomImagePrompt"
+                  v-model="bottomImagePromptDraft"
+                  class="input"
+                  rows="2"
+                  style="border-radius: var(--radius-md); flex: 1; min-height: 58px; resize: vertical; line-height: 1.4; font-size: 13px; background: var(--color-bg)"
+                  placeholder="Settings Bottom Image prompt is empty"
+                ></textarea>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  style="padding: 8px 10px; display: inline-flex; align-items: center; justify-content: center; height: 38px; flex-shrink: 0"
+                  :title="copiedBottomPrompt ? 'Copied Bottom Image prompt!' : 'Copy Bottom Image prompt'"
+                  @click="copyBottomPrompt"
+                >
+                  <Icon :name="copiedBottomPrompt ? 'check' : 'copy'" :size="14" />
+                </button>
+              </div>
+            </div>
+
+            <!-- Copy prompts together button -->
+            <button
+              type="button"
+              class="btn btn-secondary"
+              style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); padding-block: 8px; margin-top: 2px"
+              :disabled="!topImagePromptDraft.trim() && !bottomImagePromptDraft.trim() && !imageResizeAndAppendDraft.trim()"
+              title="Copy prompts to clipboard"
+              @click="copyBothPrompts"
+            >
+              <Icon :name="copiedBoth ? 'check' : 'copy'" :size="14" />
+              <span>{{ copiedBoth ? 'Copied prompts to clipboard!' : 'Copy to clipboard' }}</span>
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </aside>
+  </template>
+</template>

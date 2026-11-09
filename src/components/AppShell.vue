@@ -1,0 +1,265 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import Icon from './Icon.vue'
+import NavAnimals from './NavAnimals.vue'
+import RemarksDrawer from './RemarksDrawer.vue'
+import { lastOpenRemarkOf } from '../domain'
+import { useAuthStore } from '../stores/auth'
+import { useRecordsStore } from '../stores/records'
+import { useUiStore } from '../stores/ui'
+
+const auth = useAuthStore()
+const store = useRecordsStore()
+const ui = useUiStore()
+const router = useRouter()
+const route = useRoute()
+
+const top = ref('')
+const bottom = ref('')
+const invalid = computed(() => !(top.value.trim() && bottom.value.trim()))
+const initials = computed(() => (auth.email.split('@')[0] || '?').slice(0, 2).toUpperCase())
+
+const myEmail = computed(() => (auth.email || '').trim().toLowerCase())
+
+const openCount = computed(() => {
+  const email = myEmail.value
+  return store.visible.filter((r) => {
+    const last = lastOpenRemarkOf(r)
+    return !!last && last.by.trim().toLowerCase() !== email
+  }).length
+})
+
+const mineCount = computed(() => {
+  const email = myEmail.value
+  return store.visible.filter((r) => {
+    const last = lastOpenRemarkOf(r)
+    return !!last && last.by.trim().toLowerCase() === email
+  }).length
+})
+
+function selectRemarksFilter(filter: 'open' | 'mine') {
+  ui.remarksF = filter
+  ui.stageF = 'all'
+  ui.statusF = 'all'
+  ui.q = ''
+  if (route.path !== '/') {
+    router.push('/')
+  }
+}
+
+function lock() {
+  auth.lock()
+  store.reset()
+  ui.closeRemarks()
+  router.replace('/login')
+}
+async function create() {
+  const t = top.value.trim(), b = bottom.value.trim()
+  top.value = bottom.value = ''
+  ui.newOpen = false
+  const id = await store.create(t, b)
+  router.push(`/record/${id}`)
+}
+</script>
+
+<template>
+  <nav class="nav main-nav" style="position: relative; padding: var(--space-4) clamp(16px, 4vw, var(--space-8)) calc(var(--space-4) + 14px); flex-wrap: wrap; gap: var(--space-3); border-bottom: 2px solid var(--color-neutral-300); margin-bottom: var(--space-4)">
+    <div style="display: flex; gap: var(--space-1); margin-right: auto">
+      <h1 title="Back to pilgis" style="margin: 0; cursor: pointer" @click="router.push('/')">PilGi manager</h1>
+    </div>
+    <button class="btn btn-primary" @click="ui.newOpen = true"><Icon name="plus" />New PilGi</button>
+    <div class="split-btn-group" role="group" aria-label="Remarks quick filters">
+      <button
+        type="button"
+        class="split-btn-item"
+        :class="{ active: ui.remarksF === 'open' && route.path === '/' }"
+        title="Open: all last remarks not by me and not set as done"
+        aria-label="Open remarks filter"
+        @click="selectRemarksFilter('open')"
+      >
+        <Icon name="chat" :size="12" style="opacity: 0.8" />
+        <span>Open</span>
+        <span class="split-btn-badge" :class="{ 'has-count': openCount > 0 }">{{ openCount }}</span>
+      </button>
+      <button
+        type="button"
+        class="split-btn-item"
+        :class="{ active: ui.remarksF === 'mine' && route.path === '/' }"
+        title="Mine: all last remarks by me but not set as done"
+        aria-label="My remarks filter"
+        @click="selectRemarksFilter('mine')"
+      >
+        <Icon name="chat" :size="12" style="opacity: 0.8" />
+        <span>Mine</span>
+        <span class="split-btn-badge" :class="{ 'has-count': mineCount > 0 }">{{ mineCount }}</span>
+      </button>
+    </div>
+    <button class="btn btn-secondary" @click="router.push('/import')"><Icon name="upload" />Batch import</button>
+    <span class="text-muted" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; min-width: 0; overflow-wrap: anywhere">
+      <Icon name="branch" :size="14" />{{ auth.repo }} · {{ auth.branch }}
+    </span>
+    <span style="display: inline-flex; align-items: center; gap: var(--space-2); font-size: 13px">
+      <span style="width: 30px; height: 30px; border-radius: 50%; background: var(--color-accent-200); color: var(--color-accent-800); display: grid; place-items: center; font-weight: 700; font-size: 12px">{{ initials }}</span>
+      {{ auth.email }}
+    </span>
+    <button
+      class="btn btn-secondary btn-icon"
+      :title="store.refreshing ? 'Refreshing from GitHub…' : 'Refresh data from GitHub'"
+      :aria-label="store.refreshing ? 'Refreshing from GitHub…' : 'Refresh data from GitHub'"
+      :disabled="store.refreshing"
+      @click="store.refresh()"
+    >
+      <Icon name="refresh" :class="{ 'spin-icon': store.refreshing }" />
+    </button>
+    <button
+      class="btn btn-icon"
+      :class="route.path === '/settings' ? 'btn-primary' : 'btn-secondary'"
+      title="Settings"
+      aria-label="Settings"
+      @click="router.push('/settings')"
+    >
+      <Icon name="gear" />
+    </button>
+    <button class="btn btn-secondary btn-icon" title="Lock" @click="lock"><Icon name="lock" /></button>
+    <NavAnimals />
+  </nav>
+
+  <div v-if="!store.loaded" class="text-muted" style="padding: var(--space-8)">Loading pilgis from {{ auth.repo }}…</div>
+  <div v-else-if="store.loadError" style="margin: var(--space-6) clamp(16px, 4vw, var(--space-8)); padding: var(--space-6); border-radius: calc(var(--radius-lg) * 1.3); background: var(--color-accent-100); max-width: 640px">
+    <h3 style="margin: 0 0 var(--space-2)">Can't load your repository</h3>
+    <p style="margin: 0 0 var(--space-4); overflow-wrap: anywhere">{{ store.loadError }}</p>
+    <div style="display: flex; gap: var(--space-2)">
+      <button class="btn btn-primary" @click="store.init()">Retry</button>
+      <button class="btn btn-secondary" @click="lock">Lock &amp; change repository</button>
+    </div>
+  </div>
+  <RouterView v-else />
+
+  <RemarksDrawer />
+
+  <div v-if="ui.newOpen" class="dialog-backdrop" style="z-index: 50" @click="ui.newOpen = false">
+    <div class="dialog" style="width: min(520px, 100%)" @click.stop>
+      <div class="dialog-title">New PilGi</div>
+      <div class="field">
+        <label>Top sentence</label>
+        <textarea v-model="top" class="input" rows="2" style="border-radius: var(--radius-md); min-height: 60px; resize: vertical"></textarea>
+      </div>
+      <div class="field">
+        <label>Bottom sentence</label>
+        <textarea v-model="bottom" class="input" rows="2" style="border-radius: var(--radius-md); min-height: 60px; resize: vertical"></textarea>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" @click="ui.newOpen = false">Cancel</button>
+        <button class="btn btn-primary" :disabled="invalid" @click="create">Create PilGi</button>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="store.toastMsg" style="position: fixed; left: var(--space-8); bottom: var(--space-6); z-index: 60; display: flex; align-items: center; gap: var(--space-2); padding: 10px 18px; border-radius: 999px; background: var(--color-neutral-900); color: var(--color-bg); font-size: 13px; box-shadow: var(--shadow-lg)">
+    <Icon name="commit" :size="15" />{{ store.toastMsg }}
+  </div>
+</template>
+
+<style scoped>
+.main-nav > *:not(.nav-animals-track) {
+  position: relative;
+  z-index: 2;
+}
+
+.split-btn-group {
+  display: inline-flex;
+  align-items: stretch;
+  height: 36px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+  box-sizing: border-box;
+}
+
+.split-btn-item {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 calc(var(--space-3) * 0.9);
+  height: 100%;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: var(--font-heading-weight);
+  color: var(--color-text);
+  background: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.split-btn-item + .split-btn-item {
+  border-left: 1px solid var(--color-divider);
+}
+
+.split-btn-item:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.split-btn-item.active {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.split-btn-item.active:hover {
+  background: var(--color-accent-600);
+}
+
+.split-btn-item:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.split-btn-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  background: var(--color-neutral-300);
+  color: var(--color-neutral-700);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.split-btn-item:hover .split-btn-badge {
+  background: var(--color-neutral-400);
+  color: var(--color-neutral-900);
+}
+
+.split-btn-item:not(.active) .split-btn-badge.has-count {
+  background: var(--color-accent-200);
+  color: var(--color-accent-800);
+}
+
+.split-btn-item.active .split-btn-badge {
+  background: rgba(255, 255, 255, 0.28);
+  color: var(--color-bg);
+}
+
+@keyframes spin-anim {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin-icon {
+  animation: spin-anim 0.85s linear infinite;
+  transform-origin: center;
+}
+</style>

@@ -1,0 +1,13 @@
+{
+  "topImagePrompt": "",
+  "topTextLocation": 700,
+  "bottomImagePrompt": "",
+  "bottomTextLocation": 2300,
+  "defaultFontSize": 120,
+  "centerAlign": 768,
+  "elephantDescription": "",
+  "giraffeDescription": "",
+  "foxDescription": "",
+  "promptText": "",
+  "timeZone": "Asia/Jerusalem"
+}
